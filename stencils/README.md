@@ -9,3 +9,11 @@ Para regenerarlos:
 pip install pillow numpy scipy
 python3 tools/separar_stencils.py originales/hoja_2.jpg salida/ hoja2
 ```
+
+## Stickers
+
+Versión con borde blanco y sombra suave en `stickers/`:
+
+```sh
+python3 tools/hacer_stickers.py stencils stickers
+```
