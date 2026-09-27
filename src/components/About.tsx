@@ -2,153 +2,163 @@
 
 import { useEffect, useRef } from 'react'
 
-const lines = [
-  'Soy Briza.',
-  'Tatuadora, activista, patinadora.',
-  'Creo que cada tatuaje cuenta algo.',
-  'Trabajo en blackwork —',
-  'desde lo más oscuro hasta lo más tierno.',
-  'No tatúo decoración.',
-  'Tatúo capítulos.',
-]
-
 export default function About() {
-  const linesRef = useRef<(HTMLSpanElement | null)[]>([])
-  const sectionRef = useRef<HTMLElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            linesRef.current.forEach((el, i) => {
-              if (el) {
-                setTimeout(() => {
-                  el.style.opacity = '1'
-                  el.style.transform = 'translateY(0)'
-                }, i * 120)
-              }
-            })
-          }
-        })
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.querySelectorAll('[data-line]').forEach((line, i) => {
+            setTimeout(() => {
+              ;(line as HTMLElement).style.opacity = '1'
+              ;(line as HTMLElement).style.transform = 'translateY(0)'
+            }, i * 120)
+          })
+          obs.disconnect()
+        }
       },
-      { threshold: 0.3 }
+      { threshold: 0.1 }
     )
-
-    if (sectionRef.current) observer.observe(sectionRef.current)
-    return () => observer.disconnect()
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
 
   return (
     <section
-      ref={sectionRef}
       id="sobre-mi"
-      className="py-24 px-6 md:px-12 overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-secondary)' }}
+      ref={ref}
+      style={{
+        borderTop: '1px solid rgba(28,28,28,0.12)',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        minHeight: '80vh',
+      }}
     >
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-        {/* Text side */}
-        <div>
-          <p className="text-xs tracking-widest uppercase mb-8" style={{ color: 'var(--accent-hot)' }}>
-            Sobre mí
-          </p>
-
-          <div className="space-y-1 mb-10">
-            {lines.map((line, i) => (
-              <div key={i} className="overflow-hidden">
-                <span
-                  ref={(el) => { linesRef.current[i] = el }}
-                  className="block font-display"
-                  style={{
-                    fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
-                    color: i === lines.length - 1 ? 'var(--accent-hot)' : 'var(--black)',
-                    fontWeight: i === lines.length - 1 ? 700 : 400,
-                    fontStyle: i % 3 === 1 ? 'italic' : 'normal',
-                    opacity: 0,
-                    transform: 'translateY(40px)',
-                    transition: `opacity 0.7s ease, transform 0.7s cubic-bezier(0.16,1,0.3,1)`,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {line}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2 mb-8">
-            {['Vegan', 'Blackwork', 'Buenos Aires', 'Patineta', 'Roller', 'Activista'].map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium px-3 py-1.5 rounded-full"
-                style={{
-                  backgroundColor: 'rgba(240,40,122,0.08)',
-                  color: 'var(--accent-hot)',
-                  border: '1px solid rgba(240,40,122,0.2)',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <a
-            href="#contacto"
-            className="inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 hover:gap-4"
-            style={{ color: 'var(--accent-hot)' }}
-          >
-            Trabajemos juntos
-            <span>→</span>
-          </a>
+      {/* Image side */}
+      <div
+        style={{
+          backgroundColor: '#E8D0DC',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '70vh',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={{ textAlign: 'center', opacity: 0.15 }}>
+          <div style={{ fontSize: '8rem' }}>✦</div>
         </div>
-
-        {/* Visual side */}
-        <div className="relative">
-          {/* Placeholder for Briza's photo */}
-          <div
-            className="relative rounded-3xl overflow-hidden"
-            style={{
-              aspectRatio: '4/5',
-              backgroundColor: '#F2C4D8',
-            }}
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Foto de Briza</p>
-            </div>
-
-            {/* Decorative label */}
-            <div
-              className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl"
-              style={{ backgroundColor: 'rgba(255,240,245,0.9)', backdropFilter: 'blur(8px)' }}
-            >
-              <p className="font-display text-lg font-bold" style={{ color: 'var(--black)' }}>Briza Maldonado</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                Tatuadora · Buenos Aires · Disponible para guest spots
-              </p>
-            </div>
-          </div>
-
-          {/* Floating badge */}
-          <div
-            className="absolute -top-4 -right-4 w-20 h-20 rounded-full flex items-center justify-center text-center p-2"
-            style={{
-              backgroundColor: 'var(--accent-hot)',
-              animation: 'spin 12s linear infinite',
-            }}
-          >
-            <p className="text-white text-xs font-bold leading-tight tracking-wide">
-              BsAS · ARG
-            </p>
-          </div>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '2rem',
+            left: '2rem',
+            fontSize: '0.65rem',
+            letterSpacing: '0.25em',
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          Briza Maldonado — Palermo, CABA
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      {/* Text side */}
+      <div
+        style={{
+          padding: 'clamp(3rem, 6vw, 7rem) clamp(2rem, 5vw, 5rem)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          borderLeft: '1px solid rgba(28,28,28,0.12)',
+        }}
+      >
+        <p
+          data-line
+          style={{
+            fontSize: '0.7rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--accent-hot)',
+            marginBottom: '3rem',
+            opacity: 0,
+            transform: 'translateY(20px)',
+            transition: 'all 0.7s ease',
+          }}
+        >
+          ✦ Sobre mí
+        </p>
+
+        {[
+          'Soy Briza, tatuadora',
+          'basada en Palermo.',
+          'Trabajo desde la línea fina,',
+          'el blackwork ilustrativo',
+          'y lo ornamental.',
+          '',
+          'Diseño en iPad,',
+          'transfiero a la piel.',
+          'Cada pieza es única.',
+        ].map((line, i) => (
+          <div
+            key={i}
+            data-line
+            style={{
+              overflow: 'hidden',
+              opacity: 0,
+              transform: 'translateY(20px)',
+              transition: 'all 0.8s cubic-bezier(0.25,0.46,0.45,0.94)',
+            }}
+          >
+            <span
+              className="font-display"
+              style={{
+                display: 'block',
+                fontSize: 'clamp(1.4rem, 2.5vw, 2.2rem)',
+                lineHeight: 1.3,
+                color: line === '' ? 'transparent' : 'var(--text-primary)',
+                fontStyle: i > 5 ? 'italic' : 'normal',
+              }}
+            >
+              {line || ' '}
+            </span>
+          </div>
+        ))}
+
+        <div
+          data-line
+          style={{
+            marginTop: '3rem',
+            display: 'flex',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            opacity: 0,
+            transform: 'translateY(20px)',
+            transition: 'all 0.7s ease',
+          }}
+        >
+          {['Vegana', 'Palermo', 'iPad → Piel', 'Pole Dance'].map(tag => (
+            <span
+              key={tag}
+              style={{
+                padding: '0.3rem 0.8rem',
+                border: '1px solid rgba(28,28,28,0.2)',
+                borderRadius: '999px',
+                fontSize: '0.65rem',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }

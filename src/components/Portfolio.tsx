@@ -1,130 +1,163 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-
-const categories = ['Todo', 'Dark', 'Kawaii', 'Traditional', 'Flash']
+import { useEffect, useRef } from 'react'
 
 const works = [
-  { id: 1, title: 'Lobo textural', category: 'Dark', size: 'large', color: '#E8D5DB' },
-  { id: 2, title: 'Polilla · 777', category: 'Dark', size: 'small', color: '#D5E8E0' },
-  { id: 3, title: 'Elefante en patineta', category: 'Kawaii', size: 'small', color: '#D5DCE8' },
-  { id: 4, title: 'Cocodrilo', category: 'Traditional', size: 'large', color: '#E8E0D5' },
-  { id: 5, title: 'Corazón Vegan', category: 'Flash', size: 'small', color: '#E8D5E0' },
-  { id: 6, title: 'Oso anarquista', category: 'Kawaii', size: 'small', color: '#D5E8DC' },
-  { id: 7, title: 'Garza japonesa', category: 'Traditional', size: 'large', color: '#DCE8D5' },
-  { id: 8, title: 'Mariposa + daga', category: 'Dark', size: 'small', color: '#E8DDD5' },
-  { id: 9, title: 'Pingüino patinador', category: 'Kawaii', size: 'small', color: '#D5E5E8' },
-  { id: 10, title: 'Rosa con alambre', category: 'Traditional', size: 'large', color: '#E8D5D8' },
-  { id: 11, title: 'Moño con corazón', category: 'Flash', size: 'small', color: '#EAD5E8' },
-  { id: 12, title: 'Conejo kawaii', category: 'Kawaii', size: 'small', color: '#D5E8E8' },
+  { num: '001', title: 'Mariposas', style: 'Blackwork', year: '2024', color: '#E8D5E0' },
+  { num: '002', title: 'Polilla', style: 'Fineline', year: '2024', color: '#D5E0E8' },
+  { num: '003', title: 'Corazón de alambres', style: 'Illustrativo', year: '2024', color: '#E8E0D5' },
+  { num: '004', title: 'Garza', style: 'Watercolor', year: '2023', color: '#D5E8E0' },
+  { num: '005', title: 'Moño', style: 'Ornamental', year: '2024', color: '#E8D5D5' },
+  { num: '006', title: 'Patchwork', style: 'Mixed', year: '2024', color: '#E0D5E8' },
 ]
 
-export default function Portfolio() {
-  const [active, setActive] = useState('Todo')
-  const itemsRef = useRef<(HTMLDivElement | null)[]>([])
-
-  const filtered = active === 'Todo' ? works : works.filter(w => w.category === active)
+function WorkItem({ work, index }: { work: typeof works[0]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed')
-          }
-        })
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.style.opacity = '1'
+          el.style.transform = 'translateY(0)'
+          obs.disconnect()
+        }
       },
       { threshold: 0.15 }
     )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
-    itemsRef.current.forEach((el) => el && observer.observe(el))
-    return () => observer.disconnect()
-  }, [filtered])
+  const isEven = index % 2 === 0
 
   return (
-    <section id="portfolio" className="py-24 px-6 md:px-12" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-      {/* Header */}
-      <div className="max-w-6xl mx-auto mb-16">
-        <p className="text-xs tracking-widest uppercase mb-3" style={{ color: 'var(--accent-hot)' }}>
-          Portfolio
-        </p>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <h2
-            className="font-display font-bold"
-            style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', color: 'var(--black)', lineHeight: 1.05 }}
-          >
-            El trabajo
-          </h2>
-
-          {/* Filter pills */}
-          <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActive(cat)}
-                className="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-300 hover:scale-105"
-                style={{
-                  backgroundColor: active === cat ? 'var(--accent-hot)' : 'rgba(240,40,122,0.08)',
-                  color: active === cat ? 'white' : 'var(--text-secondary)',
-                  border: `1px solid ${active === cat ? 'transparent' : 'rgba(240,40,122,0.2)'}`,
-                }}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+    <div
+      ref={ref}
+      style={{
+        opacity: 0,
+        transform: 'translateY(60px)',
+        transition: 'opacity 0.9s ease, transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)',
+        transitionDelay: `${index * 0.05}s`,
+        display: 'grid',
+        gridTemplateColumns: isEven ? '1fr 1fr' : '1fr 1fr',
+        gap: '0',
+        borderTop: '1px solid rgba(28,28,28,0.12)',
+      }}
+    >
+      {/* Image block */}
+      <div
+        className="overflow-hidden"
+        style={{
+          order: isEven ? 0 : 1,
+          aspectRatio: '4/5',
+          backgroundColor: work.color,
+          position: 'relative',
+        }}
+      >
+        <div
+          className="img-hover w-full h-full flex items-center justify-center"
+          style={{ fontSize: '4rem', opacity: 0.2 }}
+        >
+          ✦
+        </div>
+        {/* Hover overlay */}
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(240,40,122,0.08)',
+            opacity: 0,
+            transition: 'opacity 0.4s ease',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+        >
+          <span className="font-display italic text-2xl" style={{ color: 'var(--accent-hot)' }}>
+            ver
+          </span>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filtered.map((work, i) => (
-          <div
-            key={work.id}
-            ref={(el) => { itemsRef.current[i] = el }}
-            className={`clip-reveal group relative overflow-hidden rounded-2xl cursor-pointer ${
-              work.size === 'large' ? 'col-span-2 row-span-2' : ''
-            }`}
-            style={{
-              backgroundColor: work.color,
-              aspectRatio: work.size === 'large' ? '1/1' : '3/4',
-            }}
-            data-cursor
+      {/* Text block */}
+      <div
+        style={{
+          order: isEven ? 1 : 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: 'clamp(2rem, 5vw, 5rem)',
+          backgroundColor: 'var(--bg-primary)',
+        }}
+      >
+        <div>
+          <p
+            className="text-xs tracking-widest uppercase"
+            style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}
           >
-            {/* Placeholder — real images go here */}
-            <div className="absolute inset-0 flex items-end p-4">
-              <div
-                className="opacity-0 group-hover:opacity-100 transition-all duration-400 transform translate-y-2 group-hover:translate-y-0"
-                style={{ transitionDuration: '0.4s' }}
-              >
-                <p className="text-xs font-medium tracking-wide uppercase mb-1" style={{ color: 'var(--accent-hot)' }}>
-                  {work.category}
-                </p>
-                <p className="font-display text-sm font-bold" style={{ color: 'var(--black)' }}>
-                  {work.title}
-                </p>
-              </div>
-            </div>
+            {work.num} — {work.style}
+          </p>
+          <h3
+            className="font-display"
+            style={{
+              fontSize: 'clamp(2rem, 4vw, 4rem)',
+              lineHeight: 1,
+              color: 'var(--text-primary)',
+              fontStyle: 'italic',
+            }}
+          >
+            {work.title}
+          </h3>
+        </div>
+        <p
+          className="text-xs tracking-widest"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {work.year}
+        </p>
+      </div>
+    </div>
+  )
+}
 
-            {/* Hover overlay */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-              style={{ backgroundColor: 'rgba(250, 232, 240, 0.4)' }}
-            />
-          </div>
-        ))}
+export default function Portfolio() {
+  return (
+    <section id="portfolio" style={{ marginTop: '8rem' }}>
+      {/* Section header */}
+      <div
+        style={{
+          padding: '0 2.5rem 4rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          borderBottom: '1px solid rgba(28,28,28,0.12)',
+        }}
+      >
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 'clamp(0.7rem, 1vw, 0.9rem)',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          ✦ Trabajos
+        </h2>
+        <p
+          className="font-display italic"
+          style={{ fontSize: 'clamp(3rem, 7vw, 7rem)', lineHeight: 1, color: 'var(--text-primary)' }}
+        >
+          Obra
+        </p>
       </div>
 
-      {/* CTA */}
-      <div className="max-w-6xl mx-auto mt-12 text-center">
-        <a
-          href="#contacto"
-          className="inline-flex items-center gap-2 text-sm font-medium transition-all duration-300 hover:gap-4"
-          style={{ color: 'var(--accent-hot)' }}
-        >
-          ¿Querés una pieza tuya? Escribime
-          <span>→</span>
-        </a>
+      {/* Works */}
+      <div>
+        {works.map((work, i) => (
+          <WorkItem key={work.num} work={work} index={i} />
+        ))}
       </div>
     </section>
   )

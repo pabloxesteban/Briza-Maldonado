@@ -1,164 +1,123 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 export default function Contact() {
-  const [sent, setSent] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', idea: '', placement: '' })
+  const ref = useRef<HTMLDivElement>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setSent(true)
-  }
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.querySelectorAll('[data-reveal]').forEach((item, i) => {
+            setTimeout(() => {
+              ;(item as HTMLElement).style.opacity = '1'
+              ;(item as HTMLElement).style.transform = 'translateY(0)'
+            }, i * 150)
+          })
+          obs.disconnect()
+        }
+      },
+      { threshold: 0.2 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   return (
     <section
       id="contacto"
-      className="py-24 px-6 md:px-12"
-      style={{ backgroundColor: 'var(--bg-primary)' }}
+      ref={ref}
+      style={{
+        borderTop: '1px solid rgba(28,28,28,0.12)',
+        padding: 'clamp(5rem, 10vw, 12rem) 2.5rem',
+        minHeight: '70vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+      }}
     >
-      <div className="max-w-3xl mx-auto">
-        <p className="text-xs tracking-widest uppercase mb-3" style={{ color: 'var(--accent-hot)' }}>
-          Contacto
-        </p>
-        <h2
-          className="font-display font-bold mb-4"
-          style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', color: 'var(--black)', lineHeight: 1.05 }}
+      <p
+        data-reveal
+        style={{
+          fontSize: '0.7rem',
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: 'var(--text-secondary)',
+          marginBottom: '4rem',
+          opacity: 0,
+          transform: 'translateY(20px)',
+          transition: 'all 0.7s ease',
+        }}
+      >
+        ✦ Contacto
+      </p>
+
+      <h2
+        data-reveal
+        className="font-display"
+        style={{
+          fontSize: 'clamp(3rem, 10vw, 10rem)',
+          lineHeight: 0.95,
+          color: 'var(--text-primary)',
+          marginBottom: '5rem',
+          opacity: 0,
+          transform: 'translateY(50px)',
+          transition: 'all 1s cubic-bezier(0.25,0.46,0.45,0.94)',
+        }}
+      >
+        Agendá<br />
+        <span style={{ fontStyle: 'italic' }}>tu turno</span>
+      </h2>
+
+      <div
+        data-reveal
+        style={{
+          display: 'flex',
+          gap: '2rem',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          opacity: 0,
+          transform: 'translateY(20px)',
+          transition: 'all 0.8s ease',
+        }}
+      >
+        <a
+          href="https://instagram.com/bri.t4tts"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block',
+            padding: '1.2rem 3rem',
+            backgroundColor: 'var(--text-primary)',
+            color: 'var(--bg-primary)',
+            fontSize: '0.75rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            transition: 'background-color 0.3s ease',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--accent-hot)')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--text-primary)')}
         >
-          Contame tu idea
-        </h2>
-        <p className="text-sm mb-12 max-w-md" style={{ color: 'var(--text-secondary)' }}>
-          Cada proyecto empieza con una conversación. Contame qué querés contar.
-        </p>
-
-        {!sent ? (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {[
-              { key: 'name', label: 'Tu nombre', type: 'text', placeholder: '¿Cómo te llamás?' },
-              { key: 'email', label: 'Email', type: 'email', placeholder: 'Para responder tu consulta' },
-            ].map(({ key, label, type, placeholder }) => (
-              <div key={key}>
-                <label className="block text-xs font-medium tracking-wide mb-2 uppercase" style={{ color: 'var(--text-secondary)' }}>
-                  {label}
-                </label>
-                <input
-                  type={type}
-                  placeholder={placeholder}
-                  value={form[key as keyof typeof form]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  className="w-full px-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:scale-[1.01]"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--black)',
-                    border: '1px solid rgba(240,40,122,0.15)',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = 'var(--accent-hot)'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(240,40,122,0.1)'
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(240,40,122,0.15)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-              </div>
-            ))}
-
-            <div>
-              <label className="block text-xs font-medium tracking-wide mb-2 uppercase" style={{ color: 'var(--text-secondary)' }}>
-                Tu idea
-              </label>
-              <textarea
-                placeholder="¿Qué querés tatuar? ¿Tiene algún significado? ¿Tenés referencias?"
-                rows={5}
-                value={form.idea}
-                onChange={(e) => setForm({ ...form, idea: e.target.value })}
-                className="w-full px-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 resize-none"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--black)',
-                  border: '1px solid rgba(240,40,122,0.15)',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--accent-hot)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(240,40,122,0.1)'
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(240,40,122,0.15)'
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium tracking-wide mb-2 uppercase" style={{ color: 'var(--text-secondary)' }}>
-                ¿Dónde lo querés?
-              </label>
-              <input
-                type="text"
-                placeholder="Zona del cuerpo aproximada"
-                value={form.placement}
-                onChange={(e) => setForm({ ...form, placement: e.target.value })}
-                className="w-full px-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--black)',
-                  border: '1px solid rgba(240,40,122,0.15)',
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--accent-hot)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(240,40,122,0.1)'
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(240,40,122,0.15)'
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-4 rounded-xl font-medium text-sm tracking-wide transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
-              style={{
-                backgroundColor: 'var(--accent-hot)',
-                color: 'white',
-                boxShadow: '0 4px 24px rgba(240,40,122,0.3)',
-              }}
-            >
-              Enviar consulta
-            </button>
-          </form>
-        ) : (
-          <div
-            className="text-center py-16 rounded-2xl"
-            style={{ backgroundColor: 'var(--bg-secondary)' }}
-          >
-            <p className="text-4xl mb-4">✦</p>
-            <h3 className="font-display text-2xl font-bold mb-2" style={{ color: 'var(--black)' }}>
-              ¡Recibido!
-            </h3>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Te respondo en las próximas 48 horas.
-            </p>
-          </div>
-        )}
-
-        {/* Social links */}
-        <div className="mt-16 pt-8 border-t flex items-center justify-between" style={{ borderColor: 'rgba(240,40,122,0.15)' }}>
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            También en Instagram
-          </p>
-          <a
-            href="https://instagram.com/brizamaldonado"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium transition-all duration-300 hover:gap-3 flex items-center gap-2"
-            style={{ color: 'var(--accent-hot)' }}
-          >
-            @brizamaldonado
-            <span>↗</span>
-          </a>
-        </div>
+          Instagram ↗
+        </a>
+        <a
+          href="mailto:hola@brizamaldonado.com"
+          style={{
+            fontSize: '0.75rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)',
+            textDecoration: 'none',
+            borderBottom: '1px solid rgba(107,79,87,0.3)',
+            paddingBottom: '2px',
+          }}
+        >
+          Email
+        </a>
       </div>
     </section>
   )
