@@ -1,7 +1,7 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
-import Manifesto from '@/components/Manifesto'
 import Portfolio from '@/components/Portfolio'
+import ImageStrip from '@/components/ImageStrip'
 import Process from '@/components/Process'
 import Flash from '@/components/Flash'
 import About from '@/components/About'
@@ -15,7 +15,7 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
       <Hero />
-      <Manifesto />
+      <ImageStrip />
       <Portfolio />
       <Process />
       <Flash />
