@@ -16,6 +16,36 @@ const works = [
   },
   {
     num: '02',
+    title: 'Rosa con Alambre',
+    style: 'Blackwork · Traditional',
+    year: '2024',
+    note: 'Brazo. Rosa clásica con tallo en alambre de púas. Belleza que duele.',
+    src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg',
+    alt: 'Tatuaje de rosa traditional blackwork con alambre de púas en el brazo',
+    orientation: 'portrait',
+  },
+  {
+    num: '03',
+    title: 'Cocodrilo',
+    style: 'Blackwork · Traditional',
+    year: '2024',
+    note: 'Antebrazo. Escamas en capas, cola enroscada, boca abierta. Peso y precisión.',
+    src: '/Briza-Maldonado/portfolio/cocodrilo.jpg',
+    alt: 'Tatuaje de cocodrilo blackwork traditional en el antebrazo',
+    orientation: 'portrait',
+  },
+  {
+    num: '04',
+    title: 'Polilla 777',
+    style: 'Blackwork · Illustrativo',
+    year: '2024',
+    note: 'Esterno. Grande, oscura, simétrica. Antenas 777. Presencia total.',
+    src: '/Briza-Maldonado/portfolio/polilla-esterno.jpg',
+    alt: 'Tatuaje de polilla blackwork en el esternón con 777',
+    orientation: 'portrait',
+  },
+  {
+    num: '05',
     title: 'Lockets de Gatos',
     style: 'Mixed · Color',
     year: '2024',
@@ -25,8 +55,18 @@ const works = [
     orientation: 'portrait',
   },
   {
-    num: '03',
-    title: 'Alambre y Daga',
+    num: '06',
+    title: 'Daga con Serpiente',
+    style: 'Blackwork · Traditional',
+    year: '2024',
+    note: 'Antebrazo. La daga como eje. La serpiente como movimiento. Clásico sin cliché.',
+    src: '/Briza-Maldonado/portfolio/daga-serpiente.jpg',
+    alt: 'Tatuaje de daga con serpiente traditional blackwork en el antebrazo',
+    orientation: 'portrait',
+  },
+  {
+    num: '07',
+    title: 'Alambre y Corazón',
     style: 'Blackwork · Color',
     year: '2024',
     note: 'Brazo. Alambre de púas, corazón rojo, daga. Rebelde por dentro, delicado por fuera.',
@@ -35,63 +75,23 @@ const works = [
     orientation: 'portrait',
   },
   {
-    num: '04',
-    title: 'Polilla 777',
-    style: 'Blackwork · Illustrativo',
-    year: '2024',
-    note: 'Esterno. Grande, oscura, simétrica. Con las antenas marcadas 777. Presencia total.',
-    src: '/Briza-Maldonado/portfolio/polilla-esterno.jpg',
-    alt: 'Tatuaje de polilla blackwork en el esternón con número 777',
-    orientation: 'portrait',
-  },
-  {
-    num: '05',
-    title: 'Mariposas',
-    style: 'Blackwork · Traditional',
-    year: '2023',
-    note: 'Rodillas. Dos polillas simétricas, una más detallada que la otra. El cuerpo como lienzo.',
-    src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg',
-    alt: 'Tatuaje de mariposas y polillas en las rodillas en blackwork traditional',
-    orientation: 'portrait',
-  },
-  {
-    num: '06',
-    title: 'Elefante Skater',
-    style: 'Illustrativo · Cute',
-    year: '2024',
-    note: 'Brazo. Un elefantito en skate con destellos. Ternura con actitud.',
-    src: '/Briza-Maldonado/portfolio/elefante-skate.jpg',
-    alt: 'Tatuaje de elefante en skate con destellos illustrativo en el brazo',
-    orientation: 'portrait',
-  },
-  {
-    num: '07',
-    title: 'Pingüino',
-    style: 'Illustrativo · Fineline',
-    year: '2024',
-    note: 'Brazo. Pequeño, con estrellitas. Ternura pura escrita con línea fina.',
-    src: '/Briza-Maldonado/portfolio/pinguino.jpg',
-    alt: 'Tatuaje de pingüino con estrellitas illustrativo en el brazo',
-    orientation: 'portrait',
-  },
-  {
     num: '08',
-    title: 'Vegan',
-    style: 'Lettering · Fineline',
-    year: '2024',
-    note: 'Pie. Una declaración en script cursivo elegante. Lo que sos, escrito en la piel.',
-    src: '/Briza-Maldonado/portfolio/vegan-script.jpg',
-    alt: 'Tatuaje lettering script Vegan en el pie',
-    orientation: 'landscape',
-  },
-  {
-    num: '09',
     title: 'Lobo',
     style: 'Blackwork · Illustrativo',
     year: '2024',
     note: 'Brazo. Feroz, peludo, libre. Una criatura que ocupa su espacio con todo.',
     src: '/Briza-Maldonado/portfolio/lobo.jpg',
     alt: 'Tatuaje de lobo en blackwork illustrativo en el brazo',
+    orientation: 'portrait',
+  },
+  {
+    num: '09',
+    title: 'Mariposas',
+    style: 'Blackwork · Traditional',
+    year: '2023',
+    note: 'Rodillas. Dos polillas simétricas, una más detallada que la otra. El cuerpo como lienzo.',
+    src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg',
+    alt: 'Tatuaje de mariposas y polillas en las rodillas en blackwork traditional',
     orientation: 'portrait',
   },
   {
@@ -104,6 +104,14 @@ const works = [
     alt: 'Manga patchwork con sol, delfín, vaquero y olas en traditional blackwork',
     orientation: 'portrait',
   },
+]
+
+const moreWorks = [
+  { src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg', alt: 'Mariposa blackwork en pierna', title: 'Mariposa', style: 'Blackwork' },
+  { src: '/Briza-Maldonado/portfolio/conejo.jpg', alt: 'Conejo illustrativo en brazo', title: 'Conejo', style: 'Illustrativo' },
+  { src: '/Briza-Maldonado/portfolio/elefante-skate.jpg', alt: 'Elefante en skate', title: 'Elefante Skater', style: 'Cute' },
+  { src: '/Briza-Maldonado/portfolio/pinguino.jpg', alt: 'Pingüino con estrellitas', title: 'Pingüino', style: 'Fineline' },
+  { src: '/Briza-Maldonado/portfolio/vegan-script.jpg', alt: 'Lettering Vegan en pie', title: 'Vegan', style: 'Lettering' },
 ]
 
 function StencilBorder({ isHovered }: { isHovered: boolean }) {
@@ -318,6 +326,79 @@ function WorkItem({ work, index }: { work: typeof works[0]; index: number }) {
   )
 }
 
+function MoreWorkItem({ work }: { work: typeof moreWorks[0] }) {
+  const [hovered, setHovered] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setRevealed(true); obs.disconnect() } },
+      { threshold: 0.2 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      data-hover
+      style={{
+        position: 'relative',
+        aspectRatio: '3/4',
+        overflow: 'hidden',
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? 'translateY(0)' : 'translateY(30px)',
+        transition: 'opacity 0.8s ease, transform 0.8s ease',
+        cursor: 'none',
+      }}
+    >
+      <Image
+        src={work.src}
+        alt={work.alt}
+        fill
+        style={{
+          objectFit: 'cover',
+          objectPosition: 'center top',
+          transform: hovered ? 'scale(1.06)' : 'scale(1)',
+          transition: 'transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94)',
+        }}
+        sizes="20vw"
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(to top, rgba(28,28,28,0.6) 0%, transparent 50%)',
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '1rem',
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
+      >
+        <p style={{ fontSize: '0.65rem', fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'white', lineHeight: 1.2 }}>
+          {work.title}
+        </p>
+        <p style={{ fontSize: '0.5rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginTop: '0.2rem' }}>
+          {work.style}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Portfolio() {
   return (
     <section id="obra" style={{ marginTop: '6rem' }}>
@@ -357,6 +438,37 @@ export default function Portfolio() {
       {works.map((work, i) => (
         <WorkItem key={work.num} work={work} index={i} />
       ))}
+
+      {/* Más obra — compact grid */}
+      <div
+        style={{
+          borderTop: '1px solid rgba(28,28,28,0.1)',
+          padding: '5rem 2.5rem',
+        }}
+      >
+        <p
+          style={{
+            fontSize: '0.6rem',
+            letterSpacing: '0.35em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-muted)',
+            marginBottom: '3rem',
+          }}
+        >
+          ✦ Más obra
+        </p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '1rem',
+          }}
+        >
+          {moreWorks.map((w, i) => (
+            <MoreWorkItem key={i} work={w} />
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
