@@ -16,12 +16,12 @@ const works = [
   },
   {
     num: '02',
-    title: 'Rosa con Alambre',
-    style: 'Blackwork · Traditional',
+    title: 'Moño',
+    style: 'Ornamental · Fineline',
     year: '2024',
-    note: 'Brazo. Rosa clásica con tallo en alambre de púas. Belleza que duele.',
-    src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg',
-    alt: 'Tatuaje de rosa traditional blackwork con alambre de púas en el brazo',
+    note: 'Antebrazo. Un moño con corazón en el centro. Lo más ella en un solo trazo.',
+    src: '/Briza-Maldonado/portfolio/mono-corazon.jpg',
+    alt: 'Tatuaje de moño ornamental con corazón en fineline en el antebrazo',
     orientation: 'portrait',
   },
   {
@@ -107,6 +107,8 @@ const works = [
 ]
 
 const moreWorks = [
+  { src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg', alt: 'Rosa traditional con alambre de púas', title: 'Rosa', style: 'Traditional' },
+  { src: '/Briza-Maldonado/portfolio/espinas.jpg', alt: 'Rama de espinas abstracta fineline en pierna', title: 'Espinas', style: 'Fineline' },
   { src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg', alt: 'Mariposa blackwork en pierna', title: 'Mariposa', style: 'Blackwork' },
   { src: '/Briza-Maldonado/portfolio/conejo.jpg', alt: 'Conejo illustrativo en brazo', title: 'Conejo', style: 'Illustrativo' },
   { src: '/Briza-Maldonado/portfolio/elefante-skate.jpg', alt: 'Elefante en skate', title: 'Elefante Skater', style: 'Cute' },
@@ -460,7 +462,7 @@ export default function Portfolio() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
+            gridTemplateColumns: 'repeat(7, 1fr)',
             gap: '1rem',
           }}
         >
