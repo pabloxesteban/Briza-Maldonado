@@ -29,39 +29,6 @@ export default function Hero() {
         overflow: 'hidden',
       }}
     >
-      {/* Botanical line drawing — top right corner */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '8rem',
-          right: '3rem',
-          opacity: 0,
-          animation: 'fadeIn 1.5s ease 2.2s forwards',
-          pointerEvents: 'none',
-        }}
-      >
-        <svg width="120" height="180" viewBox="0 0 120 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Stem */}
-          <path d="M60 180 Q58 120 62 60 Q60 30 60 10" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.5"
-            style={{ strokeDasharray: 200, strokeDashoffset: 200, animation: 'traceStroke 2.5s ease 2.4s forwards' }} />
-          {/* Leaves */}
-          <path d="M62 80 Q90 60 85 40 Q70 55 62 80" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.4"
-            style={{ strokeDasharray: 100, strokeDashoffset: 100, animation: 'traceStroke 2s ease 2.8s forwards' }} />
-          <path d="M60 100 Q30 80 35 60 Q52 75 60 100" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.4"
-            style={{ strokeDasharray: 100, strokeDashoffset: 100, animation: 'traceStroke 2s ease 3.1s forwards' }} />
-          {/* Flower */}
-          <circle cx="60" cy="14" r="5" stroke="var(--mark)" strokeWidth="0.8" fill="none" opacity="0.6"
-            style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'traceStroke 1.2s ease 3.4s forwards' }} />
-          <circle cx="60" cy="14" r="2" fill="var(--mark)" opacity="0"
-            style={{ animation: 'fadeIn 0.5s ease 4s forwards' }} />
-        </svg>
-        <style jsx>{`
-          @keyframes traceStroke {
-            to { stroke-dashoffset: 0; }
-          }
-        `}</style>
-      </div>
-
       {/* Location — top left */}
       <div
         style={{
