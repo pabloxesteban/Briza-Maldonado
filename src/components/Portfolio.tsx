@@ -1,18 +1,80 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const works = [
-  { num: '001', title: 'Mariposas', style: 'Blackwork', year: '2024', color: '#E8D5E0' },
-  { num: '002', title: 'Polilla', style: 'Fineline', year: '2024', color: '#D5E0E8' },
-  { num: '003', title: 'Corazón de alambres', style: 'Illustrativo', year: '2024', color: '#E8E0D5' },
-  { num: '004', title: 'Garza', style: 'Watercolor', year: '2023', color: '#D5E8E0' },
-  { num: '005', title: 'Moño', style: 'Ornamental', year: '2024', color: '#E8D5D5' },
-  { num: '006', title: 'Patchwork', style: 'Mixed', year: '2024', color: '#E0D5E8' },
+  {
+    num: '01', title: 'Polilla', style: 'Blackwork · Fineline',
+    year: '2024', note: 'Esterno. Inspirado en la quietud de lo nocturno.',
+    color: '#E8D5E0', accent: '#D4A8BB',
+  },
+  {
+    num: '02', title: 'Mariposas', style: 'Illustrativo',
+    year: '2024', note: 'Rodillas. Simétricas, delicadas, permanentes.',
+    color: '#D5E0E8', accent: '#A8C4D4',
+  },
+  {
+    num: '03', title: 'Corazón Alambrado', style: 'Blackwork',
+    year: '2024', note: 'Antebrazo. El amor como contradicción.',
+    color: '#E8E0D5', accent: '#D4C4A8',
+  },
+  {
+    num: '04', title: 'Garza', style: 'Watercolor · Fineline',
+    year: '2023', note: 'Costilla. Delicadeza que ocupa espacio.',
+    color: '#D5E8E0', accent: '#A8D4C4',
+  },
+  {
+    num: '05', title: 'Moño Ornamental', style: 'Ornamental',
+    year: '2024', note: 'Nuca. Objeto femenino con geometría precisa.',
+    color: '#E8D5D5', accent: '#D4A8A8',
+  },
+  {
+    num: '06', title: 'Patchwork Sleeve', style: 'Mixed Styles',
+    year: '2024', note: 'Manga completa. Cada pieza un capítulo.',
+    color: '#E0D5E8', accent: '#C4A8D4',
+  },
 ]
+
+function StencilBorder({ isHovered }: { isHovered: boolean }) {
+  const rectRef = useRef<SVGRectElement>(null)
+
+  useEffect(() => {
+    const rect = rectRef.current
+    if (!rect) return
+    // Calculate perimeter for dash animation
+    const w = rect.closest('svg')?.clientWidth || 300
+    const h = rect.closest('svg')?.clientHeight || 400
+    const perimeter = 2 * (w + h)
+    rect.style.strokeDasharray = String(perimeter)
+    rect.style.strokeDashoffset = isHovered ? '0' : String(perimeter)
+    rect.style.transition = isHovered
+      ? 'stroke-dashoffset 0.8s cubic-bezier(0.77,0,0.175,1)'
+      : 'stroke-dashoffset 0.5s ease'
+    rect.style.opacity = '1'
+  }, [isHovered])
+
+  return (
+    <svg
+      className="stencil-border"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}
+    >
+      <rect
+        ref={rectRef}
+        x="3" y="3"
+        width="calc(100% - 6px)" height="calc(100% - 6px)"
+        fill="none"
+        stroke="var(--mark)"
+        strokeWidth="1.5"
+        style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }}
+      />
+    </svg>
+  )
+}
 
 function WorkItem({ work, index }: { work: typeof works[0]; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [hovered, setHovered] = useState(false)
+  const [revealed, setRevealed] = useState(false)
 
   useEffect(() => {
     const el = ref.current
@@ -20,8 +82,7 @@ function WorkItem({ work, index }: { work: typeof works[0]; index: number }) {
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.style.opacity = '1'
-          el.style.transform = 'translateY(0)'
+          setTimeout(() => setRevealed(true), index * 60)
           obs.disconnect()
         }
       },
@@ -29,136 +90,211 @@ function WorkItem({ work, index }: { work: typeof works[0]; index: number }) {
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [])
+  }, [index])
 
   const isEven = index % 2 === 0
 
   return (
-    <div
+    <article
       ref={ref}
       style={{
-        opacity: 0,
-        transform: 'translateY(60px)',
-        transition: 'opacity 0.9s ease, transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)',
-        transitionDelay: `${index * 0.05}s`,
         display: 'grid',
-        gridTemplateColumns: isEven ? '1fr 1fr' : '1fr 1fr',
-        gap: '0',
-        borderTop: '1px solid rgba(28,28,28,0.12)',
+        gridTemplateColumns: '1fr 1fr',
+        minHeight: '85vh',
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? 'translateY(0)' : 'translateY(50px)',
+        transition: 'opacity 1s ease, transform 1s cubic-bezier(0.25,0.46,0.45,0.94)',
+        borderTop: '1px solid rgba(28,28,28,0.1)',
       }}
     >
-      {/* Image block */}
+      {/* Image */}
       <div
-        className="overflow-hidden"
+        className="stencil-wrap"
         style={{
           order: isEven ? 0 : 1,
-          aspectRatio: '4/5',
-          backgroundColor: work.color,
           position: 'relative',
+          overflow: 'hidden',
+          backgroundColor: work.color,
+          cursor: 'none',
         }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        data-hover
       >
+        {/* Placeholder — replace with <Image> when real photos available */}
         <div
-          className="img-hover w-full h-full flex items-center justify-center"
-          style={{ fontSize: '4rem', opacity: 0.2 }}
-        >
-          ✦
-        </div>
-        {/* Hover overlay */}
-        <div
-          className="absolute inset-0 flex items-center justify-center"
           style={{
-            backgroundColor: 'rgba(240,40,122,0.08)',
-            opacity: 0,
-            transition: 'opacity 0.4s ease',
+            width: '100%',
+            height: '100%',
+            minHeight: '65vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            transition: 'transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94)',
           }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
         >
-          <span className="font-display italic text-2xl" style={{ color: 'var(--accent-hot)' }}>
-            ver
-          </span>
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" opacity="0.15">
+            <circle cx="40" cy="40" r="30" stroke="var(--ink)" strokeWidth="0.8" />
+            <line x1="40" y1="10" x2="40" y2="70" stroke="var(--ink)" strokeWidth="0.8" />
+            <line x1="10" y1="40" x2="70" y2="40" stroke="var(--ink)" strokeWidth="0.8" />
+          </svg>
+        </div>
+
+        {/* Stencil SVG border — traces on hover */}
+        <StencilBorder isHovered={hovered} />
+
+        {/* Hover label */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            fontSize: '0.6rem',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'var(--mark)',
+            opacity: hovered ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+            fontFamily: 'DM Sans, sans-serif',
+          }}
+        >
+          ✦ ver
         </div>
       </div>
 
-      {/* Text block */}
+      {/* Info */}
       <div
         style={{
           order: isEven ? 1 : 0,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          padding: 'clamp(2rem, 5vw, 5rem)',
-          backgroundColor: 'var(--bg-primary)',
+          padding: 'clamp(3rem, 6vw, 6rem) clamp(2rem, 5vw, 5rem)',
+          backgroundColor: 'var(--bg)',
         }}
       >
         <div>
           <p
-            className="text-xs tracking-widest uppercase"
-            style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}
+            style={{
+              fontSize: '0.6rem',
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--mark)',
+              marginBottom: '2.5rem',
+            }}
           >
-            {work.num} — {work.style}
+            {work.num}
           </p>
           <h3
             className="font-display"
             style={{
-              fontSize: 'clamp(2rem, 4vw, 4rem)',
-              lineHeight: 1,
-              color: 'var(--text-primary)',
+              fontSize: 'clamp(2.5rem, 5vw, 5rem)',
+              lineHeight: 0.95,
+              letterSpacing: '-0.02em',
+              color: 'var(--ink)',
               fontStyle: 'italic',
+              marginBottom: '1.5rem',
             }}
           >
             {work.title}
           </h3>
+          <p
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-muted)',
+              marginBottom: '3rem',
+            }}
+          >
+            {work.style}
+          </p>
+          <p
+            style={{
+              fontSize: '0.85rem',
+              lineHeight: 1.7,
+              color: 'var(--ink-muted)',
+              maxWidth: '22rem',
+              fontStyle: 'italic',
+              fontFamily: "'Playfair Display', serif",
+            }}
+          >
+            "{work.note}"
+          </p>
         </div>
-        <p
-          className="text-xs tracking-widest"
-          style={{ color: 'var(--text-secondary)' }}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+          }}
         >
-          {work.year}
-        </p>
+          <span
+            style={{
+              fontSize: '0.6rem',
+              letterSpacing: '0.2em',
+              color: 'var(--ink-muted)',
+              opacity: 0.5,
+            }}
+          >
+            {work.year}
+          </span>
+          {/* Thin decorative line */}
+          <div
+            style={{
+              height: '1px',
+              width: hovered ? '3rem' : '0',
+              backgroundColor: 'var(--mark)',
+              transition: 'width 0.6s cubic-bezier(0.77,0,0.175,1)',
+            }}
+          />
+        </div>
       </div>
-    </div>
+    </article>
   )
 }
 
 export default function Portfolio() {
   return (
-    <section id="portfolio" style={{ marginTop: '8rem' }}>
-      {/* Section header */}
+    <section id="obra" style={{ marginTop: '6rem' }}>
+      {/* Header */}
       <div
         style={{
-          padding: '0 2.5rem 4rem',
+          padding: '0 2.5rem 5rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
-          borderBottom: '1px solid rgba(28,28,28,0.12)',
         }}
       >
         <h2
           className="font-display"
           style={{
-            fontSize: 'clamp(0.7rem, 1vw, 0.9rem)',
-            letterSpacing: '0.3em',
+            fontSize: 'clamp(0.6rem, 1vw, 0.75rem)',
+            letterSpacing: '0.35em',
             textTransform: 'uppercase',
-            color: 'var(--text-secondary)',
+            color: 'var(--ink-muted)',
           }}
         >
-          ✦ Trabajos
+          ✦ Obra
         </h2>
         <p
-          className="font-display italic"
-          style={{ fontSize: 'clamp(3rem, 7vw, 7rem)', lineHeight: 1, color: 'var(--text-primary)' }}
+          className="font-display"
+          style={{
+            fontSize: 'clamp(3rem, 8vw, 8rem)',
+            lineHeight: 1,
+            letterSpacing: '-0.03em',
+            color: 'var(--ink)',
+            fontStyle: 'italic',
+          }}
         >
-          Obra
+          Trabajos
         </p>
       </div>
 
-      {/* Works */}
-      <div>
-        {works.map((work, i) => (
-          <WorkItem key={work.num} work={work} index={i} />
-        ))}
-      </div>
+      {works.map((work, i) => (
+        <WorkItem key={work.num} work={work} index={i} />
+      ))}
     </section>
   )
 }

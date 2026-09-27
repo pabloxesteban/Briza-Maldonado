@@ -3,115 +3,210 @@
 import { useEffect, useRef } from 'react'
 
 export default function Hero() {
-  const lineRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (lineRef.current) lineRef.current.style.width = '100%'
-    }, 800)
-    return () => clearTimeout(timer)
+    // Stagger the line draws
+    const lines = containerRef.current?.querySelectorAll<HTMLElement>('[data-line]')
+    lines?.forEach((line, i) => {
+      setTimeout(() => {
+        line.style.opacity = '1'
+        line.style.transform = 'scaleX(1)'
+      }, 400 + i * 200)
+    })
   }, [])
 
   return (
     <section
-      className="relative min-h-screen flex flex-col justify-end overflow-hidden"
-      style={{ padding: '0 2.5rem 4rem' }}
+      ref={containerRef}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        padding: '0 2.5rem 5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      {/* Top right year mark */}
+      {/* Botanical line drawing — top right corner */}
       <div
-        className="absolute top-8 right-10 text-xs tracking-widest uppercase"
-        style={{ color: 'var(--text-secondary)', writingMode: 'vertical-rl' }}
+        style={{
+          position: 'absolute',
+          top: '8rem',
+          right: '3rem',
+          opacity: 0,
+          animation: 'fadeIn 1.5s ease 2.2s forwards',
+          pointerEvents: 'none',
+        }}
       >
-        Buenos Aires — 2024
+        <svg width="120" height="180" viewBox="0 0 120 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Stem */}
+          <path d="M60 180 Q58 120 62 60 Q60 30 60 10" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.5"
+            style={{ strokeDasharray: 200, strokeDashoffset: 200, animation: 'traceStroke 2.5s ease 2.4s forwards' }} />
+          {/* Leaves */}
+          <path d="M62 80 Q90 60 85 40 Q70 55 62 80" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.4"
+            style={{ strokeDasharray: 100, strokeDashoffset: 100, animation: 'traceStroke 2s ease 2.8s forwards' }} />
+          <path d="M60 100 Q30 80 35 60 Q52 75 60 100" stroke="var(--mark-soft)" strokeWidth="0.8" fill="none" opacity="0.4"
+            style={{ strokeDasharray: 100, strokeDashoffset: 100, animation: 'traceStroke 2s ease 3.1s forwards' }} />
+          {/* Flower */}
+          <circle cx="60" cy="14" r="5" stroke="var(--mark)" strokeWidth="0.8" fill="none" opacity="0.6"
+            style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: 'traceStroke 1.2s ease 3.4s forwards' }} />
+          <circle cx="60" cy="14" r="2" fill="var(--mark)" opacity="0"
+            style={{ animation: 'fadeIn 0.5s ease 4s forwards' }} />
+        </svg>
+        <style jsx>{`
+          @keyframes traceStroke {
+            to { stroke-dashoffset: 0; }
+          }
+        `}</style>
       </div>
 
-      {/* Symbol top left */}
+      {/* Location — top left */}
       <div
-        className="absolute"
-        style={{ top: '7rem', left: '2.5rem', fontSize: '1rem', color: 'var(--accent-hot)', opacity: 0.5 }}
+        style={{
+          position: 'absolute',
+          top: '8rem',
+          left: '2.5rem',
+          fontSize: '0.6rem',
+          letterSpacing: '0.25em',
+          textTransform: 'uppercase',
+          color: 'var(--ink-muted)',
+          opacity: 0,
+          animation: 'fadeIn 0.8s ease 2s forwards',
+          writingMode: 'vertical-rl',
+          transform: 'rotate(180deg)',
+        }}
       >
-        ✦
+        Palermo · Buenos Aires · 2024
       </div>
 
       {/* Main title */}
-      <div className="relative z-10" style={{ paddingBottom: '2rem' }}>
-        <h1
-          className="font-display leading-none select-none"
-          style={{
-            fontSize: 'clamp(4rem, 14vw, 14rem)',
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-            lineHeight: 0.9,
-          }}
-        >
-          <span className="block overflow-hidden">
-            <span
-              className="block"
-              style={{
-                transform: 'translateY(110%)',
-                animation: 'slideUp 1s cubic-bezier(0.77,0,0.175,1) 0.1s forwards',
-              }}
-            >
-              Briza
-            </span>
-          </span>
-          <span
-            className="block overflow-hidden"
-            style={{ paddingLeft: 'clamp(2rem, 8vw, 10rem)' }}
-          >
-            <span
-              className="block"
-              style={{
-                transform: 'translateY(110%)',
-                animation: 'slideUp 1s cubic-bezier(0.77,0,0.175,1) 0.25s forwards',
-                fontStyle: 'italic',
-              }}
-            >
-              Maldonado
-            </span>
-          </span>
-        </h1>
+      <div style={{ position: 'relative', zIndex: 10 }}>
 
-        {/* Horizontal rule */}
+        {/* Line above BRIZA */}
         <div
-          ref={lineRef}
+          data-line
           style={{
             height: '1px',
-            width: '0%',
-            backgroundColor: 'var(--text-primary)',
-            marginTop: '3rem',
-            transition: 'width 1.2s cubic-bezier(0.77,0,0.175,1)',
-            opacity: 0.2,
+            backgroundColor: 'var(--ink)',
+            opacity: 0,
+            transform: 'scaleX(0)',
+            transformOrigin: 'left',
+            transition: 'transform 0.9s cubic-bezier(0.77,0,0.175,1), opacity 0s',
+            marginBottom: '1.5rem',
+            width: 'clamp(8rem, 20vw, 20rem)',
           }}
         />
 
+        {/* BRIZA */}
+        <div style={{ overflow: 'hidden' }}>
+          <h1
+            className="font-display"
+            style={{
+              fontSize: 'clamp(5rem, 16vw, 16rem)',
+              lineHeight: 0.88,
+              letterSpacing: '-0.03em',
+              color: 'var(--ink)',
+              transform: 'translateY(110%)',
+              animation: 'slideUp 1.1s cubic-bezier(0.77,0,0.175,1) 0.2s forwards',
+              display: 'block',
+            }}
+          >
+            Briza
+          </h1>
+        </div>
+
+        {/* MALDONADO — italic, indented */}
+        <div style={{ overflow: 'hidden', paddingLeft: 'clamp(3rem, 10vw, 12rem)' }}>
+          <h1
+            className="font-display"
+            style={{
+              fontSize: 'clamp(4rem, 13vw, 13rem)',
+              lineHeight: 0.92,
+              letterSpacing: '-0.03em',
+              fontStyle: 'italic',
+              color: 'var(--ink)',
+              transform: 'translateY(110%)',
+              animation: 'slideUp 1.1s cubic-bezier(0.77,0,0.175,1) 0.4s forwards',
+              display: 'block',
+            }}
+          >
+            Maldonado
+          </h1>
+        </div>
+
         {/* Bottom row */}
         <div
-          className="flex justify-between items-end"
-          style={{ marginTop: '1.5rem' }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            marginTop: '3rem',
+          }}
         >
           <p
-            className="text-sm tracking-widest uppercase"
-            style={{ color: 'var(--text-secondary)', opacity: 0, animation: 'fadeIn 0.8s ease 1.2s forwards' }}
+            style={{
+              fontSize: '0.65rem',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-muted)',
+              opacity: 0,
+              animation: 'fadeIn 0.8s ease 1.3s forwards',
+            }}
           >
-            Tattoo Artist — Palermo, Buenos Aires
+            Tattoo Artist
           </p>
-          <div style={{ textAlign: 'right', opacity: 0, animation: 'fadeIn 0.8s ease 1.4s forwards' }}>
-            <p className="font-display italic" style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)', color: 'var(--text-secondary)' }}>
-              Del iPad a la piel ✦
-            </p>
+
+          {/* Scroll signal */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.5rem',
+              opacity: 0,
+              animation: 'fadeIn 0.8s ease 1.8s forwards',
+            }}
+          >
+            <div
+              style={{
+                width: '1px',
+                height: '48px',
+                backgroundColor: 'var(--ink-muted)',
+                opacity: 0.3,
+                animation: 'drawV 1s ease 2s forwards',
+                transformOrigin: 'top',
+                transform: 'scaleY(0)',
+              }}
+            />
+            <span
+              style={{
+                fontSize: '0.5rem',
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-muted)',
+                opacity: 0.5,
+              }}
+            >
+              scroll
+            </span>
           </div>
+
+          <p
+            className="font-display"
+            style={{
+              fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)',
+              fontStyle: 'italic',
+              color: 'var(--ink-muted)',
+              opacity: 0,
+              animation: 'fadeIn 0.8s ease 1.5s forwards',
+            }}
+          >
+            Del iPad a la piel <span style={{ color: 'var(--mark)' }}>✦</span>
+          </p>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideUp {
-          to { transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          to { opacity: 1; }
-        }
-      `}</style>
     </section>
   )
 }

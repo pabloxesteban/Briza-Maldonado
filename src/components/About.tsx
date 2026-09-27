@@ -2,6 +2,22 @@
 
 import { useEffect, useRef } from 'react'
 
+const lines = [
+  { text: 'Soy Briza.', delay: 0 },
+  { text: 'Tatuadora.', delay: 100 },
+  { text: 'Vegana.', delay: 200 },
+  { text: 'Vivo y trabajo', delay: 300 },
+  { text: 'en Palermo,', delay: 400 },
+  { text: 'Buenos Aires.', delay: 500 },
+]
+
+const lines2 = [
+  { text: 'Diseño en iPad.', delay: 600 },
+  { text: 'Transfiero a la piel.', delay: 700 },
+  { text: 'Cada pieza,', delay: 800 },
+  { text: 'una sola vez.', delay: 900 },
+]
+
 export default function About() {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -11,16 +27,16 @@ export default function About() {
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.querySelectorAll('[data-line]').forEach((line, i) => {
+          el.querySelectorAll<HTMLElement>('[data-inscribe]').forEach(line => {
+            const delay = Number(line.dataset.inscribe)
             setTimeout(() => {
-              ;(line as HTMLElement).style.opacity = '1'
-              ;(line as HTMLElement).style.transform = 'translateY(0)'
-            }, i * 120)
+              line.style.clipPath = 'inset(0 0% 0 0)'
+            }, delay)
           })
           obs.disconnect()
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.15 }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -31,127 +47,162 @@ export default function About() {
       id="sobre-mi"
       ref={ref}
       style={{
-        borderTop: '1px solid rgba(28,28,28,0.12)',
+        borderTop: '1px solid rgba(28,28,28,0.1)',
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        minHeight: '80vh',
+        minHeight: '90vh',
       }}
     >
-      {/* Image side */}
+      {/* Left: photo placeholder */}
       <div
         style={{
-          backgroundColor: '#E8D0DC',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '70vh',
+          backgroundColor: '#EDD4DF',
           position: 'relative',
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'flex-start',
+          padding: '3rem',
           overflow: 'hidden',
+          minHeight: '70vh',
         }}
       >
-        <div style={{ textAlign: 'center', opacity: 0.15 }}>
-          <div style={{ fontSize: '8rem' }}>✦</div>
-        </div>
+        {/* Large background symbol */}
         <div
           style={{
             position: 'absolute',
-            bottom: '2rem',
-            left: '2rem',
-            fontSize: '0.65rem',
-            letterSpacing: '0.25em',
-            textTransform: 'uppercase',
-            color: 'var(--text-secondary)',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '14rem',
+            color: 'var(--mark)',
+            opacity: 0.06,
+            fontFamily: "'Playfair Display', serif",
+            userSelect: 'none',
+            lineHeight: 1,
           }}
         >
-          Briza Maldonado — Palermo, CABA
+          ✦
         </div>
+
+        {/* Photo caption */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <p
+            style={{
+              fontSize: '0.6rem',
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-muted)',
+              lineHeight: 1.8,
+            }}
+          >
+            Briza Maldonado<br />
+            Palermo, CABA<br />
+            <span style={{ color: 'var(--mark)' }}>✦</span> Foto próximamente
+          </p>
+        </div>
+
+        {/* Decorative line */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '3rem',
+            right: '3rem',
+            width: '1px',
+            height: '4rem',
+            backgroundColor: 'var(--ink)',
+            opacity: 0.15,
+          }}
+        />
       </div>
 
-      {/* Text side */}
+      {/* Right: inscribing text */}
       <div
         style={{
-          padding: 'clamp(3rem, 6vw, 7rem) clamp(2rem, 5vw, 5rem)',
+          backgroundColor: 'var(--bg)',
+          padding: 'clamp(3rem, 6vw, 7rem) clamp(2.5rem, 5vw, 5rem)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          borderLeft: '1px solid rgba(28,28,28,0.12)',
+          borderLeft: '1px solid rgba(28,28,28,0.1)',
         }}
       >
         <p
-          data-line
           style={{
-            fontSize: '0.7rem',
+            fontSize: '0.6rem',
             letterSpacing: '0.3em',
             textTransform: 'uppercase',
-            color: 'var(--accent-hot)',
-            marginBottom: '3rem',
-            opacity: 0,
-            transform: 'translateY(20px)',
-            transition: 'all 0.7s ease',
+            color: 'var(--mark)',
+            marginBottom: '3.5rem',
           }}
         >
           ✦ Sobre mí
         </p>
 
-        {[
-          'Soy Briza, tatuadora',
-          'basada en Palermo.',
-          'Trabajo desde la línea fina,',
-          'el blackwork ilustrativo',
-          'y lo ornamental.',
-          '',
-          'Diseño en iPad,',
-          'transfiero a la piel.',
-          'Cada pieza es única.',
-        ].map((line, i) => (
-          <div
-            key={i}
-            data-line
-            style={{
-              overflow: 'hidden',
-              opacity: 0,
-              transform: 'translateY(20px)',
-              transition: 'all 0.8s cubic-bezier(0.25,0.46,0.45,0.94)',
-            }}
-          >
-            <span
+        {/* Block 1 */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          {lines.map((line, i) => (
+            <div
+              key={i}
+              data-inscribe={line.delay}
               className="font-display"
               style={{
-                display: 'block',
-                fontSize: 'clamp(1.4rem, 2.5vw, 2.2rem)',
-                lineHeight: 1.3,
-                color: line === '' ? 'transparent' : 'var(--text-primary)',
-                fontStyle: i > 5 ? 'italic' : 'normal',
+                fontSize: 'clamp(1.6rem, 3vw, 2.8rem)',
+                lineHeight: 1.2,
+                color: 'var(--ink)',
+                clipPath: 'inset(0 100% 0 0)',
+                transition: 'clip-path 0.7s cubic-bezier(0.77,0,0.175,1)',
+                fontStyle: i % 3 === 2 ? 'italic' : 'normal',
               }}
             >
-              {line || ' '}
-            </span>
-          </div>
-        ))}
+              {line.text}
+            </div>
+          ))}
+        </div>
 
+        {/* Dividing mark */}
         <div
-          data-line
           style={{
-            marginTop: '3rem',
-            display: 'flex',
-            gap: '0.75rem',
-            flexWrap: 'wrap',
-            opacity: 0,
-            transform: 'translateY(20px)',
-            transition: 'all 0.7s ease',
+            width: '2rem',
+            height: '1px',
+            backgroundColor: 'var(--mark)',
+            margin: '1rem 0 2rem',
           }}
-        >
-          {['Vegana', 'Palermo', 'iPad → Piel', 'Pole Dance'].map(tag => (
+        />
+
+        {/* Block 2 */}
+        <div style={{ marginBottom: '3rem' }}>
+          {lines2.map((line, i) => (
+            <div
+              key={i}
+              data-inscribe={line.delay}
+              className="font-display"
+              style={{
+                fontSize: 'clamp(1.2rem, 2.2vw, 2rem)',
+                lineHeight: 1.3,
+                color: 'var(--ink-muted)',
+                clipPath: 'inset(0 100% 0 0)',
+                transition: 'clip-path 0.7s cubic-bezier(0.77,0,0.175,1)',
+                fontStyle: 'italic',
+              }}
+            >
+              {line.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Tags */}
+        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {['Vegana ✦', 'Blackwork', 'Fineline', 'Ornamental', 'Palermo'].map(tag => (
             <span
               key={tag}
               style={{
-                padding: '0.3rem 0.8rem',
-                border: '1px solid rgba(28,28,28,0.2)',
-                borderRadius: '999px',
-                fontSize: '0.65rem',
+                padding: '0.3rem 0.9rem',
+                border: '1px solid rgba(28,28,28,0.15)',
+                fontSize: '0.55rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                color: 'var(--text-secondary)',
+                color: 'var(--ink-muted)',
+                borderRadius: '999px',
               }}
             >
               {tag}

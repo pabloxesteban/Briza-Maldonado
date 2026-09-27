@@ -5,11 +5,11 @@ import Cursor from '@/components/Cursor'
 
 export const metadata: Metadata = {
   title: 'Briza Maldonado — Tatuajes Buenos Aires',
-  description: 'Tatuadora especializada en blackwork, traditional e ilustración. Buenos Aires. Cada tatuaje es un capítulo.',
-  keywords: 'tatuajes, blackwork, traditional, Buenos Aires, tatuadora, flash tattoo',
+  description: 'Tatuadora basada en Palermo, Buenos Aires. Blackwork, fineline y ornamental. Del iPad a la piel.',
+  keywords: 'tatuajes, blackwork, fineline, ornamental, Buenos Aires, Palermo, tatuadora, flash tattoo',
   openGraph: {
-    title: 'Briza Maldonado — Tatuajes Buenos Aires',
-    description: 'Arte que toma partido. Blackwork con alma.',
+    title: 'Briza Maldonado ✦',
+    description: 'Del iPad a la piel. Palermo, Buenos Aires.',
     type: 'website',
   },
 }
