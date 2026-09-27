@@ -4,25 +4,55 @@ import { useEffect, useRef } from 'react'
 
 export default function Cursor() {
   const cursorRef = useRef<HTMLDivElement>(null)
-  const hoveredRef = useRef(false)
 
   useEffect(() => {
     const el = cursorRef.current
     if (!el) return
 
+    let trailCount = 0
+    const MAX_TRAIL = 12
+
     const onMove = (e: MouseEvent) => {
       el.style.left = e.clientX + 'px'
       el.style.top = e.clientY + 'px'
       el.style.opacity = '1'
+
+      // Ink trail
+      if (trailCount >= MAX_TRAIL) return
+      trailCount++
+      const dot = document.createElement('div')
+      dot.textContent = '✦'
+      dot.style.cssText = `
+        position:fixed;
+        left:${e.clientX}px;
+        top:${e.clientY}px;
+        transform:translate(-50%,-50%) scale(${0.4 + Math.random() * 0.5});
+        font-size:10px;
+        color:var(--mark);
+        pointer-events:none;
+        z-index:9998;
+        opacity:0.6;
+        transition:opacity 0.6s ease, transform 0.6s ease;
+        mix-blend-mode:multiply;
+        user-select:none;
+        line-height:1;
+      `
+      document.body.appendChild(dot)
+      requestAnimationFrame(() => {
+        dot.style.opacity = '0'
+        dot.style.transform = `translate(-50%,-60%) scale(${0.2 + Math.random() * 0.3})`
+      })
+      setTimeout(() => {
+        dot.remove()
+        trailCount--
+      }, 650)
     }
 
     const onEnter = () => {
-      hoveredRef.current = true
-      el.style.transform = 'translate(-50%, -50%) scale(1.6) rotate(22deg)'
+      el.style.transform = 'translate(-50%, -50%) scale(1.8) rotate(22deg)'
       el.style.color = 'var(--mark)'
     }
     const onLeave = () => {
-      hoveredRef.current = false
       el.style.transform = 'translate(-50%, -50%) scale(1) rotate(0deg)'
       el.style.color = 'var(--ink)'
     }
@@ -62,7 +92,7 @@ export default function Cursor() {
         opacity: 0,
         mixBlendMode: 'multiply',
         userSelect: 'none',
-        lineHeight: 1,
+        lineHeight: '1',
       }}
     >
       ✦

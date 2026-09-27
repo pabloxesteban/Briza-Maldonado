@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 
 export default function Hero() {
   const containerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    // Stagger the line draws
     const lines = containerRef.current?.querySelectorAll<HTMLElement>('[data-line]')
     lines?.forEach((line, i) => {
       setTimeout(() => {
@@ -29,6 +29,42 @@ export default function Hero() {
         overflow: 'hidden',
       }}
     >
+      {/* Background tattoo image — right side, fades into text */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '52%',
+          height: '100%',
+          opacity: 0,
+          animation: 'fadeIn 1.8s ease 0.8s forwards',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        <Image
+          src="/Briza-Maldonado/portfolio/garza.jpg"
+          alt=""
+          fill
+          priority
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center top',
+            maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.85) 60%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, rgba(0,0,0,0.85) 60%, black 100%)',
+          }}
+          sizes="52vw"
+        />
+        {/* Tint overlay so it blends with bg color */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'var(--bg)',
+          opacity: 0.35,
+        }} />
+      </div>
+
       {/* Location — top left */}
       <div
         style={{
@@ -43,14 +79,14 @@ export default function Hero() {
           animation: 'fadeIn 0.8s ease 2s forwards',
           writingMode: 'vertical-rl',
           transform: 'rotate(180deg)',
+          zIndex: 2,
         }}
       >
         Palermo · Buenos Aires · 2024
       </div>
 
       {/* Main title */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
-
+      <div style={{ position: 'relative', zIndex: 2 }}>
         {/* Line above BRIZA */}
         <div
           data-line
@@ -84,7 +120,7 @@ export default function Hero() {
           </h1>
         </div>
 
-        {/* MALDONADO — italic, indented */}
+        {/* MALDONADO */}
         <div style={{ overflow: 'hidden', paddingLeft: 'clamp(3rem, 10vw, 12rem)' }}>
           <h1
             className="font-display"
@@ -125,7 +161,6 @@ export default function Hero() {
             Tattoo Artist
           </p>
 
-          {/* Scroll signal */}
           <div
             style={{
               display: 'flex',
