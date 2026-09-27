@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  basePath: '/Briza-Maldonado',
   images: {
-    domains: [],
+    unoptimized: true,
   },
 }
 
