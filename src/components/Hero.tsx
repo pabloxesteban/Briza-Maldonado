@@ -191,7 +191,7 @@ export default function Hero() {
         {/* BRIZA */}
         <div style={{ overflow: 'hidden', lineHeight: 0.85 }}>
           <h1 className="font-display" data-line style={{
-            fontSize: 'clamp(6rem, 18vw, 20rem)',
+            fontSize: 'clamp(4.2rem, 18vw, 20rem)',
             fontWeight: 900, letterSpacing: '-0.04em',
             color: 'var(--ink)', lineHeight: 0.85, display: 'block',
             clipPath: 'inset(0 100% 0 0)', opacity: 0,
@@ -202,9 +202,9 @@ export default function Hero() {
         </div>
 
         {/* MALDONADO */}
-        <div style={{ overflow: 'hidden', lineHeight: 0.88, paddingLeft: 'clamp(2rem, 8vw, 9rem)' }}>
+        <div style={{ overflow: 'hidden', lineHeight: 0.88, paddingLeft: 'clamp(1rem, 8vw, 9rem)' }}>
           <h1 className="font-display" data-line style={{
-            fontSize: 'clamp(4.5rem, 14vw, 16rem)',
+            fontSize: 'clamp(3.3rem, 14vw, 16rem)',
             fontWeight: 700, fontStyle: 'italic', letterSpacing: '-0.03em',
             color: 'var(--ink)', lineHeight: 0.88, display: 'block',
             clipPath: 'inset(0 100% 0 0)', opacity: 0,
@@ -212,6 +212,18 @@ export default function Hero() {
           }}>
             Maldonado
           </h1>
+        </div>
+
+        {/* What she does, where, and the two ways forward */}
+        <div style={{ opacity: 0, animation: 'fadeIn 0.9s var(--ease) 1.3s forwards', marginTop: '1.8rem', paddingLeft: 'clamp(0rem, 1vw, 1rem)' }}>
+          <p style={{ fontSize: 'clamp(.8rem, 1.2vw, .95rem)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink)', lineHeight: 1.5, textShadow: '0 0 12px var(--bg), 0 0 4px var(--bg)' }}>
+            <span style={{ display: 'block' }}>Tatuadora <span style={{ color: 'var(--mark)' }}>✦</span> Traditional &amp; blackwork</span>
+            <span style={{ display: 'block', color: 'var(--ink-muted)', marginTop: '.35em' }}>Palermo, Buenos Aires</span>
+          </p>
+          <div className="hero-cta">
+            <a href="#turno" className="cta-book" data-cursor="book" style={{ padding: '.95rem 1.5rem', fontSize: '.74rem' }}>Pedir turno ✦</a>
+            <a href="#obra" className="ghost-link" data-cursor="view">Ver trabajos ↓</a>
+          </div>
         </div>
 
         {/* scroll indicator only */}

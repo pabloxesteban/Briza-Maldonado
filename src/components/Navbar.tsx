@@ -8,7 +8,6 @@ const links = [
   { label: 'Obra',    href: '/obra' },
   { label: 'Flash',   href: '/flash' },
   { label: 'Proceso', href: '/proceso' },
-  { label: 'Turno',   href: '/turno' },
 ]
 
 export default function Navbar() {
@@ -33,7 +32,26 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
+  // Hide the mobile dock while the booking form itself is on screen
+  const [bookingInView, setBookingInView] = useState(false)
+  useEffect(() => {
+    const el = document.getElementById('turno')
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setBookingInView(e.isIntersecting), { threshold: 0.15 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [pathname])
+
+  const [pastHero, setPastHero] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setPastHero(window.scrollY > window.innerHeight * 0.75)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   const isSubPage = pathname !== '/'
+  const bookHref = pathname === '/' ? '#turno' : '/turno'
   const show = isSubPage || visible
 
   return (
@@ -104,24 +122,7 @@ export default function Navbar() {
               </Link>
             )
           })}
-          <a
-            href="https://instagram.com/bri.t4tts"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.18em',
-              color: 'var(--mark)',
-              textDecoration: 'none',
-              borderBottom: '1px solid var(--mark)',
-              paddingBottom: '1px',
-              transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={e => ((e.target as HTMLElement).style.opacity = '0.6')}
-            onMouseLeave={e => ((e.target as HTMLElement).style.opacity = '1')}
-          >
-            @bri.t4tts
-          </a>
+          <Link href={bookHref} className="cta-book" data-cursor="book">Pedir turno ✦</Link>
         </div>
 
         {/* Hamburger button — mobile only */}
@@ -207,6 +208,11 @@ export default function Navbar() {
           })}
         </div>
 
+        <Link href={bookHref} className="cta-book" onClick={() => setMenuOpen(false)}
+          style={{ alignSelf: 'flex-start', marginTop: '2.5rem', padding: '1rem 1.6rem', fontSize: '.78rem', opacity: menuOpen ? 1 : 0, transition: `opacity 0.4s ease ${links.length * 60 + 80}ms` }}>
+          Pedir turno ✦
+        </Link>
+
         {/* Instagram at bottom */}
         <a
           href="https://instagram.com/bri.t4tts"
@@ -224,6 +230,11 @@ export default function Navbar() {
         >
           @bri.t4tts
         </a>
+      </div>
+
+      {/* Mobile: booking always one thumb away */}
+      <div className={`cta-dock ${bookingInView || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
+        <Link href={bookHref} className="cta-book">Pedir turno ✦</Link>
       </div>
     </>
   )

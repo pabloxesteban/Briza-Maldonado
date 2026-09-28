@@ -13,6 +13,11 @@
   --mark-soft: #F472B6;
   --skin: #F5DDE6;
   --white: #FAE8F0;
+  /* Motion: one curve ("el trazo"), three speeds */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --t-fast: .35s;
+  --t-mid: .7s;
+  --t-slow: 1.15s;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; -webkit-tap-highlight-color: transparent; }
@@ -279,3 +284,40 @@ body { cursor: none; }
 }
 .form-step.active { opacity: 1; transform: translateY(0); pointer-events: all; }
 .form-step.done { opacity: 0.35; transform: translateY(0); pointer-events: none; }
+
+/* ─── BOOKING ─── */
+.booking-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(2.5rem, 6vw, 6rem); max-width: 1280px; margin: 0 auto; align-items: start; }
+@media (max-width: 860px) { .booking-grid { grid-template-columns: 1fr; } }
+.booking-steps { list-style: none; margin-top: 2.6rem; display: grid; gap: .9rem; max-width: 22rem; }
+.booking-steps button { background: none; border: 0; font: inherit; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; padding: 0; transition: color var(--t-fast) var(--ease); }
+.booking-steps i { display: block; height: 1px; margin-top: .55rem; background: var(--mark); transform-origin: left; transition: transform var(--t-mid) var(--ease); }
+@media (max-width: 860px) {
+  .booking-steps { grid-template-columns: repeat(4, 1fr); gap: .5rem; max-width: none; }
+  .booking-steps button { font-size: .62rem; letter-spacing: .08em; }
+}
+.book-chips { display: flex; flex-wrap: wrap; gap: .6rem; }
+.book-chip:hover { border-color: var(--ink) !important; }
+.book-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--ink); padding: .7rem 0; font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(1.15rem, 2.2vw, 1.5rem); color: var(--ink); outline: none; border-radius: 0; }
+.book-input::placeholder { color: rgba(107,79,87,.45); }
+.book-send { padding: 1rem 1.6rem; border-radius: 999px; border: 1px solid var(--mark); background: var(--mark); color: #fff; font-family: 'DM Sans', sans-serif; font-size: .95rem; letter-spacing: .02em; transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.book-send.ghost { background: transparent; color: var(--mark); }
+.book-send:disabled { opacity: .3; }
+.book-send:not(:disabled):hover { transform: translateY(-2px); }
+.book-link { background: none; border: 0; padding: 0 0 2px; font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--ink-muted); border-bottom: 1px solid rgba(107,79,87,.35); }
+.book-link:hover { color: var(--mark); border-color: var(--mark); }
+/* Reveal like a pen stroke: left to right */
+.book-reveal { animation: penReveal var(--t-mid) var(--ease) both; }
+@keyframes penReveal { from { clip-path: inset(0 100% 0 0); transform: translateX(-12px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+
+/* ─── PERSISTENT BOOK CTA ─── */
+.cta-book { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.1rem; border-radius: 999px; background: var(--mark); color: #fff !important; text-decoration: none; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; border: 0 !important; transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+.cta-book:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(232,24,95,.28); }
+.cta-dock { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 480; transform: translate(-50%, 0); transition: transform var(--t-mid) var(--ease), opacity var(--t-mid) var(--ease); display: none; }
+.cta-dock .cta-book { padding: .95rem 1.6rem; font-size: .74rem; box-shadow: 0 10px 28px rgba(20,14,14,.25); }
+.cta-dock.hide { transform: translate(-50%, 140%); opacity: 0; pointer-events: none; }
+@media (max-width: 767px) { .cta-dock { display: block; } }
+
+/* ─── HERO CTA ─── */
+.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.6rem; margin-top: 2rem; pointer-events: auto; }
+.hero-cta .ghost-link { color: var(--ink); text-decoration: none; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding-bottom: 3px; }
+.hero-cta .ghost-link:hover { color: var(--mark); border-color: var(--mark); }

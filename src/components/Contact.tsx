@@ -2,256 +2,233 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const questions = [
-  { id: 'q1', prompt: '¿Qué estás pensando?', placeholder: 'Un diseño, una idea, un flash...' },
-  { id: 'q2', prompt: '¿Qué estilo te interesa?', placeholder: 'Blackwork, fineline, ornamental...' },
-  { id: 'q3', prompt: '¿Dónde en el cuerpo?', placeholder: 'Antebrazo, costilla, tobillo...' },
-  { id: 'q4', prompt: '¿Tamaño aproximado?', placeholder: 'Pequeño (5cm), mediano (10cm), grande...' },
-  { id: 'q5', prompt: '¿Cómo te contactamos?', placeholder: 'Tu Instagram o email' },
-]
+const WHATSAPP = '5491156233929'
+const INSTAGRAM = 'bri.t4tts'
+
+type Answers = {
+  idea: string; detail: string
+  zone: string; size: string
+  when: string
+  name: string
+}
+
+const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '' }
+
+const IDEAS = ['Un flash del cuaderno', 'Un diseño propio', 'Todavía no sé']
+const ZONES = ['Brazo', 'Antebrazo', 'Pierna', 'Costilla', 'Espalda', 'Otra zona']
+const SIZES = ['Chico · 5–9 cm', 'Mediano · 10–15 cm', 'Grande · +15 cm']
+const WHEN = ['Lo antes posible', 'Este mes', 'Próximos meses', 'Sin apuro']
+
+const STEPS = ['La idea', 'Zona y tamaño', 'Cuándo', 'Vos'] as const
+
+function buildMessage(a: Answers) {
+  return [
+    `Hola Bri! Soy ${a.name.trim()} y quiero un turno ✦`,
+    '',
+    `• Idea: ${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}`,
+    `• Zona: ${a.zone}`,
+    `• Tamaño: ${a.size}`,
+    `• Cuándo: ${a.when}`,
+    '',
+    'Te mando referencias por acá.',
+  ].join('\n')
+}
+
+function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      data-hover
+      className="book-chip"
+      style={{
+        padding: '0.8rem 1.15rem',
+        border: `1px solid ${on ? 'var(--ink)' : 'rgba(20,14,14,0.2)'}`,
+        background: on ? 'var(--ink)' : 'transparent',
+        color: on ? 'var(--bg)' : 'var(--ink)',
+        borderRadius: 999,
+        fontFamily: "'DM Sans', sans-serif",
+        fontSize: '0.92rem',
+        lineHeight: 1,
+        transition: 'background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease)',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function Question({ n, children }: { n: string; children: React.ReactNode }) {
+  return (
+    <p className="font-display" style={{ fontSize: 'clamp(1.7rem, 3.4vw, 2.6rem)', lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', marginBottom: '1.6rem' }}>
+      <span style={{ fontSize: '0.45em', verticalAlign: 'top', color: 'var(--mark)', marginRight: '0.6em', fontStyle: 'normal', letterSpacing: 0 }}>{n}</span>
+      {children}
+    </p>
+  )
+}
+
+const label: React.CSSProperties = { fontSize: '0.72rem', letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: '0.9rem' }
 
 export default function Contact() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [current, setCurrent] = useState(-1)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
-  const [sent, setSent] = useState(false)
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
+  const [step, setStep] = useState(0)
+  const [a, setA] = useState<Answers>(EMPTY)
+  const [done, setDone] = useState<null | 'whatsapp' | 'instagram'>(null)
+  const [copied, setCopied] = useState(false)
+  const nameRef = useRef<HTMLInputElement>(null)
+  const set = (k: keyof Answers) => (v: string) => setA(p => ({ ...p, [k]: v }))
+
+  const ready = [
+    !!a.idea,
+    !!a.zone && !!a.size,
+    !!a.when,
+    a.name.trim().length > 1,
+  ][step]
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setCurrent(0), 400)
-          obs.disconnect()
-        }
-      },
-      { threshold: 0.3 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
+    if (step === 3) setTimeout(() => nameRef.current?.focus({ preventScroll: true }), 350)
+  }, [step])
+
+  // Pre-select the idea when a flash asks for it (see Flash notebook)
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const name = (e as CustomEvent<string>).detail
+      setA(p => ({ ...p, idea: 'Un flash del cuaderno', detail: name }))
+      setStep(0); setDone(null)
+    }
+    window.addEventListener('book:flash', onPick)
+    return () => window.removeEventListener('book:flash', onPick)
   }, [])
 
-  useEffect(() => {
-    if (current >= 0 && current < questions.length) {
-      setTimeout(() => inputRefs.current[current]?.focus(), 600)
+  const send = async (via: 'whatsapp' | 'instagram') => {
+    const msg = buildMessage(a)
+    if (via === 'whatsapp') {
+      window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')
+    } else {
+      // Instagram DMs can't be pre-filled, so the message goes to the clipboard first
+      try { await navigator.clipboard.writeText(msg); setCopied(true) } catch { setCopied(false) }
+      window.open(`https://ig.me/m/${INSTAGRAM}`, '_blank', 'noopener')
     }
-  }, [current])
-
-  const handleKey = (e: React.KeyboardEvent, idx: number) => {
-    if (e.key === 'Enter' && answers[questions[idx].id]) {
-      if (idx < questions.length - 1) {
-        setCurrent(idx + 1)
-      } else {
-        setSent(true)
-      }
-    }
+    setDone(via)
   }
+
+  const next = () => { if (ready && step < 3) setStep(s => s + 1) }
 
   return (
     <section
       id="turno"
-      ref={ref}
       data-cursor="book"
+      className="booking"
       style={{
         borderTop: '1px solid rgba(28,28,28,0.1)',
-        padding: 'clamp(5rem, 10vw, 10rem) 2.5rem',
-        minHeight: '80vh',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '4rem',
-        alignItems: 'start',
+        padding: 'clamp(5rem, 10vw, 9rem) clamp(1.25rem, 4vw, 2.5rem)',
+        minHeight: '90vh',
       }}
     >
-      {/* Left: heading */}
-      <div style={{ paddingTop: '1rem' }}>
-        <h2
-          className="font-display"
-          style={{
-            fontSize: 'clamp(2.5rem, 6vw, 6rem)',
-            lineHeight: 0.95,
-            letterSpacing: '-0.02em',
-            color: 'var(--ink)',
-            marginBottom: '2.5rem',
-          }}
-        >
-          Hagamos<br />
-          <span style={{ fontStyle: 'italic' }}>algo tuyo.</span>
-        </h2>
-        <p
-          style={{
-            fontSize: '0.8rem',
-            lineHeight: 1.8,
-            color: 'var(--ink-muted)',
-            maxWidth: '22rem',
-          }}
-        >
-          Cada tatuaje es una conversación entre tu idea y mi línea.
-          Respondé las preguntas y te contacto pronto.
-        </p>
+      <div className="booking-grid">
+        {/* Left: title + progress */}
+        <div>
+          <h2 className="font-display" style={{ fontSize: 'clamp(2.8rem, 7vw, 6.5rem)', lineHeight: 0.92, letterSpacing: '-0.03em', color: 'var(--ink)', marginBottom: '1.6rem' }}>
+            Hagamos<br /><span style={{ fontStyle: 'italic' }}>algo tuyo.</span>
+          </h2>
+          <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '26rem' }}>
+            Cuatro preguntas rápidas y te abro el chat con todo escrito. Las referencias me las mandás directo por ahí.
+          </p>
 
-        {/* Direct link */}
-        <div style={{ marginTop: '3rem' }}>
-          <a
-            href="https://instagram.com/bri.t4tts"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: '0.65rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--ink-muted)',
-              textDecoration: 'none',
-              borderBottom: '1px solid rgba(107,79,87,0.3)',
-              paddingBottom: '2px',
-              transition: 'color 0.2s, border-color 0.2s',
-            }}
-            onMouseEnter={e => {
-              ;(e.target as HTMLElement).style.color = 'var(--mark)'
-              ;(e.target as HTMLElement).style.borderColor = 'var(--mark)'
-            }}
-            onMouseLeave={e => {
-              ;(e.target as HTMLElement).style.color = 'var(--ink-muted)'
-              ;(e.target as HTMLElement).style.borderColor = 'rgba(107,79,87,0.3)'
-            }}
-          >
-            o escribime directo en Instagram ↗
-          </a>
-        </div>
-      </div>
-
-      {/* Right: conversational form */}
-      <div>
-        {sent ? (
-          <div
-            style={{
-              paddingTop: '4rem',
-              animation: 'fadeIn 0.8s ease forwards',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '2.5rem',
-                color: 'var(--mark)',
-                marginBottom: '1.5rem',
-              }}
-            >
-              ✦
-            </div>
-            <p
-              className="font-display"
-              style={{
-                fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
-                fontStyle: 'italic',
-                color: 'var(--ink)',
-                lineHeight: 1.2,
-                marginBottom: '1rem',
-              }}
-            >
-              Recibido.
-            </p>
-            <p
-              style={{
-                fontSize: '0.85rem',
-                color: 'var(--ink-muted)',
-                lineHeight: 1.7,
-              }}
-            >
-              Te voy a escribir pronto por Instagram.
-            </p>
-          </div>
-        ) : (
-          <div style={{ paddingTop: '1rem' }}>
-            {questions.map((q, i) => (
-              <div
-                key={q.id}
-                className={`form-step ${i <= current ? (i < current ? 'done' : 'active') : ''}`}
-                style={{
-                  marginBottom: '2.5rem',
-                  opacity: i > current ? 0 : i < current ? 0.35 : 1,
-                  transform: i > current ? 'translateY(16px)' : 'translateY(0)',
-                  transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)',
-                  pointerEvents: i === current ? 'all' : 'none',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    color: i === current ? 'var(--mark)' : 'var(--ink-muted)',
-                    marginBottom: '0.75rem',
-                    transition: 'color 0.3s',
-                  }}
-                >
-                  {String(i + 1).padStart(2, '0')} — {q.prompt}
-                </p>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    ref={el => { inputRefs.current[i] = el }}
-                    type="text"
-                    placeholder={q.placeholder}
-                    value={answers[q.id] || ''}
-                    onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-                    onKeyDown={e => handleKey(e, i)}
-                    disabled={i !== current}
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: `1px solid ${i === current ? 'var(--ink)' : 'rgba(28,28,28,0.15)'}`,
-                      padding: '0.75rem 0',
-                      fontSize: '1rem',
-                      color: 'var(--ink)',
-                      fontFamily: "'Playfair Display', serif",
-                      fontStyle: 'italic',
-                      outline: 'none',
-                      transition: 'border-color 0.3s',
-                    }}
-                  />
-                  {i === current && answers[q.id] && (
-                    <button
-                      onClick={() => {
-                        if (i < questions.length - 1) setCurrent(i + 1)
-                        else setSent(true)
-                      }}
-                      style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'none',
-                        fontSize: '0.6rem',
-                        letterSpacing: '0.2em',
-                        textTransform: 'uppercase',
-                        color: 'var(--mark)',
-                      }}
-                      data-hover
-                    >
-                      {i < questions.length - 1 ? 'siguiente →' : 'enviar ✦'}
-                    </button>
-                  )}
-                </div>
-                {i === current && (
-                  <p
-                    style={{
-                      fontSize: '0.55rem',
-                      letterSpacing: '0.15em',
-                      color: 'var(--ink-muted)',
-                      opacity: 0.4,
-                      marginTop: '0.5rem',
-                    }}
+          {!done && (
+            <ol className="booking-steps" aria-label="Progreso">
+              {STEPS.map((s, i) => (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => i < step && setStep(i)}
+                    disabled={i >= step}
+                    data-hover={i < step ? '' : undefined}
+                    aria-current={i === step ? 'step' : undefined}
+                    style={{ color: i === step ? 'var(--ink)' : i < step ? 'var(--ink-muted)' : 'rgba(107,79,87,.4)' }}
                   >
-                    Enter para continuar
-                  </p>
-                )}
+                    <span style={{ color: i <= step ? 'var(--mark)' : 'inherit' }}>0{i + 1}</span> {s}
+                  </button>
+                  <i style={{ transform: `scaleX(${i < step ? 1 : i === step ? 0.35 : 0})` }} />
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+
+        {/* Right: one question at a time */}
+        <div style={{ minHeight: '26rem' }}>
+          {done ? (
+            <div key="done" className="book-reveal">
+              <Question n="✦">{done === 'whatsapp' ? 'Listo, se abrió WhatsApp.' : 'Listo, se abrió Instagram.'}</Question>
+              <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '30rem', marginBottom: '2rem' }}>
+                {done === 'whatsapp'
+                  ? 'Tu mensaje ya está escrito: solo tocá enviar y sumá tus referencias.'
+                  : copied
+                    ? 'Copié tu mensaje: pegalo en el chat y sumá tus referencias.'
+                    : 'Escribime en el chat con tu idea, zona, tamaño y cuándo te gustaría.'}
+              </p>
+              <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap' }}>
+                <button type="button" className="book-link" data-hover onClick={() => send(done)}>Abrir de nuevo ↗</button>
+                <button type="button" className="book-link" data-hover onClick={() => { setDone(null); setStep(0); setA(EMPTY) }}>Empezar otra consulta</button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ) : (
+            <form key={step} className="book-reveal" onSubmit={e => { e.preventDefault(); next() }}>
+              {step === 0 && (
+                <>
+                  <Question n="01">¿Qué tenés en mente?</Question>
+                  <div className="book-chips">
+                    {IDEAS.map(o => <Chip key={o} label={o} on={a.idea === o} onClick={() => set('idea')(o)} />)}
+                  </div>
+                  <label style={{ display: 'block', marginTop: '2rem' }}>
+                    <p style={label}>Contame un poco (opcional)</p>
+                    <input className="book-input" value={a.detail} onChange={e => set('detail')(e.target.value)}
+                      placeholder={a.idea === 'Un flash del cuaderno' ? 'Ej: la golondrina' : 'Ej: una rosa con daga, estilo traditional'} />
+                  </label>
+                </>
+              )}
+              {step === 1 && (
+                <>
+                  <Question n="02">¿Dónde y de qué tamaño?</Question>
+                  <p style={label}>Zona</p>
+                  <div className="book-chips">
+                    {ZONES.map(o => <Chip key={o} label={o} on={a.zone === o} onClick={() => set('zone')(o)} />)}
+                  </div>
+                  <p style={{ ...label, marginTop: '2rem' }}>Tamaño aproximado</p>
+                  <div className="book-chips">
+                    {SIZES.map(o => <Chip key={o} label={o} on={a.size === o} onClick={() => set('size')(o)} />)}
+                  </div>
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <Question n="03">¿Para cuándo lo querés?</Question>
+                  <div className="book-chips">
+                    {WHEN.map(o => <Chip key={o} label={o} on={a.when === o} onClick={() => set('when')(o)} />)}
+                  </div>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--ink-muted)', marginTop: '2rem' }}>Tatúo en Palermo, CABA.</p>
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  <Question n="04">¿Cómo te llamás?</Question>
+                  <input ref={nameRef} className="book-input" value={a.name} onChange={e => set('name')(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" />
+                  <p style={{ ...label, marginTop: '2.4rem' }}>Enviar por</p>
+                  <div className="book-chips">
+                    <button type="button" className="book-send" data-hover disabled={!ready} onClick={() => send('whatsapp')}>WhatsApp ↗</button>
+                    <button type="button" className="book-send ghost" data-hover disabled={!ready} onClick={() => send('instagram')}>Instagram ↗</button>
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.4rem', marginTop: '2.6rem' }}>
+                {step > 0 && <button type="button" className="book-link" data-hover onClick={() => setStep(s => s - 1)}>← Atrás</button>}
+                {step < 3 && <button type="submit" className="book-send" data-hover disabled={!ready}>Seguir →</button>}
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </section>
   )
