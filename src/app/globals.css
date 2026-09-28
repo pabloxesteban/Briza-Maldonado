@@ -188,6 +188,13 @@ body { cursor: none; }
 .exhibit-desktop  { display: block; }
 .exhibit-carousel { display: none;  }
 
+/* Navbar responsive */
+.nav-hamburger { display: none !important; }
+@media (max-width: 767px) {
+  .nav-desktop   { display: none !important; }
+  .nav-hamburger { display: flex !important; }
+}
+
 @media (max-width: 767px) {
   /* hide sticky desktop sections */
   .exhibit-desktop  { display: none; }
