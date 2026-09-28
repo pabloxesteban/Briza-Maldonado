@@ -159,15 +159,17 @@ function NotebookCover({ onClick }: { onClick: () => void }) {
   )
 }
 
+// Tape strip angles per sticker for variety
+const TAPE_ROTS = [2, -3, 1, -2, 3, -1, 2]
+
 function FlashItem({ flash, index, visible }: { flash: typeof flashes[0]; index: number; visible: boolean }) {
   const [hovered, setHovered] = useState(false)
-  const [popped, setPopped] = useState(false)
+  const tapeRot = TAPE_ROTS[index % TAPE_ROTS.length]
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => setPopped(v => !v)}
       data-hover
       style={{
         position: 'absolute',
@@ -178,29 +180,42 @@ function FlashItem({ flash, index, visible }: { flash: typeof flashes[0]; index:
         opacity: visible ? 1 : 0,
         transform: visible
           ? hovered
-            ? `rotate(0deg) scale(1.15) translateY(-10px)`
+            ? `rotate(${flash.rot * 0.3}deg) scale(1.1) translateY(-8px)`
             : `rotate(${flash.rot}deg) scale(1)`
-          : `rotate(${flash.rot}deg) scale(0.6)`,
+          : `rotate(${flash.rot}deg) scale(0.7)`,
         transition: visible
-          ? hovered
-            ? 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.5s ease'
-            : 'transform 0.4s ease, opacity 0.5s ease'
+          ? 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.5s ease, filter 0.25s ease'
           : 'none',
-        transitionDelay: visible ? `${index * 70}ms` : '0ms',
-        zIndex: hovered || popped ? 20 : index + 1,
+        transitionDelay: visible ? `${index * 80}ms` : '0ms',
+        zIndex: hovered ? 20 : index + 1,
         filter: hovered
-          ? 'drop-shadow(0 16px 32px rgba(0,0,0,0.3))'
-          : 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
+          ? 'drop-shadow(3px 10px 18px rgba(0,0,0,0.32))'
+          : 'drop-shadow(2px 6px 10px rgba(0,0,0,0.22))',
       }}
     >
+      {/* Tape strip */}
+      <div style={{
+        position: 'absolute',
+        top: -10,
+        left: '50%',
+        transform: `translateX(-50%) rotate(${tapeRot}deg)`,
+        width: Math.round(flash.size * 0.35),
+        height: 14,
+        backgroundColor: 'rgba(255,252,200,0.55)',
+        border: '1px solid rgba(200,190,120,0.3)',
+        zIndex: 2,
+        pointerEvents: 'none',
+        backdropFilter: 'blur(1px)',
+      }} />
+
       <div style={{ position: 'relative', width: flash.size, height: flash.size }}>
         <Image src={flash.src} alt={flash.name} fill style={{ objectFit: 'contain' }} sizes={`${flash.size}px`} />
       </div>
 
-      {/* price tag that appears on hover */}
+      {/* Price label on hover */}
       <div style={{
         position: 'absolute',
-        bottom: -28,
+        bottom: -32,
         left: '50%',
         transform: 'translateX(-50%)',
         whiteSpace: 'nowrap',
@@ -211,19 +226,15 @@ function FlashItem({ flash, index, visible }: { flash: typeof flashes[0]; index:
       }}>
         <p style={{
           fontFamily: "'Caveat', cursive",
-          fontSize: '0.95rem',
-          color: flash.available ? '#c0392b' : '#888',
+          fontSize: '1rem',
+          color: flash.available ? '#b02020' : '#999',
           letterSpacing: '0.01em',
           lineHeight: 1.1,
         }}>
           {flash.price}
         </p>
         {!flash.available && (
-          <p style={{
-            fontFamily: "'Caveat', cursive",
-            fontSize: '0.7rem',
-            color: '#aaa',
-          }}>agotado</p>
+          <p style={{ fontFamily: "'Caveat', cursive", fontSize: '0.75rem', color: '#aaa' }}>agotado</p>
         )}
       </div>
     </div>
@@ -267,18 +278,29 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
           minHeight: 780,
           borderRadius: '0 8px 8px 0',
           overflow: 'hidden',
-          backgroundColor: '#f7f4ee',
+          backgroundColor: '#f8f5ec',
           backgroundImage: `
             repeating-linear-gradient(
               transparent,
-              transparent 29px,
-              #b8cfe0 29px,
-              #b8cfe0 30px
+              transparent 27px,
+              rgba(140,175,210,0.5) 27px,
+              rgba(140,175,210,0.5) 28px
             ),
-            linear-gradient(to right, transparent 52px, #dfa0a0 52px, #dfa0a0 53px, transparent 53px)
+            linear-gradient(to right, transparent 60px, rgba(205,65,65,0.35) 60px, rgba(205,65,65,0.35) 61.5px, transparent 61.5px)
           `,
-          padding: '2.5rem 2.5rem 3rem 4rem',
+          padding: '2.5rem 2.5rem 3rem 4.5rem',
         }}>
+          {/* Paper grain overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E")`,
+            opacity: 0.045,
+          }} />
+          {/* Subtle page curl shadow on right edge */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, pointerEvents: 'none', zIndex: 0,
+            background: 'linear-gradient(to left, rgba(0,0,0,0.06) 0%, transparent 100%)',
+          }} />
 
           {/* Header handwritten */}
           <div style={{ marginBottom: '1.5rem', paddingLeft: '0.5rem' }}>
