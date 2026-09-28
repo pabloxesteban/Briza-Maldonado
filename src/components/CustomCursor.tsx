@@ -114,7 +114,7 @@ export default function CustomCursor() {
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
           color: '#FAE8F0',
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: 'var(--font-body)',
           fontWeight: 700,
           opacity: 0,
           transition: 'opacity 0.2s',

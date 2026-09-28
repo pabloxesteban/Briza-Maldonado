@@ -2,7 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=DM+Sans:ital,wght@0,200;0,300;0,400;0,500;1,300&display=swap');
+@font-face { font-family: 'Briza Display'; src: url('/Briza-Maldonado/fonts/briza-display.woff2') format('woff2'); font-weight: 500 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Briza Display'; src: url('/Briza-Maldonado/fonts/briza-display.woff2') format('woff2'); font-weight: 500 900; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Briza Wide'; src: url('/Briza-Maldonado/fonts/briza-wide.woff2') format('woff2'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Briza Mono'; src: url('/Briza-Maldonado/fonts/briza-mono.woff2') format('woff2'); font-weight: 400 600; font-display: swap; }
 
 :root {
   --bg: #F5E8EE;
@@ -13,6 +16,10 @@
   --mark-soft: #F472B6;
   --skin: #F5DDE6;
   --white: #FAE8F0;
+  /* Type: sharp italic serif for titles, wide sans for labels, mono for text */
+  --font-display: 'Briza Display', 'Fraunces', Georgia, serif;
+  --font-wide: 'Briza Wide', 'Lexend Exa', 'Arial', sans-serif;
+  --font-body: 'Briza Mono', 'Overpass Mono', ui-monospace, monospace;
   /* Motion: one curve ("el trazo"), three speeds */
   --ease: cubic-bezier(.22, 1, .36, 1);
   --t-fast: .35s;
@@ -36,14 +43,14 @@ html.lenis { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--bg);
   color: var(--ink);
   cursor: none;
   overflow-x: clip;
 }
 
-.font-display { font-family: 'Playfair Display', serif; }
+.font-display { font-family: var(--font-display); font-style: italic; }
 
 ::selection {
   background-color: var(--mark);
@@ -297,13 +304,13 @@ body { cursor: none; }
 }
 .book-chips { display: flex; flex-wrap: wrap; gap: .6rem; }
 .book-chip:hover { border-color: var(--ink) !important; }
-.book-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--ink); padding: .7rem 0; font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(1.15rem, 2.2vw, 1.5rem); color: var(--ink); outline: none; border-radius: 0; }
+.book-input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--ink); padding: .7rem 0; font-family: var(--font-display); font-style: italic; font-size: clamp(1.15rem, 2.2vw, 1.5rem); color: var(--ink); outline: none; border-radius: 0; }
 .book-input::placeholder { color: rgba(107,79,87,.45); }
-.book-send { padding: 1rem 1.6rem; border-radius: 999px; border: 1px solid var(--mark); background: var(--mark); color: #fff; font-family: 'DM Sans', sans-serif; font-size: .95rem; letter-spacing: .02em; transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+.book-send { padding: 1rem 1.6rem; border-radius: 999px; border: 1px solid var(--mark); background: var(--mark); color: #fff; font-family: var(--font-body); font-size: .95rem; letter-spacing: .02em; transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
 .book-send.ghost { background: transparent; color: var(--mark); }
 .book-send:disabled { opacity: .3; }
 .book-send:not(:disabled):hover { transform: translateY(-2px); }
-.book-link { background: none; border: 0; padding: 0 0 2px; font-family: 'DM Sans', sans-serif; font-size: .9rem; color: var(--ink-muted); border-bottom: 1px solid rgba(107,79,87,.35); }
+.book-link { background: none; border: 0; padding: 0 0 2px; font-family: var(--font-body); font-size: .9rem; color: var(--ink-muted); border-bottom: 1px solid rgba(107,79,87,.35); }
 .book-link:hover { color: var(--mark); border-color: var(--mark); }
 /* Reveal like a pen stroke: left to right */
 .book-reveal { animation: penReveal var(--t-mid) var(--ease) both; }
@@ -342,7 +349,7 @@ body { cursor: none; }
 .process-rail li.on { color: var(--ink); }
 .process-rail i { display: block; height: 1.5px; margin-top: .5rem; background: var(--mark); transform-origin: left; }
 .process-stage { animation: penReveal var(--t-mid) var(--ease) both; }
-.process-num { font-family: 'Playfair Display', serif; font-style: italic; color: var(--mark); font-size: 1.1rem; }
+.process-num { font-family: var(--font-display); font-style: italic; color: var(--mark); font-size: 1.1rem; }
 .process-stage h3 { font-size: clamp(2rem, 4.5vw, 3.8rem); line-height: 1; letter-spacing: -.02em; color: var(--ink); margin: .3rem 0 .9rem; }
 .process-desc { font-size: clamp(.98rem, 1.3vw, 1.12rem); line-height: 1.65; color: var(--ink-muted); }
 .process-cta { align-self: flex-start; padding: .95rem 1.5rem; font-size: .74rem; transition: opacity var(--t-mid) var(--ease), transform var(--t-fast) var(--ease); }
@@ -463,4 +470,18 @@ body { cursor: none; }
 }
 
 /* Name next to the heart in the nav */
-.nav-wordmark { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 900; font-size: 1.55rem; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
+.nav-wordmark { font-family: var(--font-display); font-style: italic; font-weight: 900; font-size: 1.55rem; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
+
+/* Uppercase labels, menu and buttons use the wide sans (inline-styled uppercase text included) */
+[style*="uppercase"], .cta-book, .arch-toggle button, .arch-close, .arch-style, .arch-row-meta, .booking-steps button,
+.process-kicker, .process-rail li, .arch-meta-line, .arch-entrance-title p, .book-send, .nav-desktop a {
+  font-family: var(--font-wide) !important;
+  letter-spacing: .08em !important;
+}
+.nav-wordmark { font-family: var(--font-display); font-style: italic; }
+/* The italic display face sets tighter than Playfair did: undo the old negative tracking and open word gaps */
+.font-display, [style*="--font-display"], .arch-name, .arch-row-name, .arch-meta h3, .process-stage h3, .process-title, .arch-entrance-title h2, .nav-wordmark {
+  letter-spacing: -0.005em !important;
+  word-spacing: 0.12em;
+  font-weight: 850 !important; /* 5a is the black cut */
+}

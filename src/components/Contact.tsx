@@ -48,7 +48,7 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
         background: on ? 'var(--ink)' : 'transparent',
         color: on ? 'var(--bg)' : 'var(--ink)',
         borderRadius: 999,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: 'var(--font-body)',
         fontSize: '0.92rem',
         lineHeight: 1,
         transition: 'background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease)',

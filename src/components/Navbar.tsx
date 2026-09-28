@@ -80,7 +80,7 @@ export default function Navbar() {
           href="/"
           aria-label="Briza Maldonado — inicio"
           style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: 'var(--font-display)',
             fontSize: '0.9rem',
             fontStyle: 'italic',
             color: 'var(--ink)',
@@ -194,7 +194,7 @@ export default function Navbar() {
                 key={l.href}
                 href={l.href}
                 style={{
-                  fontFamily: "'Playfair Display', serif",
+                  fontFamily: 'var(--font-display)',
                   fontSize: 'clamp(2.5rem, 12vw, 4rem)',
                   fontStyle: 'italic',
                   letterSpacing: '-0.02em',
