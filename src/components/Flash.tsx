@@ -7,31 +7,33 @@ type Place = { x: number; y: number; s: number; rot: number } // x,s: fraction o
 type Note = { x: number; y: number; w: number } // x,w: fraction of width · y: fraction of height (snapped to a ruled line)
 type FlashDef = {
   src: string; name: string; price: string; available: boolean
-  p: Place; note: Note; fix: 'tape' | 'dots'
+  p: Place; note: Note
+  aspect: number // image height / width
+  dots: [number, number][] // dot centres on the cut edge, as fractions of the image
 }
 
 const BASE = '/Briza-Maldonado/flash/'
 const PAGES: FlashDef[][] = [
   [
-    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, fix: 'tape',
+    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, aspect: 1.308, dots: [[0.568, 0.047], [0.821, 0.429], [0.427, 0.666], [0.073, 0.329]],
       p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
-    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, fix: 'dots',
+    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, aspect: 1.243, dots: [[0.376, 0.099], [0.85, 0.593], [0.098, 0.723]],
       p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
   ],
   [
-    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, fix: 'dots',
+    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, aspect: 0.816, dots: [[0.676, 0.032], [0.93, 0.63], [0.448, 0.801], [0.114, 0.267]],
       p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
-    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, fix: 'tape',
+    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, aspect: 1.167, dots: [[0.456, 0.086], [0.898, 0.448], [0.526, 0.767], [0.174, 0.502]],
       p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
   ],
   [
-    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, fix: 'tape',
+    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, aspect: 1.161, dots: [[0.443, 0.187], [0.698, 0.434], [0.371, 0.89], [0.141, 0.391]],
       p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
-    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, fix: 'dots',
+    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, aspect: 0.95, dots: [[0.619, 0.09], [0.844, 0.594], [0.415, 0.892], [0.11, 0.387]],
       p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
   ],
   [
-    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, fix: 'tape',
+    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, aspect: 1.003, dots: [[0.489, 0.282], [0.75, 0.511], [0.489, 0.756], [0.258, 0.511]],
       p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
@@ -66,7 +68,12 @@ function useSize<T extends HTMLElement>() {
 const HOLE_X = 16
 const PAPER = '#faf6ea'
 const PEN = '#26318c'
-const GRAIN = `url(${BASE}paper-grain.png)`
+let grainImg: Promise<HTMLImageElement> | null = null
+const loadGrain = () => (grainImg ??= new Promise(res => {
+  const img = new window.Image()
+  img.onload = () => res(img)
+  img.src = `${BASE}paper-grain.png`
+}))
 const lineTop = (H: number) => Math.round(H * 0.075)
 const lineGap = (W: number) => Math.max(21, Math.round(W * 0.062))
 const holeYs = (H: number) => Array.from({ length: 16 }, (_, k) => H * 0.04 + (k * H * 0.92) / 15)
@@ -76,7 +83,7 @@ const snapToLine = (yFrac: number, W: number, H: number) => {
 }
 
 // ─── Paper: flat ivory, lighting, thin grey rules, slot holes ─────────────
-function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number, mirror: boolean) {
+function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number, mirror: boolean, grain: HTMLImageElement) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   canvas.width = W * dpr
   canvas.height = H * dpr
@@ -103,6 +110,14 @@ function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number
   ctx.globalCompositeOperation = 'soft-light'
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(g, -W * 0.2, -H * 0.2, W * 1.4, H * 1.4)
+  ctx.restore()
+
+  // Grain photographed from the real notebook
+  ctx.save()
+  ctx.globalCompositeOperation = 'overlay'
+  ctx.globalAlpha = 0.5
+  ctx.fillStyle = ctx.createPattern(grain, 'repeat')!
+  ctx.fillRect(0, 0, W, H)
   ctx.restore()
 
   // Printed rules: thin, grey, slightly uneven ink
@@ -142,31 +157,22 @@ function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number
 function PaperCanvas({ w, h, seed, mirror = false }: { w: number; h: number; seed: number; mirror?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
-    if (ref.current && w > 0 && h > 0) drawPaper(ref.current, w, h, seed, mirror)
+    if (!(w > 0 && h > 0)) return
+    let live = true
+    loadGrain().then(g => { if (live && ref.current) drawPaper(ref.current, w, h, seed, mirror, g) })
+    return () => { live = false }
   }, [w, h, seed, mirror])
   return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
-}
-
-// Grain photographed from the real notebook, layered with overlay blend
-function Grain({ opacity = 0.5, size = 300 }: { opacity?: number; size?: number }) {
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, pointerEvents: 'none',
-      backgroundImage: GRAIN, backgroundSize: `${size}px ${size}px`,
-      mixBlendMode: 'overlay', opacity,
-    }} />
-  )
 }
 
 function Paper({ W, H, seed, mirror = false }: { W: number; H: number; seed: number; mirror?: boolean }) {
   return (
     <>
       <PaperCanvas w={W} h={H} seed={seed} mirror={mirror} />
-      <Grain />
       {/* Warm daylight from the top, slight falloff at the bottom */}
       <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', mixBlendMode: 'multiply',
-        background: 'radial-gradient(130% 80% at 60% 0%, rgba(255,255,255,0) 45%, rgba(150,130,90,.05) 100%)',
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(130% 80% at 60% 0%, rgba(150,130,90,0) 45%, rgba(150,130,90,.06) 100%)',
       }} />
     </>
   )
@@ -181,7 +187,7 @@ function WireSpiral({ height }: { height: number }) {
     `M ${hx - 1} ${y} C ${hx - 12} ${y + 2}, ${o - 20} ${y + 3}, ${o - 21} ${y - 2} C ${o - 22} ${y - 7}, ${o - 4} ${y - 8}, ${o + 7} ${y - 5}`
   return (
     <svg width={o * 2 + 20} height={height}
-      style={{ position: 'absolute', left: -o, top: 0, zIndex: 200, overflow: 'visible', pointerEvents: 'none' }}>
+      style={{ position: 'absolute', left: -o, top: 0, zIndex: 200, overflow: 'visible', pointerEvents: 'none', transform: 'translateZ(14px)' }}>
       <defs>
         <linearGradient id="wire" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#231c18" />
@@ -211,42 +217,15 @@ function WireSpiral({ height }: { height: number }) {
   )
 }
 
-// ─── Fasteners: masking tape and neon dot stickers ────────────────────────
-function tornEnds(seed: number) {
-  const r = rng(seed)
-  const pts: string[] = []
-  const teeth = 9
-  for (let i = 0; i <= teeth; i++) pts.push(`${(r() * 3.5).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
-  for (let i = teeth; i >= 0; i--) pts.push(`${(100 - r() * 3.5).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
-  return `polygon(${pts.join(',')})`
-}
-
-function Tape({ seed, w, h, style }: { seed: number; w: number; h: number; style: React.CSSProperties }) {
-  return (
-    <div style={{ position: 'absolute', zIndex: 3, pointerEvents: 'none', filter: 'drop-shadow(0 .6px .6px rgba(70,60,30,.22))', ...style }}>
-      <div style={{
-        position: 'relative', width: w, height: h, clipPath: tornEnds(seed),
-        background: `
-          repeating-linear-gradient(${88 + (seed % 5)}deg, rgba(255,255,255,.07) 0 1px, rgba(150,130,80,.04) 1px 2.5px),
-          linear-gradient(160deg, rgba(255,255,245,.35), rgba(255,255,245,0) 55%),
-          rgba(244,236,204,.72)
-        `,
-      }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: GRAIN, backgroundSize: '160px', mixBlendMode: 'overlay', opacity: .7 }} />
-      </div>
-    </div>
-  )
-}
-
+// ─── Neon dot stickers ────────────────────────
 function Dot({ d, style }: { d: number; style: React.CSSProperties }) {
   return (
     <div style={{
       position: 'absolute', zIndex: 3, pointerEvents: 'none', width: d, height: d, borderRadius: '50%',
-      background: 'linear-gradient(160deg, #6ff852, #5cf03f)',
-      boxShadow: '0 .5px .5px rgba(0,50,0,.3)',
+      background: 'radial-gradient(circle at 50% 50%, #64f646 0%, #5ef040 70%, #55e338 100%)',
+      boxShadow: '0 .4px .5px rgba(0,40,0,.35), 0 0 0 .5px rgba(40,160,20,.35)',
       ...style,
     }}>
-      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundImage: GRAIN, backgroundSize: '120px', mixBlendMode: 'overlay', opacity: .35 }} />
     </div>
   )
 }
@@ -256,13 +235,9 @@ function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W:
   const [lift, setLift] = useState(false)
   const { p } = flash
   const size = p.s * W
-  const tw = size * 0.3, th = size * 0.12, dot = Math.max(16, W * 0.07)
-  const mask: React.CSSProperties = {
-    WebkitMaskImage: `url(${flash.src})`, maskImage: `url(${flash.src})`,
-    WebkitMaskSize: 'contain', maskSize: 'contain',
-    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center', maskPosition: 'center',
-  }
+  const dot = Math.max(15, W * 0.062)
+  const bw = flash.aspect > 1 ? size / flash.aspect : size
+  const bh = bw * flash.aspect
 
   return (
     <div
@@ -270,7 +245,7 @@ function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W:
       onMouseLeave={() => setLift(false)}
       data-hover
       style={{
-        position: 'absolute', left: p.x * W, top: p.y * H, width: size, height: size,
+        position: 'absolute', left: p.x * W, top: p.y * H, width: bw, height: bh,
         transform: `rotate(${p.rot}deg) translateY(${lift ? -2 : 0}px)`,
         transition: 'transform .4s ease',
         zIndex: index + 1,
@@ -286,25 +261,11 @@ function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W:
       }}>
         <Image src={flash.src} alt={flash.name} fill draggable={false} sizes={`${Math.round(size)}px`}
           style={{ objectFit: 'contain', filter: 'contrast(1.12) saturate(.8) brightness(1.04)' }} />
-        {/* Printer-paper grain + toner sitting on the fibres */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, backgroundImage: GRAIN, backgroundSize: '200px', mixBlendMode: 'overlay', opacity: .45 }} />
-        {/* Printer paper held by tape never lies perfectly flat: faint cockling */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, background: 'linear-gradient(118deg, rgba(0,0,0,0) 20%, rgba(90,80,60,.07) 48%, rgba(255,255,255,.1) 62%, rgba(0,0,0,0) 80%)', mixBlendMode: 'soft-light' }} />
       </div>
 
-      {flash.fix === 'tape' ? (
-        <>
-          <Tape seed={index * 17 + 3} w={tw} h={th} style={{ top: size * 0.02, right: size * 0.12, transform: 'rotate(38deg)' }} />
-          <Tape seed={index * 17 + 5} w={tw} h={th} style={{ bottom: size * 0.06, left: size * 0.06, transform: 'rotate(40deg)' }} />
-          {index % 2 === 0 && <Tape seed={index * 17 + 7} w={tw * 0.9} h={th} style={{ top: size * 0.42, left: -size * 0.04, transform: 'rotate(-8deg)' }} />}
-        </>
-      ) : (
-        <>
-          <Dot d={dot} style={{ top: size * 0.04, left: size * 0.34 }} />
-          <Dot d={dot} style={{ top: size * 0.46, right: size * 0.02 }} />
-          <Dot d={dot} style={{ bottom: size * 0.06, left: size * 0.12 }} />
-        </>
-      )}
+      {flash.dots.map(([x, y], k) => (
+        <Dot key={k} d={dot} style={{ left: x * bw - dot / 2, top: y * bh - dot / 2, transform: `rotate(${k * 47}deg)` }} />
+      ))}
     </div>
   )
 }
@@ -407,7 +368,6 @@ function CoverBack() {
       position: 'absolute', inset: 0, borderRadius: '14px 0 0 14px', overflow: 'hidden',
       backgroundColor: '#bcc5dc', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.1)',
     }}>
-      <Grain opacity={.6} />
       <Holes right />
     </div>
   )
@@ -584,13 +544,15 @@ export default function Flash() {
                 touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
               }}
             >
+              {/* One shared 3D space for sheets and wire: order comes from depth, so Safari can't flip it mid-turn */}
+              <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
               {Array.from({ length: SHEETS }).map((_, i) => {
                 const angle = angleOf(i)
                 const shade = Math.sin((Math.abs(angle) * Math.PI) / 180)
                 const live = drag?.sheet === i
                 const z = live || moving === i ? 100 : i < turned ? 10 + i : 60 - i
                 // Distinct depth per sheet so resting pages never z-fight at the binding (iOS Safari sorts by depth, not z-index)
-                const depth = live || moving === i ? 3 : i < turned ? i * 0.4 - SHEETS : (SHEETS - i) * 0.4
+                const depth = live || moving === i ? 8 : i < turned ? i * 1.5 - 20 : (SHEETS - i) * 1.5
                 const hidden = !spread && i < turned - 1 && !live && moving !== i
                 const peek = i === 0 && turned === 0 && !drag && !hinted
                 return (
@@ -607,20 +569,21 @@ export default function Flash() {
                       {/* Front */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
                         {i === 0 ? <CoverFront /> : <PageFront n={i - 1} W={W} H={H} />}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)`, mixBlendMode: 'multiply' }} />
+                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)` }} />
                       </div>
                       {/* Back */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
                         {i === 0 ? <CoverBack /> : <PageBack n={i - 1} W={W} H={H} />}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)`, mixBlendMode: 'multiply' }} />
+                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)` }} />
                       </div>
                     </div>
                   </div>
                 )
               })}
+              <WireSpiral height={H} />
+              </div>
             </div>
 
-            <WireSpiral height={H} />
           </div>
         )}
       </div>
