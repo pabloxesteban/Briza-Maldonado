@@ -5,8 +5,6 @@ import Image from 'next/image'
 import { WORKS, num, type Work } from '@/data/works'
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
-const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a))
-const ease = (t: number) => 1 - Math.pow(1 - t, 3)
 
 type Rect = { left: number; top: number; width: number; height: number }
 
@@ -44,83 +42,55 @@ function useScrollProgress(ref: React.RefObject<HTMLElement>, mode: 'pin' | 'pas
   return p
 }
 
-// ─── Act 1: the entrance ──────────────────────────────────────────────────
-function Entrance({ still, mobile }: { still: boolean; mobile: boolean }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const p = useScrollProgress(ref, 'pin')
-  const cols = mobile ? 2 : 3
-  const rows = 4
-  const tiles = WORKS.slice(0, cols * rows)
-  const inP = ease(seg(p, 0, 0.42))        // columns arrive from opposite directions
-  const openP = ease(seg(p, 0.42, 0.86))   // the grid zooms and opens a space in the middle
-  const titleP = ease(seg(p, 0.66, 0.92))
-  const mid = (cols - 1) / 2
-
-  if (still) return null
-
-  return (
-    <div ref={ref} className="arch-entrance" style={{ height: mobile ? '230vh' : '260vh' }}>
-      <div className="arch-stage">
-        <div className="arch-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, transform: `scale(${1 + openP * (mobile ? 0.4 : 0.32)})` }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <div key={c} className="arch-col" style={{
-              transform: `translate(${(c - mid) * openP * (mobile ? 58 : 78)}%, ${(1 - inP) * (c % 2 ? -70 : 70)}vh)`,
-            }}>
-              {Array.from({ length: rows }).map((_, r) => {
-                const w = tiles[r * cols + c]
-                const centre = !mobile && c === 1
-                return (
-                  <div key={r} className="arch-tile" style={{
-                    transform: centre ? `translateY(${(r < 2 ? -1 : 1) * openP * 150}%)` : undefined,
-                    opacity: 0.25 + inP * 0.75,
-                  }}>
-                    <Image src={w.src} alt="" fill sizes={mobile ? '50vw' : '30vw'} style={{ objectFit: 'cover' }} />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-        <div className="arch-entrance-title" style={{ opacity: titleP, transform: `translateY(${(1 - titleP) * 24}px)` }}>
-          <h2 className="font-display">Trabajos</h2>
-          <p>{WORKS.length} piezas · Traditional · Black &amp; white · Color</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Act 2: the wall ──────────────────────────────────────────────────────
+// ─── The wall: alternate column scroll ────────────────────────────────────
+// The "moving" column scrolls with the page; the others stay pinned to the viewport and
+// travel the opposite way (content runs downward), so the columns cross as you scroll.
 function Wall({ still, mobile, onOpen }: { still: boolean; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
   const ref = useRef<HTMLDivElement>(null)
-  const p = useScrollProgress(ref, 'pass')
+  const colRefs = useRef<(HTMLDivElement | null)[]>([])
+  const p = useScrollProgress(ref, 'pin')
+  const [heights, setHeights] = useState<number[]>([])
   const cols = mobile ? 2 : 3
-  const speeds = mobile ? [-40, 60] : [-70, 110, -30]
+  const flowing = mobile ? 0 : 1 // index of the column that scrolls normally
   const columns: { w: Work; i: number }[][] = Array.from({ length: cols }, () => [])
   WORKS.forEach((w, i) => columns[i % cols].push({ w, i }))
 
+  useEffect(() => {
+    const measure = () => setHeights(colRefs.current.map(el => el?.scrollHeight ?? 0))
+    measure()
+    const ro = new ResizeObserver(measure)
+    colRefs.current.forEach(el => el && ro.observe(el))
+    return () => ro.disconnect()
+  }, [cols])
+
+  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+
   return (
-    <div ref={ref} className="arch-wall" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-      {columns.map((col, c) => (
-        <div key={c} className="arch-wall-col" style={{
-          transform: still ? undefined : `translateY(${(p - 0.5) * speeds[c]}px)`,
-          marginTop: !mobile && c === 1 ? '14vh' : mobile && c === 1 ? '9vh' : 0,
-        }}>
-          {col.map(({ w, i }) => (
-            <button key={w.slug} type="button" className="arch-item" data-cursor="view" data-work={w.slug}
-              onClick={e => onOpen(i, (e.currentTarget.querySelector('.arch-img') as HTMLElement))}>
-              <span className="arch-img">
-                <Image src={w.src} alt={w.title} fill sizes={mobile ? '48vw' : '31vw'} style={{ objectFit: 'cover' }} />
-              </span>
-              <span className="arch-cap">
-                <span className="arch-num">Nº {num(i)}</span>
-                <span className="arch-name font-display">{w.title}</span>
-                <span className="arch-style">{w.style}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      ))}
+    <div ref={ref} className={`arch-wall ${still ? 'still' : ''}`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+      {columns.map((col, c) => {
+        const pinned = !still && c !== flowing
+        const travel = Math.max(0, (heights[c] ?? 0) - vh)
+        return (
+          <div key={c} className={pinned ? 'arch-wall-pin' : 'arch-wall-flow'}>
+            <div ref={el => { colRefs.current[c] = el }} className="arch-wall-col"
+              style={pinned ? { flexDirection: 'column-reverse', transform: `translate3d(0, ${-travel * (1 - p)}px, 0)` } : undefined}>
+              {col.map(({ w, i }) => (
+                <button key={w.slug} type="button" className="arch-item" data-cursor="view" data-work={w.slug}
+                  onClick={e => onOpen(i, (e.currentTarget.querySelector('.arch-img') as HTMLElement))}>
+                  <span className="arch-img">
+                    <Image src={w.src} alt={w.title} fill sizes={mobile ? '48vw' : '31vw'} style={{ objectFit: 'cover' }} />
+                  </span>
+                  <span className="arch-cap">
+                    <span className="arch-num">Nº {num(i)}</span>
+                    <span className="arch-name font-display">{w.title}</span>
+                    <span className="arch-style">{w.style}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -320,8 +290,6 @@ export default function Archive() {
 
   return (
     <section id="obra" className="archive">
-      <Entrance still={still} mobile={mobile} />
-
       <div className="arch-bar">
         <p className="arch-bar-title"><span className="font-display">Trabajos</span> <span className="arch-count">{WORKS.length}</span></p>
         <div className="arch-toggle" role="tablist" aria-label="Vista">

@@ -400,8 +400,11 @@ body { cursor: none; }
 .arch-toggle button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
 .arch-view { animation: fadeIn var(--t-mid) var(--ease) both; }
 
-.arch-wall { display: grid; gap: clamp(10px, 2.2vw, 36px); padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 3rem) clamp(5rem, 12vw, 10rem); align-items: start; }
-.arch-wall-col { display: grid; gap: clamp(1.4rem, 3.5vw, 3.5rem); will-change: transform; }
+.arch-wall { display: grid; gap: clamp(10px, 2.2vw, 36px); padding: 0 clamp(1rem, 4vw, 3rem); align-items: start; }
+.arch-wall-flow { padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(3rem, 8vw, 6rem); }
+.arch-wall-pin { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; }
+.arch-wall-col { display: flex; flex-direction: column; gap: clamp(1.4rem, 3.5vw, 3.5rem); padding: clamp(1.5rem, 4vw, 3rem) 0; will-change: transform; }
+.arch-wall.still .arch-wall-col { flex-direction: column !important; }
 .arch-item { display: block; width: 100%; background: none; border: 0; padding: 0; text-align: left; color: inherit; }
 .arch-img { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 2px; background: #e9d3dc; }
 .arch-img img { transition: transform var(--t-slow) var(--ease); }
