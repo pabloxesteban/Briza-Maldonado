@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 
 const flashStickers = [
@@ -118,8 +118,6 @@ function StickerPin({ s, mouseX, mouseY, isOpen, onToggle }: {
 export default function Hero() {
   const nameRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
-  const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 })
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
 
   useEffect(() => {
     const lines = nameRef.current?.querySelectorAll<HTMLElement>('[data-line]')
@@ -129,17 +127,6 @@ export default function Hero() {
         el.style.clipPath = 'inset(0 0% 0 0)'
       }, 300 + i * 220)
     })
-  }, [])
-
-  useEffect(() => {
-    const el = sectionRef.current
-    if (!el) return
-    const handle = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect()
-      setMouse({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height })
-    }
-    el.addEventListener('mousemove', handle, { passive: true })
-    return () => el.removeEventListener('mousemove', handle)
   }, [])
 
   return (
@@ -188,29 +175,7 @@ export default function Hero() {
         }} />
       </div>
 
-      {/* Flash stickers — highest z-index, big, spread around the name area */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        zIndex: 20,
-        pointerEvents: 'none',
-        opacity: 0,
-        animation: 'fadeIn 1.2s ease 2s forwards',
-      }}>
-        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'all' }}>
-          {flashStickers.map((s, i) => (
-            <StickerPin
-              key={i}
-              s={s}
-              mouseX={mouse.x}
-              mouseY={mouse.y}
-              isOpen={openIdx === i}
-              onToggle={() => setOpenIdx(openIdx === i ? null : i)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Name — behind stickers */}
+      {/* Name */}
       <div
         ref={nameRef}
         style={{

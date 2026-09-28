@@ -18,7 +18,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; -webkit-tap-highlight-color: transparent; }
 
 @media (pointer: coarse), (hover: none) {
-  * { cursor: auto; }
+  *, *::before, *::after { cursor: auto !important; }
   .custom-cursor-root { display: none !important; }
 }
 
