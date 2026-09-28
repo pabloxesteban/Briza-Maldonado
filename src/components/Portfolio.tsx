@@ -91,29 +91,66 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
   const mobile = useMobile()
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
+  const touchStartTime = useRef(0)
+  const isDragging = useRef(false)
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null)
+  const [animKey, setAnimKey] = useState(0)
+  const prevIndexRef = useRef(index)
+
+  // Track direction for slide animation
+  useEffect(() => {
+    if (index !== prevIndexRef.current) {
+      prevIndexRef.current = index
+    }
+  }, [index])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') onPrev()
-      if (e.key === 'ArrowRight') onNext()
+      if (e.key === 'ArrowLeft') { setSlideDir('right'); setAnimKey(k => k + 1); onPrev() }
+      if (e.key === 'ArrowRight') { setSlideDir('left'); setAnimKey(k => k + 1); onNext() }
     }
     document.addEventListener('keydown', h)
+    // Lock scroll on body AND prevent touchmove to stop background scroll on iOS
     document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
+    document.body.style.touchAction = 'none'
+    const preventScroll = (e: TouchEvent) => { e.preventDefault() }
+    document.addEventListener('touchmove', preventScroll, { passive: false })
+    return () => {
+      document.removeEventListener('keydown', h)
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+      document.removeEventListener('touchmove', preventScroll)
+    }
   }, [onClose, onPrev, onNext])
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
+    touchStartTime.current = Date.now()
+    isDragging.current = false
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const dx = e.touches[0].clientX - touchStartX.current
+    const dy = e.touches[0].clientY - touchStartY.current
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true
+    // If clearly horizontal, stop any residual scroll leak
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) {
+      e.stopPropagation()
+    }
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current
     const dy = e.changedTouches[0].clientY - touchStartY.current
-    // only trigger if horizontal swipe is dominant and >40px
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
-      dx < 0 ? onNext() : onPrev()
+    const dt = Date.now() - touchStartTime.current
+    const isFlick = dt < 300 && Math.abs(dx) > 30
+    const isSwipe = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55
+
+    if (isFlick || isSwipe) {
+      if (dx < 0) { setSlideDir('left'); setAnimKey(k => k + 1); onNext() }
+      else        { setSlideDir('right'); setAnimKey(k => k + 1); onPrev() }
     }
   }
 
@@ -121,12 +158,15 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
     return (
       <div
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
           position: 'fixed', inset: 0, zIndex: 3000,
           background: '#080606',
           display: 'flex', flexDirection: 'column',
           animation: 'fadeIn 0.2s ease',
+          overflow: 'hidden',
+          touchAction: 'none',
         }}>
         {/* top bar */}
         <div style={{
@@ -160,11 +200,21 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
           >✕</button>
         </div>
 
-        {/* image — takes most of screen */}
-        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-          <Image key={item.src} src={item.src} alt={item.title} fill
-            style={{ objectFit: 'contain', padding: '0 0.5rem' }}
-            sizes="100vw" priority />
+        {/* image — takes most of screen, slides on change */}
+        <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <div
+            key={animKey}
+            style={{
+              position: 'absolute', inset: 0,
+              animation: slideDir
+                ? `slideIn${slideDir === 'left' ? 'Left' : 'Right'} 0.32s cubic-bezier(0.25,0.46,0.45,0.94) both`
+                : 'fadeIn 0.2s ease',
+            }}
+          >
+            <Image src={item.src} alt={item.title} fill
+              style={{ objectFit: 'contain', padding: '0 0.5rem' }}
+              sizes="100vw" priority />
+          </div>
         </div>
 
         {/* bottom: title + nav */}
@@ -193,7 +243,7 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
             <div style={{ display: 'flex', gap: '0.6rem' }}>
               {(['prev', 'next'] as const).map(dir => (
                 <button key={dir}
-                  onClick={e => { e.stopPropagation(); dir === 'prev' ? onPrev() : onNext() }}
+                  onClick={e => { e.stopPropagation(); if (dir === 'prev') { setSlideDir('right'); setAnimKey(k => k + 1); onPrev() } else { setSlideDir('left'); setAnimKey(k => k + 1); onNext() } }}
                   style={{
                     width: '2.6rem', height: '2.6rem', borderRadius: '50%',
                     background: 'rgba(250,232,240,0.07)',
