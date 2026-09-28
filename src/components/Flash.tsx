@@ -256,16 +256,6 @@ export default function Flash() {
           }}>
             Disponibles
           </p>
-          <p style={{
-            fontSize: '0.6rem',
-            letterSpacing: '0.25em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-            marginTop: '0.75rem',
-            opacity: 0.6,
-          }}>
-            Diseños únicos — uno por cliente
-          </p>
         </div>
       </div>
 
