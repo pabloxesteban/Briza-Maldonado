@@ -241,13 +241,97 @@ function FlashItem({ flash, index, visible }: { flash: typeof flashes[0]; index:
   )
 }
 
+// Canvas draws real paper: per-pixel noise + hand-drawn lines
+function PaperCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const W = canvas.offsetWidth || 700
+    const H = canvas.offsetHeight || 900
+    canvas.width = W
+    canvas.height = H
+
+    // Base warm paper
+    ctx.fillStyle = '#f2edd8'
+    ctx.fillRect(0, 0, W, H)
+
+    // Per-pixel grain — the only way to get real texture
+    const imgData = ctx.getImageData(0, 0, W, H)
+    const d = imgData.data
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (Math.random() - 0.5) * 22
+      d[i]   = Math.min(255, Math.max(0, d[i]   + n))
+      d[i+1] = Math.min(255, Math.max(0, d[i+1] + n * 0.9))
+      d[i+2] = Math.min(255, Math.max(0, d[i+2] + n * 0.7))
+    }
+    ctx.putImageData(imgData, 0, 0)
+
+    // Subtle warm vignette
+    const vg = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.85)
+    vg.addColorStop(0, 'rgba(0,0,0,0)')
+    vg.addColorStop(1, 'rgba(60,40,10,0.1)')
+    ctx.fillStyle = vg
+    ctx.fillRect(0, 0, W, H)
+
+    // Ruled lines — slightly imperfect spacing and opacity
+    const lineSpacing = 28
+    const startY = 88
+    for (let y = startY; y < H - 20; y += lineSpacing) {
+      const jitter = (Math.random() - 0.5) * 0.4
+      ctx.beginPath()
+      ctx.moveTo(0, y + jitter)
+      ctx.lineTo(W, y + jitter)
+      ctx.strokeStyle = `rgba(130,165,205,${0.32 + Math.random() * 0.12})`
+      ctx.lineWidth = 0.8 + Math.random() * 0.4
+      ctx.stroke()
+    }
+
+    // Red margin line — hand-drawn feel with slight waviness
+    ctx.beginPath()
+    ctx.moveTo(68, 0)
+    for (let y = 0; y < H; y += 4) {
+      ctx.lineTo(68 + (Math.random() - 0.5) * 0.5, y)
+    }
+    ctx.strokeStyle = 'rgba(195,55,55,0.42)'
+    ctx.lineWidth = 1.2
+    ctx.stroke()
+
+    // Top margin horizontal rule
+    ctx.beginPath()
+    ctx.moveTo(0, 72)
+    ctx.lineTo(W, 72)
+    ctx.strokeStyle = 'rgba(195,55,55,0.28)'
+    ctx.lineWidth = 0.9
+    ctx.stroke()
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        borderRadius: '0 8px 8px 0',
+      }}
+    />
+  )
+}
+
 function NotebookInterior({ onClose }: { onClose: () => void }) {
   const [visible, setVisible] = useState(false)
   const [itemsVisible, setItemsVisible] = useState(false)
 
   useEffect(() => {
     const t1 = setTimeout(() => setVisible(true), 50)
-    const t2 = setTimeout(() => setItemsVisible(true), 300)
+    const t2 = setTimeout(() => setItemsVisible(true), 350)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
 
@@ -255,8 +339,9 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
     <div style={{
       opacity: visible ? 1 : 0,
       transform: visible ? 'scale(1)' : 'scale(0.96)',
-      transition: 'opacity 0.4s ease, transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)',
+      transition: 'opacity 0.45s ease, transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)',
       position: 'relative',
+      width: '100%',
     }}>
       {/* Notebook outer */}
       <div style={{
@@ -264,122 +349,88 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
         width: '100%',
         maxWidth: 800,
         margin: '0 auto',
-        minHeight: 780,
-        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+        minHeight: 860,
+        boxShadow: '0 28px 70px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.3)',
         borderRadius: '0 8px 8px 0',
         overflow: 'visible',
       }}>
         <SpiralBinding />
 
-        {/* Lined paper */}
+        {/* Paper container — canvas behind, content on top */}
         <div style={{
           position: 'relative',
           width: '100%',
-          minHeight: 780,
+          minHeight: 860,
           borderRadius: '0 8px 8px 0',
           overflow: 'hidden',
-          backgroundColor: '#f8f5ec',
-          backgroundImage: `
-            repeating-linear-gradient(
-              transparent,
-              transparent 27px,
-              rgba(140,175,210,0.5) 27px,
-              rgba(140,175,210,0.5) 28px
-            ),
-            linear-gradient(to right, transparent 60px, rgba(205,65,65,0.35) 60px, rgba(205,65,65,0.35) 61.5px, transparent 61.5px)
-          `,
-          padding: '2.5rem 2.5rem 3rem 4.5rem',
         }}>
-          {/* Paper grain overlay */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E")`,
-            opacity: 0.045,
-          }} />
-          {/* Subtle page curl shadow on right edge */}
-          <div style={{
-            position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, pointerEvents: 'none', zIndex: 0,
-            background: 'linear-gradient(to left, rgba(0,0,0,0.06) 0%, transparent 100%)',
-          }} />
+          <PaperCanvas />
 
-          {/* Header handwritten */}
-          <div style={{ marginBottom: '1.5rem', paddingLeft: '0.5rem' }}>
-            <p style={{
-              fontFamily: "'Caveat', cursive",
-              fontSize: 'clamp(1.6rem, 4vw, 2.8rem)',
-              color: '#1a1a5e',
-              lineHeight: 1,
-              letterSpacing: '-0.01em',
-            }}>
-              Flash disponibles
-            </p>
-            <p style={{
-              fontFamily: "'Caveat', cursive",
-              fontSize: '1rem',
-              color: '#c0392b',
-              marginTop: '0.2rem',
-            }}>
-              ✦ consultá por turno → @bri.t4tts
-            </p>
-          </div>
+          {/* Everything on top of canvas */}
+          <div style={{ position: 'relative', zIndex: 1, padding: '5.5rem 2.5rem 3rem 5rem' }}>
 
-          {/* Flash items scattered on the paper */}
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: 600,
-          }}>
-            {flashes.map((flash, i) => (
-              <FlashItem key={i} flash={flash} index={i} visible={itemsVisible} />
-            ))}
-
-            {/* handwritten annotations */}
-            <div style={{
-              position: 'absolute', bottom: '5%', right: '2%',
-              fontFamily: "'Caveat', cursive",
-              fontSize: '0.85rem',
-              color: '#5a5a8a',
-              transform: 'rotate(-3deg)',
-              opacity: itemsVisible ? 0.7 : 0,
-              transition: 'opacity 0.8s ease 0.6s',
-            }}>
-              1 diseño por cliente ✦
-            </div>
-
-            <div style={{
-              position: 'absolute', bottom: '18%', left: '55%',
-              fontFamily: "'Caveat', cursive",
-              fontSize: '0.8rem',
-              color: '#c0392b',
-              transform: 'rotate(4deg)',
-              opacity: itemsVisible ? 0.6 : 0,
-              transition: 'opacity 0.8s ease 0.8s',
-            }}>
-              ← hover para ver precio
-            </div>
-          </div>
-
-          {/* close button */}
-          <div style={{ textAlign: 'center', paddingTop: '1rem' }}>
-            <button
-              onClick={onClose}
-              data-hover
-              style={{
-                background: 'none',
-                border: 'none',
+            {/* Header */}
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{
                 fontFamily: "'Caveat', cursive",
-                fontSize: '1rem',
-                color: '#c0392b',
-                cursor: 'none',
-                textDecoration: 'underline',
-                opacity: 0.7,
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
-            >
-              cerrar cuaderno ↑
-            </button>
+                fontSize: 'clamp(1.8rem, 4.5vw, 3rem)',
+                color: '#1a1a6e',
+                lineHeight: 1,
+                fontWeight: 700,
+              }}>
+                Flash disponibles
+              </p>
+              <p style={{
+                fontFamily: "'Caveat', cursive",
+                fontSize: '1.05rem',
+                color: '#b02020',
+                marginTop: '0.25rem',
+                fontWeight: 600,
+              }}>
+                ✦ consultá por turno → @bri.t4tts
+              </p>
+            </div>
+
+            {/* Stickers */}
+            <div style={{ position: 'relative', width: '100%', height: 640 }}>
+              {flashes.map((flash, i) => (
+                <FlashItem key={i} flash={flash} index={i} visible={itemsVisible} />
+              ))}
+
+              <div style={{
+                position: 'absolute', bottom: '4%', right: '3%',
+                fontFamily: "'Caveat', cursive",
+                fontSize: '0.9rem',
+                color: '#4a4a8a',
+                transform: 'rotate(-2deg)',
+                opacity: itemsVisible ? 0.65 : 0,
+                transition: 'opacity 0.8s ease 0.7s',
+              }}>
+                1 diseño por cliente ✦
+              </div>
+            </div>
+
+            {/* Close */}
+            <div style={{ textAlign: 'center', paddingTop: '0.5rem' }}>
+              <button
+                onClick={onClose}
+                data-hover
+                style={{
+                  background: 'none', border: 'none',
+                  fontFamily: "'Caveat', cursive",
+                  fontSize: '1.05rem',
+                  color: '#b02020',
+                  cursor: 'none',
+                  textDecoration: 'underline',
+                  opacity: 0.7,
+                  transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+              >
+                cerrar cuaderno ↑
+              </button>
+            </div>
           </div>
         </div>
       </div>
