@@ -4,22 +4,35 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
 type Place = { x: number; y: number; s: number; rot: number } // x,s: fraction of page width · y: fraction of page height
-type FlashDef = { src: string; name: string; price: string; available: boolean; p: Place }
+type Note = { x: number; y: number; w: number } // x,w: fraction of width · y: fraction of height (snapped to a ruled line)
+type FlashDef = {
+  src: string; name: string; price: string; available: boolean
+  p: Place; note: Note; fix: 'tape' | 'dots'
+}
 
 const BASE = '/Briza-Maldonado/flash/'
 const PAGES: FlashDef[][] = [
   [
-    { src: BASE + 'mariposa-daga.png', name: 'Mariposa con Daga', price: '$50.000', available: true,  p: { x: .08, y: .24, s: .44, rot: -6 } },
-    { src: BASE + 'frutilla.png',      name: 'Frutilla',          price: '$40.000', available: true,  p: { x: .56, y: .30, s: .34, rot: 8 } },
-    { src: BASE + 'corazon-vegan.png', name: 'Corazón Vegan',     price: '$55.000', available: true,  p: { x: .26, y: .60, s: .46, rot: -4 } },
+    { src: BASE + 'mariposa-daga.png', name: 'Mariposa con daga', price: '$50.000', available: true, fix: 'tape',
+      p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
+    { src: BASE + 'frutilla.png', name: 'Frutilla', price: '$40.000', available: true, fix: 'dots',
+      p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
   ],
   [
-    { src: BASE + 'gorrion.png',       name: 'Gorrión',           price: '$60.000', available: false, p: { x: .07, y: .08, s: .44, rot: 7 } },
-    { src: BASE + 'flor-hojas.png',    name: 'Flor con Hojas',    price: '$45.000', available: true,  p: { x: .55, y: .16, s: .38, rot: -9 } },
-    { src: BASE + 'cerdo-cabra.png',   name: 'Cerdo & Cabra',     price: '$65.000', available: true,  p: { x: .22, y: .52, s: .50, rot: -4 } },
+    { src: BASE + 'corazon-vegan.png', name: 'Corazón vegan', price: '$55.000', available: true, fix: 'dots',
+      p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
+    { src: BASE + 'gorrion.png', name: 'Gorrión', price: '$60.000', available: false, fix: 'tape',
+      p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
   ],
   [
-    { src: BASE + 'rosa-alambre-flash.png', name: 'Rosa con Alambre', price: '$50.000', available: true, p: { x: .16, y: .08, s: .58, rot: 10 } },
+    { src: BASE + 'flor-hojas.png', name: 'Flor con hojas', price: '$45.000', available: true, fix: 'tape',
+      p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
+    { src: BASE + 'cerdo-cabra.png', name: 'Cerdo & cabra', price: '$65.000', available: true, fix: 'dots',
+      p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
+  ],
+  [
+    { src: BASE + 'rosa-alambre-flash.png', name: 'Rosa con alambre', price: '$50.000', available: true, fix: 'tape',
+      p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
 const SHEETS = PAGES.length + 1 // cover + pages
@@ -50,12 +63,19 @@ function useSize<T extends HTMLElement>() {
   return [ref, size] as const
 }
 
-const HOLE_X = 15
-const COIL_GAP = 27
-const lineTop = (H: number) => Math.round(H * 0.1)
-const lineGap = (H: number) => Math.max(22, Math.round(H * 0.042))
+const HOLE_X = 16
+const PAPER = '#f1eee2'
+const PEN = '#26318c'
+const GRAIN = `url(${BASE}paper-grain.png)`
+const lineTop = (H: number) => Math.round(H * 0.075)
+const lineGap = (W: number) => Math.max(21, Math.round(W * 0.062))
+const holeYs = (H: number) => Array.from({ length: 16 }, (_, k) => H * 0.04 + (k * H * 0.92) / 15)
+const snapToLine = (yFrac: number, W: number, H: number) => {
+  const gap = lineGap(W), top = lineTop(H)
+  return top + Math.max(1, Math.round((yFrac * H - top) / gap)) * gap
+}
 
-// ─── Paper ────────────────────────────────────────────────────────────────
+// ─── Paper: flat ivory, lighting, thin grey rules, slot holes ─────────────
 function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number, mirror: boolean) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   canvas.width = W * dpr
@@ -64,117 +84,59 @@ function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number
   ctx.scale(dpr, dpr)
   if (mirror) { ctx.translate(W, 0); ctx.scale(-1, 1) }
   const r = rng(seed * 7919 + 13)
-  const marginX = Math.round(W * 0.14)
 
-  ctx.fillStyle = '#f3eedf'
+  ctx.fillStyle = PAPER
   ctx.fillRect(0, 0, W, H)
 
-  const mottle = (cell: number, alpha: number) => {
-    const gw = Math.ceil(W / cell) + 2, gh = Math.ceil(H / cell) + 2
-    const g = document.createElement('canvas')
-    g.width = gw; g.height = gh
-    const gc = g.getContext('2d')!
-    const id = gc.createImageData(gw, gh)
-    for (let i = 0; i < id.data.length; i += 4) {
-      const v = 110 + r() * 60
-      id.data[i] = v + 8; id.data[i + 1] = v + 2; id.data[i + 2] = v - 10; id.data[i + 3] = 255
-    }
-    gc.putImageData(id, 0, 0)
-    ctx.save()
-    ctx.globalAlpha = alpha
-    ctx.globalCompositeOperation = 'soft-light'
-    ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(g, -cell, -cell, gw * cell, gh * cell)
-    ctx.restore()
+  // Very soft large-scale tone drift (daylight falling unevenly on the page)
+  const g = document.createElement('canvas')
+  g.width = 5; g.height = 7
+  const gc = g.getContext('2d')!
+  const id = gc.createImageData(5, 7)
+  for (let i = 0; i < id.data.length; i += 4) {
+    const v = 128 + (r() - 0.5) * 40
+    id.data[i] = v; id.data[i + 1] = v; id.data[i + 2] = v - 4; id.data[i + 3] = 255
   }
-  mottle(200, 0.55)
-  mottle(64, 0.35)
-  mottle(16, 0.22)
-
+  gc.putImageData(id, 0, 0)
   ctx.save()
-  ctx.lineCap = 'round'
-  for (let i = 0; i < (W * H) / 900; i++) {
-    const x = r() * W, y = r() * H, len = 3 + r() * 12, a = r() * Math.PI
+  ctx.globalAlpha = 0.35
+  ctx.globalCompositeOperation = 'soft-light'
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(g, -W * 0.2, -H * 0.2, W * 1.4, H * 1.4)
+  ctx.restore()
+
+  // Printed rules: thin, grey, slightly uneven ink
+  const gap = lineGap(W)
+  const x0 = HOLE_X + 14, x1 = W - 10
+  for (let y = lineTop(H); y < H - gap * 0.6; y += gap) {
+    let px = x0
+    const yy = Math.round(y) + 0.5
+    for (let x = x0 + 18; x <= x1 + 17; x += 18) {
+      const nx = Math.min(x, x1)
+      ctx.beginPath()
+      ctx.moveTo(px, yy)
+      ctx.lineTo(nx, yy)
+      ctx.strokeStyle = `rgba(92,94,96,${0.34 + r() * 0.12})`
+      ctx.lineWidth = 0.75
+      ctx.stroke()
+      px = nx
+    }
+  }
+
+  // Slot holes for the twin-loop wire
+  for (const y of holeYs(H)) {
+    const w = 7, h = 11, x = HOLE_X - w / 2, top = y - h / 2
     ctx.beginPath()
-    ctx.moveTo(x, y)
-    ctx.quadraticCurveTo(x + Math.cos(a + 0.6) * len * 0.5, y + Math.sin(a + 0.6) * len * 0.5, x + Math.cos(a) * len, y + Math.sin(a) * len)
-    ctx.strokeStyle = r() > 0.5 ? `rgba(255,255,250,${0.25 + r() * 0.3})` : `rgba(120,100,70,${0.05 + r() * 0.07})`
-    ctx.lineWidth = 0.4 + r() * 0.5
+    ctx.roundRect(x, top, w, h, 1.5)
+    ctx.fillStyle = '#35302b'
+    ctx.fill()
+    ctx.beginPath()
+    ctx.moveTo(x + 0.5, top + h + 0.6)
+    ctx.lineTo(x + w - 0.5, top + h + 0.6)
+    ctx.strokeStyle = 'rgba(255,255,255,.6)'
+    ctx.lineWidth = 0.8
     ctx.stroke()
   }
-  ctx.restore()
-
-  const inkLine = (x1: number, y1: number, x2: number, y2: number, rgb: string, base: number, width: number) => {
-    const steps = Math.max(1, Math.round(Math.hypot(x2 - x1, y2 - y1) / 14))
-    let px = x1, py = y1
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps
-      const nx = x1 + (x2 - x1) * t + (x1 === x2 ? (r() - 0.5) * 0.35 : 0)
-      const ny = y1 + (y2 - y1) * t + (y1 === y2 ? (r() - 0.5) * 0.25 : 0)
-      ctx.beginPath()
-      ctx.moveTo(px, py)
-      ctx.lineTo(nx, ny)
-      ctx.strokeStyle = `rgba(${rgb},${base * (0.7 + r() * 0.45)})`
-      ctx.lineWidth = width * (0.85 + r() * 0.3)
-      ctx.stroke()
-      px = nx; py = ny
-    }
-  }
-  const gap = lineGap(H)
-  for (let y = lineTop(H); y < H - 16; y += gap) inkLine(0, y + 0.5, W, y + 0.5, '96,142,196', 0.42, 0.9)
-  inkLine(marginX, 0, marginX, H, '208,62,72', 0.55, 1.1)
-  inkLine(marginX + 3, 0, marginX + 3, H, '208,62,72', 0.3, 0.7)
-
-  if (seed === 3 && !mirror) {
-    const cx = W * 0.82, cy = H * 0.9, cr = W * 0.13
-    ctx.save()
-    ctx.globalCompositeOperation = 'multiply'
-    const fill = ctx.createRadialGradient(cx, cy, cr * 0.2, cx, cy, cr)
-    fill.addColorStop(0, 'rgba(190,150,90,0.05)')
-    fill.addColorStop(0.85, 'rgba(170,120,60,0.09)')
-    fill.addColorStop(1, 'rgba(150,100,50,0)')
-    ctx.fillStyle = fill
-    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill()
-    for (let k = 0; k < 5; k++) {
-      ctx.beginPath()
-      const start = r() * Math.PI * 2, span = Math.PI * (1.1 + r() * 0.9)
-      for (let a = start; a < start + span; a += 0.05) {
-        const rr = cr * (0.96 + Math.sin(a * 3 + k) * 0.02 + (r() - 0.5) * 0.01)
-        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr
-        a === start ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-      }
-      ctx.strokeStyle = `rgba(140,90,40,${0.1 + r() * 0.1})`
-      ctx.lineWidth = 0.8 + r() * 1.6
-      ctx.stroke()
-    }
-    ctx.restore()
-  }
-
-  ctx.save()
-  ctx.globalCompositeOperation = 'multiply'
-  const sx = marginX + W * 0.1 + r() * W * 0.5, sy = H * (0.3 + r() * 0.5)
-  const sm = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.22)
-  sm.addColorStop(0, 'rgba(90,90,100,0.06)')
-  sm.addColorStop(1, 'rgba(90,90,100,0)')
-  ctx.fillStyle = sm
-  ctx.fillRect(0, 0, W, H)
-  ctx.restore()
-
-  for (let y = 18; y < H - 8; y += COIL_GAP) {
-    ctx.beginPath(); ctx.arc(HOLE_X, y, 4.6, 0, Math.PI * 2)
-    ctx.fillStyle = '#2a2320'; ctx.fill()
-    ctx.beginPath(); ctx.arc(HOLE_X + 0.8, y + 0.8, 4.6, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 0.8; ctx.stroke()
-  }
-
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-  const id = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const d = id.data
-  for (let i = 0; i < d.length; i += 4) {
-    const n = (r() - 0.5) * 9
-    d[i] += n; d[i + 1] += n; d[i + 2] += n * 0.9
-  }
-  ctx.putImageData(id, 0, 0)
 }
 
 function PaperCanvas({ w, h, seed, mirror = false }: { w: number; h: number; seed: number; mirror?: boolean }) {
@@ -185,174 +147,240 @@ function PaperCanvas({ w, h, seed, mirror = false }: { w: number; h: number; see
   return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
 }
 
-// ─── Wire spiral ──────────────────────────────────────────────────────────
+// Grain photographed from the real notebook, layered with overlay blend
+function Grain({ opacity = 0.9, size = 300 }: { opacity?: number; size?: number }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none',
+      backgroundImage: GRAIN, backgroundSize: `${size}px ${size}px`,
+      mixBlendMode: 'overlay', opacity,
+    }} />
+  )
+}
+
+function Paper({ W, H, seed, mirror = false }: { W: number; H: number; seed: number; mirror?: boolean }) {
+  return (
+    <>
+      <PaperCanvas w={W} h={H} seed={seed} mirror={mirror} />
+      <Grain />
+      {/* Warm daylight from the top, slight falloff at the bottom */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', mixBlendMode: 'multiply',
+        background: 'radial-gradient(130% 80% at 60% 0%, rgba(255,255,255,0) 45%, rgba(120,110,90,.10) 100%)',
+      }} />
+    </>
+  )
+}
+
+// ─── Twin-loop wire binding ───────────────────────────────────────────────
 function WireSpiral({ height }: { height: number }) {
   if (!height) return null
-  const ys: number[] = []
-  for (let y = 18; y < height - 8; y += COIL_GAP) ys.push(y)
   const o = 24
   const hx = HOLE_X + o
+  const loop = (y: number) =>
+    `M ${hx - 1} ${y} C ${hx - 12} ${y + 2}, ${o - 20} ${y + 3}, ${o - 21} ${y - 2} C ${o - 22} ${y - 7}, ${o - 4} ${y - 8}, ${o + 7} ${y - 5}`
   return (
     <svg width={o * 2 + 20} height={height}
       style={{ position: 'absolute', left: -o, top: 0, zIndex: 200, overflow: 'visible', pointerEvents: 'none' }}>
       <defs>
         <linearGradient id="wire" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3a2a22" />
-          <stop offset=".3" stopColor="#8a6a58" />
-          <stop offset=".45" stopColor="#e8d4c4" />
-          <stop offset=".6" stopColor="#6e5244" />
-          <stop offset=".82" stopColor="#b8998a" />
-          <stop offset="1" stopColor="#3a2a22" />
+          <stop offset="0" stopColor="#231c18" />
+          <stop offset=".35" stopColor="#5e4d42" />
+          <stop offset=".5" stopColor="#c9b3a2" />
+          <stop offset=".65" stopColor="#4e3f36" />
+          <stop offset="1" stopColor="#1e1814" />
         </linearGradient>
         <filter id="wireShadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="1.6" />
+          <feGaussianBlur stdDeviation="1.4" />
         </filter>
       </defs>
-      {ys.map(y => {
-        const path = `M ${hx} ${y + 1} C ${hx - 10} ${y + 11}, ${o - 22} ${y + 9}, ${o - 20} ${y - 1} C ${o - 18} ${y - 10}, ${o - 2} ${y - 11}, ${o + 6} ${y - 6}`
-        return (
-          <g key={y}>
-            <path d={path} transform="translate(3 4)" stroke="rgba(30,20,10,.35)" strokeWidth={3.6} fill="none" filter="url(#wireShadow)" />
-            <path d={path} stroke="url(#wire)" strokeWidth={3.4} fill="none" strokeLinecap="round" />
-            <path d={path} stroke="rgba(255,240,230,.5)" strokeWidth={0.8} fill="none" strokeLinecap="round" transform="translate(-.4 -.8)" />
-          </g>
-        )
-      })}
+      {holeYs(height).map(y => (
+        <g key={y}>
+          {[-3, 3].map(dy => (
+            <path key={'s' + dy} d={loop(y + dy)} transform="translate(2.5 3.5)" stroke="rgba(30,20,10,.3)" strokeWidth={2.4} fill="none" filter="url(#wireShadow)" />
+          ))}
+          {[-3, 3].map(dy => (
+            <g key={dy}>
+              <path d={loop(y + dy)} stroke="url(#wire)" strokeWidth={2.2} fill="none" strokeLinecap="round" />
+              <path d={loop(y + dy)} stroke="rgba(255,240,228,.45)" strokeWidth={0.6} fill="none" strokeLinecap="round" transform="translate(-.3 -.6)" />
+            </g>
+          ))}
+        </g>
+      ))}
     </svg>
   )
 }
 
-// ─── Masking tape ─────────────────────────────────────────────────────────
-function tornPolygon(seed: number) {
+// ─── Fasteners: masking tape and neon dot stickers ────────────────────────
+function tornEnds(seed: number) {
   const r = rng(seed)
   const pts: string[] = []
-  const teeth = 7
-  for (let i = 0; i <= teeth; i++) pts.push(`${(r() * 7).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
-  for (let i = teeth; i >= 0; i--) pts.push(`${(100 - r() * 7).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
+  const teeth = 9
+  for (let i = 0; i <= teeth; i++) pts.push(`${(r() * 3.5).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
+  for (let i = teeth; i >= 0; i--) pts.push(`${(100 - r() * 3.5).toFixed(1)}% ${(i / teeth * 100).toFixed(1)}%`)
   return `polygon(${pts.join(',')})`
 }
 
-function Tape({ seed, width, style }: { seed: number; width: number; style: React.CSSProperties }) {
+function Tape({ seed, w, h, style }: { seed: number; w: number; h: number; style: React.CSSProperties }) {
   return (
-    <div style={{ position: 'absolute', zIndex: 3, pointerEvents: 'none', filter: 'drop-shadow(0 1px 1.5px rgba(60,40,10,.25))', ...style }}>
+    <div style={{ position: 'absolute', zIndex: 3, pointerEvents: 'none', filter: 'drop-shadow(0 .6px .6px rgba(70,60,30,.22))', ...style }}>
       <div style={{
-        width, height: Math.max(14, width * 0.28),
-        clipPath: tornPolygon(seed),
+        position: 'relative', width: w, height: h, clipPath: tornEnds(seed),
         background: `
-          linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 40%, rgba(0,0,0,.04)),
-          repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 2px, rgba(0,0,0,.025) 2px 3px),
-          rgba(232,221,186,.78)
+          repeating-linear-gradient(${88 + (seed % 5)}deg, rgba(255,255,255,.07) 0 1px, rgba(120,110,70,.05) 1px 2.5px),
+          linear-gradient(160deg, rgba(255,255,245,.35), rgba(255,255,245,0) 55%),
+          rgba(236,229,190,.66)
         `,
-      }} />
+      }}>
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: GRAIN, backgroundSize: '160px', mixBlendMode: 'overlay', opacity: .7 }} />
+      </div>
     </div>
   )
 }
 
-// ─── Sticker ──────────────────────────────────────────────────────────────
-function Sticker({ flash, index, visible, W, H }: { flash: FlashDef; index: number; visible: boolean; W: number; H: number }) {
-  const [active, setActive] = useState(false)
+function Dot({ d, style }: { d: number; style: React.CSSProperties }) {
+  return (
+    <div style={{
+      position: 'absolute', zIndex: 3, pointerEvents: 'none', width: d, height: d, borderRadius: '50%',
+      background: 'linear-gradient(160deg, #6ff852, #5cf03f)',
+      boxShadow: '0 .5px .5px rgba(0,50,0,.3)',
+      ...style,
+    }}>
+      <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', backgroundImage: GRAIN, backgroundSize: '120px', mixBlendMode: 'overlay', opacity: .35 }} />
+    </div>
+  )
+}
+
+// ─── Cut-out paper flash ──────────────────────────────────────────────────
+function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W: number; H: number }) {
+  const [lift, setLift] = useState(false)
   const { p } = flash
   const size = p.s * W
-  const twoTapes = (index + flash.name.length) % 3 === 0
+  const tw = size * 0.3, th = size * 0.12, dot = Math.max(16, W * 0.07)
+  const mask: React.CSSProperties = {
+    WebkitMaskImage: `url(${flash.src})`, maskImage: `url(${flash.src})`,
+    WebkitMaskSize: 'contain', maskSize: 'contain',
+    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center', maskPosition: 'center',
+  }
 
   return (
     <div
-      onMouseEnter={() => setActive(true)}
-      onMouseLeave={() => setActive(false)}
-      onClick={() => setActive(a => !a)}
+      onMouseEnter={() => setLift(true)}
+      onMouseLeave={() => setLift(false)}
       data-hover
       style={{
         position: 'absolute', left: p.x * W, top: p.y * H, width: size, height: size,
-        opacity: visible ? 1 : 0,
-        transform: `rotate(${active ? p.rot * 0.4 : p.rot}deg) translateY(${active ? -6 : 0}px) scale(${active ? 1.06 : 1})`,
-        transition: 'transform .55s cubic-bezier(.2,.9,.25,1.15), opacity .4s ease',
-        zIndex: active ? 20 : index + 1,
+        transform: `rotate(${p.rot}deg) translateY(${lift ? -2 : 0}px)`,
+        transition: 'transform .4s ease',
+        zIndex: index + 1,
       }}
     >
       <div style={{
         position: 'absolute', inset: 0,
-        filter: active
-          ? 'drop-shadow(0 1px 1px rgba(40,25,10,.3)) drop-shadow(4px 14px 16px rgba(40,25,10,.28))'
-          : 'drop-shadow(0 .5px .6px rgba(40,25,10,.45)) drop-shadow(1.5px 3px 4px rgba(40,25,10,.18))',
-        transition: 'filter .35s ease',
+        // Paper lies flat: a tight contact shadow, barely any ambient shadow
+        filter: lift
+          ? 'drop-shadow(0 .6px .5px rgba(40,30,20,.3)) drop-shadow(1px 4px 5px rgba(60,50,30,.18))'
+          : 'drop-shadow(0 .5px .4px rgba(40,30,20,.32)) drop-shadow(.5px 1.5px 2px rgba(60,50,30,.12))',
+        transition: 'filter .4s ease',
       }}>
-        <Image src={flash.src} alt={flash.name} fill draggable={false} style={{ objectFit: 'contain' }} sizes={`${Math.round(size)}px`} />
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          WebkitMaskImage: `url(${flash.src})`, maskImage: `url(${flash.src})`,
-          WebkitMaskSize: 'contain', maskSize: 'contain',
-          WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-          WebkitMaskPosition: 'center', maskPosition: 'center',
-          background: 'linear-gradient(118deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.38) 44%, rgba(255,255,255,0) 52%, rgba(255,255,255,0) 70%, rgba(255,255,255,.14) 78%, rgba(255,255,255,0) 84%)',
-          backgroundSize: '220% 220%',
-          backgroundPosition: active ? '0% 0%' : '60% 60%',
-          transition: 'background-position .8s ease',
-          mixBlendMode: 'screen',
-        }} />
+        <Image src={flash.src} alt={flash.name} fill draggable={false} sizes={`${Math.round(size)}px`}
+          style={{ objectFit: 'contain', filter: 'contrast(1.12) saturate(.8) brightness(1.04)' }} />
+        {/* Printer-paper grain + toner sitting on the fibres */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, backgroundImage: GRAIN, backgroundSize: '220px', mixBlendMode: 'multiply', opacity: .18 }} />
       </div>
 
-      {twoTapes ? (
+      {flash.fix === 'tape' ? (
         <>
-          <Tape seed={index * 31 + 1} width={size * 0.32} style={{ top: size * 0.1, left: size * 0.02, transform: 'rotate(-38deg)' }} />
-          <Tape seed={index * 31 + 2} width={size * 0.32} style={{ bottom: size * 0.12, right: size * 0.02, transform: 'rotate(-40deg)' }} />
+          <Tape seed={index * 17 + 3} w={tw} h={th} style={{ top: size * 0.02, right: size * 0.12, transform: 'rotate(38deg)' }} />
+          <Tape seed={index * 17 + 5} w={tw} h={th} style={{ bottom: size * 0.06, left: size * 0.06, transform: 'rotate(40deg)' }} />
+          {index % 2 === 0 && <Tape seed={index * 17 + 7} w={tw * 0.9} h={th} style={{ top: size * 0.42, left: -size * 0.04, transform: 'rotate(-8deg)' }} />}
         </>
       ) : (
-        <Tape seed={index * 31 + 3} width={size * 0.42} style={{ top: size * 0.04, left: '50%', transform: `translateX(-50%) rotate(${index % 2 ? 3 : -4}deg)` }} />
+        <>
+          <Dot d={dot} style={{ top: size * 0.04, left: size * 0.34 }} />
+          <Dot d={dot} style={{ top: size * 0.46, right: size * 0.02 }} />
+          <Dot d={dot} style={{ bottom: size * 0.06, left: size * 0.12 }} />
+        </>
       )}
+    </div>
+  )
+}
 
-      <div style={{
-        position: 'absolute', top: '100%', left: '50%', marginTop: 2,
-        transform: `translateX(-50%) rotate(${-p.rot}deg)`,
-        whiteSpace: 'nowrap', textAlign: 'center', pointerEvents: 'none',
-        opacity: active ? 1 : 0, transition: 'opacity .25s ease',
-        fontFamily: "'Caveat', cursive", lineHeight: 1,
-      }}>
-        <span style={{ fontSize: Math.max(16, W * 0.052), fontWeight: 700, color: flash.available ? '#1f2a7a' : '#8a8a8a', textDecoration: flash.available ? 'none' : 'line-through' }}>
-          {flash.price}
-        </span>
-        {!flash.available && <span style={{ fontSize: Math.max(14, W * 0.042), color: '#b3262e', marginLeft: 6 }}>agotado</span>}
-      </div>
+// ─── Ballpoint notes ──────────────────────────────────────────────────────
+const hand = (gap: number): React.CSSProperties => ({
+  fontFamily: "'Nothing You Could Do', cursive",
+  fontSize: gap * 0.74, lineHeight: `${gap}px`, color: PEN,
+  textShadow: `0 0 .4px ${PEN}`, whiteSpace: 'nowrap',
+})
+
+function Underline({ w, double = false }: { w: number; double?: boolean }) {
+  return (
+    <svg width={w} height={8} viewBox={`0 0 ${w} 8`} style={{ position: 'absolute', left: -2, bottom: 1, overflow: 'visible' }}>
+      <path d={`M1 3 C ${w * 0.3} 1.5, ${w * 0.7} 4.5, ${w - 1} 2.5`} stroke={PEN} strokeWidth={1.1} fill="none" strokeLinecap="round" />
+      {double && <path d={`M${w * 0.2} 7 C ${w * 0.5} 5.5, ${w * 0.8} 7.5, ${w - 3} 6`} stroke={PEN} strokeWidth={1} fill="none" strokeLinecap="round" />}
+    </svg>
+  )
+}
+
+function FlashNote({ flash, W, H }: { flash: FlashDef; W: number; H: number }) {
+  const gap = lineGap(W)
+  const top = snapToLine(flash.note.y, W, H) - gap + 3
+  return (
+    <div style={{ position: 'absolute', left: flash.note.x * W, top, width: flash.note.w * W, transform: 'rotate(-.6deg)' }}>
+      <p style={{ ...hand(gap), position: 'relative', display: 'inline-block' }}>
+        {flash.name}
+        <Underline w={Math.min(flash.note.w * W, flash.name.length * gap * 0.36)} />
+      </p>
+      <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>
+        · {flash.available ? 'disponible ✓' : <span style={{ textDecoration: 'line-through' }}>disponible</span>}
+        {!flash.available && ' agotado'}
+      </p>
+      <p style={{ ...hand(gap), paddingLeft: gap * 0.5, position: 'relative', display: 'inline-block', fontSize: gap * 0.82 }}>
+        {flash.price}
+        {flash.available && <Underline w={gap * 2.9} />}
+      </p>
     </div>
   )
 }
 
 // ─── Faces ────────────────────────────────────────────────────────────────
-const ink = (W: number, k: number): React.CSSProperties => ({ fontFamily: "'Caveat', cursive", fontSize: W * k, lineHeight: 1 })
-
-function PageFront({ n, W, H, visible }: { n: number; W: number; H: number; visible: boolean }) {
-  const marginX = Math.round(W * 0.14)
-  const top = lineTop(H), gap = lineGap(H)
+function PageFront({ n, W, H }: { n: number; W: number; H: number }) {
+  const gap = lineGap(W)
+  const last = n === PAGES.length - 1
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
-      <PaperCanvas w={W} h={H} seed={n + 1} />
+      <Paper W={W} H={H} seed={n + 1} />
 
       {n === 0 && (
-        <div style={{ position: 'absolute', left: marginX + 12, top: top - gap * 1.35, right: 12 }}>
-          <p style={{ ...ink(W, 0.1), fontWeight: 700, color: '#1c2466', transform: 'rotate(-1.5deg)', transformOrigin: 'left', whiteSpace: 'nowrap' }}>
+        <div style={{ position: 'absolute', left: W * 0.14, top: lineTop(H) + gap * 0 - gap + 4, transform: 'rotate(-1deg)' }}>
+          <p style={{ ...hand(gap), fontSize: gap * 0.9, position: 'relative', display: 'inline-block' }}>
             Flash disponibles
+            <Underline w={gap * 6.4} double />
           </p>
-          <svg viewBox="0 0 300 14" preserveAspectRatio="none" style={{ display: 'block', width: W * 0.62, height: 10, marginTop: 2, overflow: 'visible' }}>
-            <path d="M2 8 C 60 3, 140 11, 210 6 S 290 4, 298 7" stroke="#b3262e" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity=".8" />
-          </svg>
-          <p style={{ ...ink(W, 0.055), color: '#b3262e', marginTop: gap * 0.35 }}>consultá por turno → @bri.t4tts</p>
         </div>
       )}
-      {n === 1 && (
-        <p style={{ ...ink(W, 0.05), position: 'absolute', right: W * 0.08, bottom: H * 0.1, color: '#1c2466', transform: 'rotate(-3deg)', opacity: .8 }}>
-          blackwork & traditional ✶
-        </p>
-      )}
-      {n === 2 && (
-        <div style={{ position: 'absolute', left: marginX + 12, right: 14, top: H * 0.58, color: '#1c2466' }}>
-          <p style={{ ...ink(W, 0.062), transform: 'rotate(-2deg)' }}>1 diseño por cliente ✶</p>
-          <p style={{ ...ink(W, 0.062), marginTop: gap * 0.7, transform: 'rotate(-1deg)', color: '#b3262e' }}>escribime → @bri.t4tts</p>
-          <p style={{ ...ink(W, 0.048), marginTop: gap * 0.7, opacity: .7 }}>(tocá un flash para ver el precio)</p>
+      <p style={{ ...hand(gap), position: 'absolute', right: W * 0.07, top: lineTop(H) - gap + 4, fontSize: gap * 0.6, opacity: .85 }}>
+        flash 2026
+      </p>
+
+      {PAGES[n].map((f, i) => <PaperFlash key={f.src} flash={f} index={i} W={W} H={H} />)}
+      {PAGES[n].map(f => <FlashNote key={f.src + 'n'} flash={f} W={W} H={H} />)}
+
+      {last && (
+        <div style={{ position: 'absolute', left: W * 0.12, top: snapToLine(0.8, W, H) - gap + 3, transform: 'rotate(-.8deg)' }}>
+          <p style={hand(gap)}>1 diseño por cliente ♡</p>
+          <p style={hand(gap)}>escribime → @bri.t4tts</p>
         </div>
       )}
+    </div>
+  )
+}
 
-      {PAGES[n].map((f, i) => <Sticker key={f.src} flash={f} index={i} visible={visible} W={W} H={H} />)}
-
-      <p style={{ ...ink(W, 0.045), position: 'absolute', bottom: 10, right: 16, color: '#1c2466', opacity: .55 }}>{n + 1}</p>
+function PageBack({ n, W, H }: { n: number; W: number; H: number }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <Paper W={W} H={H} seed={n + 40} mirror />
     </div>
   )
 }
@@ -361,7 +389,6 @@ function CoverFront() {
   return (
     <div style={{ position: 'absolute', inset: 0, borderRadius: '0 14px 14px 0', overflow: 'hidden', background: '#b7c1d7' }}>
       <Image src="/Briza-Maldonado/flash/cover.jpg" alt="Cuaderno de flashes" fill priority draggable={false} style={{ objectFit: 'cover' }} sizes="(max-width: 600px) 90vw, 460px" />
-      {/* cardboard edge + soft sheen of a laminated cover */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 'inherit',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12), inset -2px -2px 3px rgba(0,0,0,.12), inset 2px 2px 2px rgba(255,255,255,.35)',
@@ -376,10 +403,9 @@ function CoverBack() {
   return (
     <div style={{
       position: 'absolute', inset: 0, borderRadius: '14px 0 0 14px', overflow: 'hidden',
-      backgroundColor: '#bcc5dc',
-      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E")`,
-      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.1)',
+      backgroundColor: '#bcc5dc', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.1)',
     }}>
+      <Grain opacity={.6} />
       <Holes right />
     </div>
   )
@@ -387,15 +413,13 @@ function CoverBack() {
 
 function Holes({ right = false }: { right?: boolean }) {
   const [ref, { h }] = useSize<HTMLDivElement>()
-  const ys: number[] = []
-  for (let y = 18; y < h - 8; y += COIL_GAP) ys.push(y)
   return (
     <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      {ys.map(y => (
+      {h > 0 && holeYs(h).map(y => (
         <div key={y} style={{
-          position: 'absolute', top: y - 4.6, [right ? 'right' : 'left']: HOLE_X - 4.6,
-          width: 9.2, height: 9.2, borderRadius: '50%', background: '#2a2320',
-          boxShadow: '.8px .8px 0 rgba(255,255,255,.5)',
+          position: 'absolute', top: y - 5.5, [right ? 'right' : 'left']: HOLE_X - 3.5,
+          width: 7, height: 11, borderRadius: 1.5, background: '#2a2320',
+          boxShadow: '0 .8px 0 rgba(255,255,255,.5)',
         }} />
       ))}
     </div>
@@ -537,7 +561,7 @@ export default function Flash() {
             {/* Page block + back cover under the right side */}
             <div style={{ position: 'absolute', inset: 0, transform: 'translate(7px, 8px)', background: '#aeb9d3', borderRadius: '0 14px 14px 0', boxShadow: '0 30px 60px rgba(40,30,60,.35), 0 8px 18px rgba(40,30,60,.25)' }} />
             {turned < SHEETS - 1 && [5, 3.5, 2].map(o => (
-              <div key={o} style={{ position: 'absolute', top: 4, bottom: 4, left: 0, right: 4, transform: `translate(${o}px, ${o * 0.6}px)`, background: o === 5 ? '#e3dcc8' : '#eee8d6', borderRadius: '0 4px 4px 0', boxShadow: 'inset -1px -1px 0 rgba(0,0,0,.08)' }} />
+              <div key={o} style={{ position: 'absolute', top: 4, bottom: 4, left: 0, right: 4, transform: `translate(${o}px, ${o * 0.6}px)`, background: o === 5 ? '#dedbcd' : '#ebe8db', borderRadius: '0 16px 16px 0', boxShadow: 'inset -1px -1px 0 rgba(0,0,0,.08)' }} />
             ))}
             {/* Left-side block once opened (visible on wide screens) */}
             {open && (
@@ -576,16 +600,13 @@ export default function Flash() {
                       animation: peek ? 'nbPeek 4.5s ease-in-out 1.5s infinite' : 'none',
                     }}>
                       {/* Front */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', borderRadius: i === 0 ? '0 14px 14px 0' : '0 4px 4px 0', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverFront /> : <PageFront n={i - 1} W={W} H={H} visible={turned >= i - 1} />}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.25 + shade * 0.3}) 0, rgba(40,25,10,${0.06 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)`, mixBlendMode: 'multiply' }} />
-                        {i === turned && i > 0 && i < SHEETS - 1 && !drag && (
-                          <div style={{ position: 'absolute', right: 0, bottom: 0, width: 30, height: 30, pointerEvents: 'none', background: 'linear-gradient(315deg, rgba(0,0,0,0) 50%, #d8d0b8 50%, #f7f2e3 72%, #e6dec8 100%)', boxShadow: '-2px -2px 5px rgba(0,0,0,.12)', borderTopLeftRadius: 2, animation: hinted ? 'none' : 'nbCorner 2.4s ease-in-out infinite' }} />
-                        )}
+                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
+                        {i === 0 ? <CoverFront /> : <PageFront n={i - 1} W={W} H={H} />}
+                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)`, mixBlendMode: 'multiply' }} />
                       </div>
                       {/* Back */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: i === 0 ? '14px 0 0 14px' : '4px 0 0 4px', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverBack /> : <PaperCanvas w={W} h={H} seed={i + 40} mirror />}
+                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
+                        {i === 0 ? <CoverBack /> : <PageBack n={i - 1} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)`, mixBlendMode: 'multiply' }} />
                       </div>
                     </div>
@@ -600,9 +621,8 @@ export default function Flash() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+        @font-face { font-family: 'Nothing You Could Do'; src: url('/Briza-Maldonado/flash/nothing-you-could-do.ttf') format('truetype'); font-display: swap; }
         @keyframes nbPeek { 0%, 70%, 100% { transform: rotateY(0deg) } 80% { transform: rotateY(-16deg) } 88% { transform: rotateY(-4deg) } }
-        @keyframes nbCorner { 0%, 100% { width: 22px; height: 22px } 50% { width: 38px; height: 38px } }
       `}</style>
     </section>
   )
