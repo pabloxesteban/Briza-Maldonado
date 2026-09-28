@@ -1,17 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const links = [
-  { label: 'Obra', href: '#obra' },
-  { label: 'Flash', href: '#flash' },
-  { label: 'Proceso', href: '#proceso' },
-  { label: 'Turno', href: '#turno' },
+  { label: 'Obra',    href: '/obra' },
+  { label: 'Flash',   href: '/flash' },
+  { label: 'Proceso', href: '/proceso' },
+  { label: 'Turno',   href: '/turno' },
 ]
 
 export default function Navbar() {
   const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 2000)
@@ -19,6 +22,10 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => { clearTimeout(t); window.removeEventListener('scroll', onScroll) }
   }, [])
+
+  // On sub-pages, appear immediately
+  const isSubPage = pathname !== '/'
+  const show = isSubPage || visible
 
   return (
     <nav
@@ -30,18 +37,18 @@ export default function Navbar() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        opacity: visible ? 1 : 0,
+        opacity: show ? 1 : 0,
         transition: 'opacity 0.8s ease, background 0.4s ease, backdrop-filter 0.4s',
-        pointerEvents: visible ? 'all' : 'none',
+        pointerEvents: show ? 'all' : 'none',
         background: scrolled ? 'rgba(245,232,238,0.85)' : 'transparent',
         backdropFilter: scrolled ? 'blur(16px)' : 'none',
         WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none',
         borderBottom: scrolled ? '1px solid rgba(20,14,14,0.07)' : 'none',
       }}
     >
-      {/* Logo */}
-      <a
-        href="#"
+      {/* Logo → home */}
+      <Link
+        href="/"
         style={{
           fontFamily: "'Playfair Display', serif",
           fontSize: '0.9rem',
@@ -55,35 +62,37 @@ export default function Navbar() {
         }}
       >
         Briza <span style={{ color: 'var(--mark)', fontSize: '0.65rem' }}>✦</span> Maldonado
-      </a>
+      </Link>
 
       {/* Links */}
       <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
-        {links.map(l => (
-          <a
-            key={l.href}
-            href={l.href}
-            style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--ink-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-              position: 'relative',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLElement
-              el.style.color = 'var(--mark)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLElement
-              el.style.color = 'var(--ink-muted)'
-            }}
-          >
-            {l.label}
-          </a>
-        ))}
+        {links.map(l => {
+          const active = pathname === l.href || pathname === l.href + '/'
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              style={{
+                fontSize: '0.6rem',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: active ? 'var(--mark)' : 'var(--ink-muted)',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                borderBottom: active ? '1px solid var(--mark)' : '1px solid transparent',
+                paddingBottom: '1px',
+              }}
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--mark)'
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--ink-muted)'
+              }}
+            >
+              {l.label}
+            </Link>
+          )
+        })}
         <a
           href="https://instagram.com/bri.t4tts"
           target="_blank"
