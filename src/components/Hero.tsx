@@ -170,7 +170,7 @@ export default function Hero() {
           fill priority
           style={{
             objectFit: 'cover',
-            objectPosition: '50% 60%',
+            objectPosition: '75% 60%',
             opacity: 0,
             animation: 'fadeIn 2.2s ease 0.5s forwards',
           }}
