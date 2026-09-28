@@ -4,8 +4,8 @@ import SmoothScroll from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
   title: 'Briza Maldonado — Tatuajes Buenos Aires',
-  description: 'Tatuadora basada en Palermo, Buenos Aires. Blackwork, fineline y ornamental. Del iPad a la piel.',
-  keywords: 'tatuajes, blackwork, fineline, ornamental, Buenos Aires, Palermo, tatuadora, flash tattoo',
+  description: 'Tatuadora basada en Palermo, Buenos Aires. Traditional, black & white y color.',
+  keywords: 'tatuajes, traditional, blackwork, color, Buenos Aires, Palermo, tatuadora, flash tattoo',
   openGraph: {
     title: 'Briza Maldonado ✦',
     description: 'Del iPad a la piel. Palermo, Buenos Aires.',

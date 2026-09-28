@@ -7,11 +7,11 @@ import ScrollProgress from '@/components/ScrollProgress'
 
 export const metadata: Metadata = {
   title: 'Obra — Briza Maldonado',
-  description: 'Portfolio de tatuajes de Briza Maldonado. Blackwork, fineline, ornamental y traditional. Trabajos únicos hechos en Palermo, Buenos Aires.',
-  keywords: 'tatuajes blackwork, fineline tattoo, ornamental tattoo, portfolio tatuajes, Buenos Aires, Palermo',
+  description: 'Portfolio de tatuajes de Briza Maldonado. Traditional, black & white y color. Trabajos únicos hechos en Palermo, Buenos Aires.',
+  keywords: 'traditional tattoo, tatuajes blackwork, tatuajes color, portfolio tatuajes, Buenos Aires, Palermo',
   openGraph: {
     title: 'Obra — Briza Maldonado',
-    description: 'Portfolio de tatuajes únicos. Blackwork, fineline y ornamental. Palermo, Buenos Aires.',
+    description: 'Portfolio de tatuajes únicos. Traditional, black & white y color. Palermo, Buenos Aires.',
     type: 'website',
   },
 }

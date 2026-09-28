@@ -153,7 +153,7 @@ export default function About() {
 
         {/* Tags */}
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-          {['Vegana ✦', 'Blackwork', 'Fineline', 'Ornamental', 'Palermo'].map(tag => (
+          {['Vegana ✦', 'Traditional', 'Black & white', 'Color', 'Palermo'].map(tag => (
             <span
               key={tag}
               style={{

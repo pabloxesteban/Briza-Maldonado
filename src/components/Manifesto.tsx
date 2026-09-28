@@ -90,7 +90,7 @@ export default function Manifesto() {
             lineHeight: 1.8,
           }}
         >
-          Blackwork · Fineline · Ornamental<br />
+          Traditional · Black &amp; white · Color<br />
           Palermo, Buenos Aires
         </p>
       </div>

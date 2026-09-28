@@ -23,7 +23,7 @@ const exhibition = [
   {
     num: '01',
     title: 'La Garza',
-    style: 'Blackwork',
+    style: 'Traditional',
     placement: 'Antebrazo',
     note: 'Alas abiertas, plumas en capas. Un vuelo permanente.',
     src: '/Briza-Maldonado/portfolio/garza.jpg',
@@ -31,7 +31,7 @@ const exhibition = [
   {
     num: '02',
     title: 'Polilla 777',
-    style: 'Ornamental',
+    style: 'Traditional',
     placement: 'Esterno',
     note: 'Grande, oscura, simétrica. El centro del cuerpo.',
     src: '/Briza-Maldonado/portfolio/polilla-esterno.jpg',
@@ -47,7 +47,7 @@ const exhibition = [
   {
     num: '04',
     title: 'El Lobo',
-    style: 'Blackwork',
+    style: 'Traditional',
     placement: 'Brazo',
     note: 'Feroz, peludo, libre. Sin domesticar.',
     src: '/Briza-Maldonado/portfolio/lobo.jpg',
@@ -63,18 +63,18 @@ const exhibition = [
 ]
 
 const gridWork = [
-  { title: 'Alambre y Corazón', style: 'Blackwork',    src: '/Briza-Maldonado/portfolio/alambre-daga-corazon.jpg' },
-  { title: 'Cocodrilo',          style: 'Blackwork',    src: '/Briza-Maldonado/portfolio/cocodrilo.jpg' },
-  { title: 'Lockets de Gatos',   style: 'Fineline',     src: '/Briza-Maldonado/portfolio/lockets-gatos.jpg' },
-  { title: 'Mariposas',          style: 'Blackwork',    src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg' },
-  { title: 'Moño y Corazón',     style: 'Ornamental',   src: '/Briza-Maldonado/portfolio/mono-corazon.jpg' },
+  { title: 'Alambre y Corazón', style: 'Color',    src: '/Briza-Maldonado/portfolio/alambre-daga-corazon.jpg' },
+  { title: 'Cocodrilo',          style: 'Black & white',    src: '/Briza-Maldonado/portfolio/cocodrilo.jpg' },
+  { title: 'Lockets de Gatos',   style: 'Color',     src: '/Briza-Maldonado/portfolio/lockets-gatos.jpg' },
+  { title: 'Mariposas',          style: 'Traditional',    src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg' },
+  { title: 'Moño y Corazón',     style: 'Black & white',   src: '/Briza-Maldonado/portfolio/mono-corazon.jpg' },
   { title: 'Rosa',               style: 'Traditional',  src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg' },
-  { title: 'Espinas',            style: 'Fineline',     src: '/Briza-Maldonado/portfolio/espinas.jpg' },
-  { title: 'Mariposa',           style: 'Blackwork',    src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg' },
-  { title: 'Conejo',             style: 'Illustrativo', src: '/Briza-Maldonado/portfolio/conejo.jpg' },
-  { title: 'Elefante Skater',    style: 'Cute',         src: '/Briza-Maldonado/portfolio/elefante-skate.jpg' },
-  { title: 'Pingüino',           style: 'Fineline',     src: '/Briza-Maldonado/portfolio/pinguino.jpg' },
-  { title: 'Vegan',              style: 'Lettering',    src: '/Briza-Maldonado/portfolio/vegan-script.jpg' },
+  { title: 'Espinas',            style: 'Black & white',     src: '/Briza-Maldonado/portfolio/espinas.jpg' },
+  { title: 'Mariposa',           style: 'Traditional',    src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg' },
+  { title: 'Conejo',             style: 'Black & white', src: '/Briza-Maldonado/portfolio/conejo.jpg' },
+  { title: 'Elefante Skater',    style: 'Black & white',         src: '/Briza-Maldonado/portfolio/elefante-skate.jpg' },
+  { title: 'Pingüino',           style: 'Black & white',     src: '/Briza-Maldonado/portfolio/pinguino.jpg' },
+  { title: 'Vegan',              style: 'Black & white',    src: '/Briza-Maldonado/portfolio/vegan-script.jpg' },
 ]
 
 const allWork = [
@@ -674,7 +674,7 @@ export default function Portfolio() {
                 fontSize: '0.42rem', letterSpacing: '0.5em', textTransform: 'uppercase',
                 color: 'rgba(250,232,240,0.08)', whiteSpace: 'nowrap', paddingRight: '4rem',
               }}>
-                Blackwork · Fineline · Ornamental · Traditional · Illustrativo ✦&nbsp;
+                Traditional · Black &amp; white · Color ✦&nbsp;
               </span>
             ))}
           </div>

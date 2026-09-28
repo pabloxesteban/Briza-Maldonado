@@ -77,7 +77,7 @@ export default function ImageStrip() {
           gap: '1.5rem',
           alignItems: 'center',
         }}>
-          {['Blackwork', '✦', 'Fineline', '✦', 'Ornamental', '✦', 'Traditional'].map((t, i) => (
+          {['Traditional', '✦', 'Black & white', '✦', 'Color'].map((t, i) => (
             <span key={i} style={{
               fontSize: '0.5rem',
               letterSpacing: '0.3em',

@@ -37,7 +37,6 @@ const PAGES: FlashDef[][] = [
       p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
-const SHEETS = PAGES.length + 1 // cover + pages
 const RATIO = 1100 / 1680 // width / height of the real notebook
 
 function rng(seed: number) {
@@ -231,7 +230,7 @@ function Dot({ d, style }: { d: number; style: React.CSSProperties }) {
 }
 
 // ─── Cut-out paper flash ──────────────────────────────────────────────────
-function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W: number; H: number }) {
+function PaperFlash({ flash, index, W, H, mirror = false }: { flash: FlashDef; index: number; W: number; H: number; mirror?: boolean }) {
   const [lift, setLift] = useState(false)
   const { p } = flash
   const size = p.s * W
@@ -245,7 +244,7 @@ function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W:
       onMouseLeave={() => setLift(false)}
       data-hover
       style={{
-        position: 'absolute', left: p.x * W, top: p.y * H, width: bw, height: bh,
+        position: 'absolute', left: mirror ? W - p.x * W - bw : p.x * W, top: p.y * H, width: bw, height: bh,
         transform: `rotate(${p.rot}deg) translateY(${lift ? -2 : 0}px)`,
         transition: 'transform .4s ease',
         zIndex: index + 1,
@@ -286,11 +285,11 @@ function Underline({ w, double = false }: { w: number; double?: boolean }) {
   )
 }
 
-function FlashNote({ flash, W, H }: { flash: FlashDef; W: number; H: number }) {
+function FlashNote({ flash, W, H, mirror = false }: { flash: FlashDef; W: number; H: number; mirror?: boolean }) {
   const gap = lineGap(W)
   const top = snapToLine(flash.note.y, W, H) - gap + 3
   return (
-    <div style={{ position: 'absolute', left: flash.note.x * W, top, width: flash.note.w * W, transform: 'rotate(-.6deg)' }}>
+    <div style={{ position: 'absolute', left: (mirror ? 1 - flash.note.x - flash.note.w - 0.02 : flash.note.x) * W, top, width: flash.note.w * W, transform: 'rotate(-.6deg)' }}>
       <p style={{ ...hand(gap), position: 'relative', display: 'inline-block' }}>
         {flash.name}
         <Underline w={Math.min(flash.note.w * W, flash.name.length * gap * 0.36)} />
@@ -309,30 +308,31 @@ function FlashNote({ flash, W, H }: { flash: FlashDef; W: number; H: number }) {
 }
 
 // ─── Faces ────────────────────────────────────────────────────────────────
-function PageFront({ n, W, H }: { n: number; W: number; H: number }) {
+// mirror: the page sits on the left of a spread (back of a sheet), so the binding is on its right
+function PageFront({ n, W, H, mirror = false }: { n: number; W: number; H: number; mirror?: boolean }) {
   const gap = lineGap(W)
   const last = n === PAGES.length - 1
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
-      <Paper W={W} H={H} seed={n + 1} />
+      <Paper W={W} H={H} seed={n + 1} mirror={mirror} />
 
       {n === 0 && (
-        <div style={{ position: 'absolute', left: W * 0.14, top: lineTop(H) + gap * 0 - gap + 4, transform: 'rotate(-1deg)' }}>
+        <div style={{ position: 'absolute', left: W * (mirror ? 0.07 : 0.14), top: lineTop(H) + gap * 0 - gap + 4, transform: 'rotate(-1deg)' }}>
           <p style={{ ...hand(gap), fontSize: gap * 0.9, position: 'relative', display: 'inline-block' }}>
             Flash disponibles
             <Underline w={gap * 6.4} double />
           </p>
         </div>
       )}
-      <p style={{ ...hand(gap), position: 'absolute', right: W * 0.07, top: lineTop(H) - gap + 4, fontSize: gap * 0.6, opacity: .85 }}>
+      <p style={{ ...hand(gap), position: 'absolute', [mirror ? 'left' : 'right']: W * 0.07, top: lineTop(H) - gap + 4, fontSize: gap * 0.6, opacity: .85 }}>
         flash 2026
       </p>
 
-      {PAGES[n].map((f, i) => <PaperFlash key={f.src} flash={f} index={i} W={W} H={H} />)}
-      {PAGES[n].map(f => <FlashNote key={f.src + 'n'} flash={f} W={W} H={H} />)}
+      {PAGES[n].map((f, i) => <PaperFlash key={f.src} flash={f} index={i} W={W} H={H} mirror={mirror} />)}
+      {PAGES[n].map(f => <FlashNote key={f.src + 'n'} flash={f} W={W} H={H} mirror={mirror} />)}
 
       {last && (
-        <div style={{ position: 'absolute', left: W * 0.12, top: snapToLine(0.8, W, H) - gap + 3, transform: 'rotate(-.8deg)' }}>
+        <div style={{ position: 'absolute', left: W * (mirror ? 0.07 : 0.12), top: snapToLine(0.8, W, H) - gap + 3, transform: 'rotate(-.8deg)' }}>
           <p style={hand(gap)}>1 diseño por cliente ♡</p>
           <p style={hand(gap)}>escribime → @bri.t4tts</p>
         </div>
@@ -341,7 +341,7 @@ function PageFront({ n, W, H }: { n: number; W: number; H: number }) {
   )
 }
 
-function PageBack({ n, W, H }: { n: number; W: number; H: number }) {
+function PageBlank({ n, W, H }: { n: number; W: number; H: number }) {
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <Paper W={W} H={H} seed={n + 40} mirror />
@@ -405,18 +405,26 @@ export default function Flash() {
   const W = Math.max(0, Math.min(460, wrap.w - 30))
   const H = W / RATIO
   const spread = wrap.w >= W * 2 + 80
+  // Desktop spreads use both sides of each sheet, like a real notebook; mobile shows one side
+  const perSheet = spread ? 2 : 1
+  const SHEETS = 1 + Math.ceil(PAGES.length / perSheet)
+  // On a spread the last sheet can also be turned, revealing the inside of the back cover
+  const MAX_TURN = spread ? SHEETS : SHEETS - 1
+  const frontPage = (i: number) => (i - 1) * perSheet
+  const backPage = (i: number) => (spread ? (i - 1) * 2 + 1 : -1)
+  useEffect(() => { setTurned(0); setDrag(null) }, [spread])
   const open = turned > 0
 
   const go = useCallback((dir: 1 | -1) => {
     setTurned(t => {
-      const next = Math.min(SHEETS - 1, Math.max(0, t + dir))
+      const next = Math.min(MAX_TURN, Math.max(0, t + dir))
       if (next !== t) {
         setMoving(dir === 1 ? t : t - 1)
         setHinted(true)
       }
       return next
     })
-  }, [])
+  }, [MAX_TURN])
 
   useEffect(() => {
     if (moving === null) return
@@ -459,7 +467,7 @@ export default function Flash() {
       }
       const dir: 1 | -1 = dx < 0 ? 1 : -1
       const sheet = dir === 1 ? turned : turned - 1
-      if (sheet < 0 || sheet > SHEETS - 2) { gesture.current = null; return }
+      if (sheet < 0 || sheet > MAX_TURN - 1) { gesture.current = null; return }
       g.dragging = true; g.sheet = sheet; g.dir = dir
       stageRef.current?.setPointerCapture(e.pointerId)
     }
@@ -523,7 +531,7 @@ export default function Flash() {
           }}>
             {/* Page block + back cover under the right side */}
             <div style={{ position: 'absolute', inset: 0, transform: 'translate(7px, 8px)', background: '#aeb9d3', borderRadius: '0 14px 14px 0', boxShadow: '0 30px 60px rgba(40,30,60,.35), 0 8px 18px rgba(40,30,60,.25)' }} />
-            {turned < SHEETS - 1 && [5, 3.5, 2].map(o => (
+            {turned < SHEETS && [5, 3.5, 2].slice(0, SHEETS - Math.max(1, turned)).map(o => (
               <div key={o} style={{ position: 'absolute', top: 4, bottom: 4, left: 0, right: 4, transform: `translate(${o}px, ${o * 0.6}px)`, background: o === 5 ? '#dedbcd' : '#ebe8db', borderRadius: '0 16px 16px 0', boxShadow: 'inset -1px -1px 0 rgba(0,0,0,.08)' }} />
             ))}
             {/* Left-side block once opened (visible on wide screens) */}
@@ -573,12 +581,12 @@ export default function Flash() {
                     }}>
                       {/* Front */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'visible' : 'hidden', transition: flipAt, borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverFront /> : <PageFront n={i - 1} W={W} H={H} />}
+                        {i === 0 ? <CoverFront /> : <PageFront n={frontPage(i)} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)` }} />
                       </div>
                       {/* Back */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'hidden' : 'visible', transition: flipAt, transform: 'rotateY(180deg) translateZ(.5px)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverBack /> : <PageBack n={i - 1} W={W} H={H} />}
+                        {i === 0 ? <CoverBack /> : backPage(i) >= 0 && backPage(i) < PAGES.length ? <PageFront n={backPage(i)} W={W} H={H} mirror /> : <PageBlank n={i - 1} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)` }} />
                       </div>
                     </div>
