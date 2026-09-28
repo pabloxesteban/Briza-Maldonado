@@ -15,7 +15,12 @@
   --white: #FAE8F0;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+* { margin: 0; padding: 0; box-sizing: border-box; cursor: none; -webkit-tap-highlight-color: transparent; }
+
+@media (pointer: coarse), (hover: none) {
+  * { cursor: auto; }
+  .custom-cursor-root { display: none !important; }
+}
 
 html {
   background-color: var(--bg);

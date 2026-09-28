@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
 const flashes = [
-  { src: '/Briza-Maldonado/flash/mariposa-daga.png',     name: 'Mariposa con Daga', style: 'Blackwork',   price: '$50.000', available: true,  top: '8%',  left: '12%',  rot: -8,  size: 160 },
-  { src: '/Briza-Maldonado/flash/corazon-vegan.png',      name: 'Corazón Vegan',     style: 'Traditional', price: '$55.000', available: true,  top: '6%',  left: '55%',  rot: 5,   size: 130 },
-  { src: '/Briza-Maldonado/flash/frutilla.png',           name: 'Frutilla',          style: 'Blackwork',   price: '$40.000', available: true,  top: '24%', left: '38%',  rot: -12, size: 115 },
-  { src: '/Briza-Maldonado/flash/flor-hojas.png',         name: 'Flor con Hojas',    style: 'Traditional', price: '$45.000', available: true,  top: '28%', left: '72%',  rot: 9,   size: 125 },
-  { src: '/Briza-Maldonado/flash/gorrion.png',            name: 'Gorrión',           style: 'Traditional', price: '$60.000', available: false, top: '44%', left: '5%',   rot: 6,   size: 140 },
-  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre',  style: 'Blackwork',   price: '$50.000', available: true,  top: '50%', left: '48%',  rot: -7,  size: 135 },
-  { src: '/Briza-Maldonado/flash/cerdo-cabra.png',        name: 'Cerdo & Cabra',     style: 'Traditional', price: '$65.000', available: true,  top: '66%', left: '22%',  rot: 11,  size: 145 },
+  // Top row: left · center · right
+  { src: '/Briza-Maldonado/flash/mariposa-daga.png',     name: 'Mariposa con Daga', style: 'Blackwork',   price: '$50.000', available: true,  top: '2%',  left: '3%',   rot: -6,  size: 155 },
+  { src: '/Briza-Maldonado/flash/frutilla.png',           name: 'Frutilla',          style: 'Blackwork',   price: '$40.000', available: true,  top: '0%',  left: '38%',  rot: 8,   size: 115 },
+  { src: '/Briza-Maldonado/flash/corazon-vegan.png',      name: 'Corazón Vegan',     style: 'Traditional', price: '$55.000', available: true,  top: '4%',  left: '70%',  rot: -5,  size: 130 },
+  // Middle row: left · right
+  { src: '/Briza-Maldonado/flash/gorrion.png',            name: 'Gorrión',           style: 'Traditional', price: '$60.000', available: false, top: '40%', left: '18%',  rot: 7,   size: 140 },
+  { src: '/Briza-Maldonado/flash/flor-hojas.png',         name: 'Flor con Hojas',    style: 'Traditional', price: '$45.000', available: true,  top: '36%', left: '60%',  rot: -9,  size: 125 },
+  // Bottom row: left · right
+  { src: '/Briza-Maldonado/flash/cerdo-cabra.png',        name: 'Cerdo & Cabra',     style: 'Traditional', price: '$65.000', available: true,  top: '65%', left: '5%',   rot: -4,  size: 145 },
+  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre',  style: 'Blackwork',   price: '$50.000', available: true,  top: '62%', left: '52%',  rot: 10,  size: 135 },
 ]
 
 function SpiralBinding() {
@@ -250,7 +253,7 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
         width: '100%',
         maxWidth: 800,
         margin: '0 auto',
-        minHeight: 700,
+        minHeight: 780,
         boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
         borderRadius: '0 8px 8px 0',
         overflow: 'visible',
@@ -261,7 +264,7 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
         <div style={{
           position: 'relative',
           width: '100%',
-          minHeight: 700,
+          minHeight: 780,
           borderRadius: '0 8px 8px 0',
           overflow: 'hidden',
           backgroundColor: '#f7f4ee',
@@ -302,7 +305,7 @@ function NotebookInterior({ onClose }: { onClose: () => void }) {
           <div style={{
             position: 'relative',
             width: '100%',
-            height: 520,
+            height: 600,
           }}>
             {flashes.map((flash, i) => (
               <FlashItem key={i} flash={flash} index={i} visible={itemsVisible} />
@@ -382,31 +385,16 @@ export default function Flash() {
       }}
     >
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        marginBottom: '4rem',
-      }}>
-        <h2 className="font-display" style={{
-          fontSize: 'clamp(0.6rem, 1vw, 0.75rem)',
-          letterSpacing: '0.35em',
-          textTransform: 'uppercase',
-          color: 'var(--ink-muted)',
+      <div style={{ marginBottom: '4rem' }}>
+        <p className="font-display" style={{
+          fontSize: 'clamp(2.5rem, 6vw, 6rem)',
+          lineHeight: 1,
+          letterSpacing: '-0.03em',
+          color: 'var(--ink)',
+          fontStyle: 'italic',
         }}>
-          ✦ Flash
-        </h2>
-        <div style={{ textAlign: 'right' }}>
-          <p className="font-display" style={{
-            fontSize: 'clamp(2.5rem, 6vw, 6rem)',
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
-            color: 'var(--ink)',
-            fontStyle: 'italic',
-          }}>
-            Disponibles
-          </p>
-        </div>
+          Flash disponibles
+        </p>
       </div>
 
       {/* Notebook */}
