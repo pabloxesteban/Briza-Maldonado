@@ -261,7 +261,7 @@ export default function Portfolio() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: '340px',
+        gridAutoRows: '460px',
         gap: '3px',
       }}>
         {gallery.map((item, i) => (
