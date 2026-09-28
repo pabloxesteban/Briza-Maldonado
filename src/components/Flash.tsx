@@ -565,7 +565,8 @@ export default function Flash() {
               <div key={o} style={{ position: 'absolute', top: 4, bottom: 4, left: 0, right: 4, transform: `translate(${o}px, ${o * 0.6}px)`, background: o === 5 ? '#dedbcd' : '#ebe8db', borderRadius: '0 16px 16px 0', boxShadow: 'inset -1px -1px 0 rgba(0,0,0,.08)' }} />
             ))}
             {/* Left-side block once opened (visible on wide screens) */}
-            {open && (
+            {/* The cover's thickness on the left appears only once the cover has landed, or it reads as a second cover */}
+            {open && moving !== 0 && drag?.sheet !== 0 && (
               <div style={{ position: 'absolute', top: 0, bottom: 0, right: '100%', width: W, transform: 'translate(-7px, 8px)', background: '#aeb9d3', borderRadius: '14px 0 0 14px', boxShadow: '0 30px 60px rgba(40,30,60,.3)' }} />
             )}
 
