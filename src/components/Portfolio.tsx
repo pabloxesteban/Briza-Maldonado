@@ -3,6 +3,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 
+function useMobile() {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return mobile
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const exhibition = [
@@ -74,6 +85,8 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
   index: number; onClose: () => void; onPrev: () => void; onNext: () => void
 }) {
   const item = allWork[index]
+  const mobile = useMobile()
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -93,57 +106,73 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
       animation: 'fadeIn 0.2s ease', cursor: 'none',
     }}>
       <button onClick={onClose} data-hover style={{
-        position: 'absolute', top: '2rem', right: '2.5rem',
-        background: 'none', border: 'none', color: 'rgba(250,232,240,0.2)',
+        position: 'absolute', top: '1.5rem', right: '1.5rem',
+        background: 'none', border: 'none', color: 'rgba(250,232,240,0.3)',
         fontSize: '0.48rem', letterSpacing: '0.3em', textTransform: 'uppercase',
         cursor: 'none', zIndex: 10, transition: 'color 0.2s',
+        padding: '0.5rem',
       }}
         onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.2)')}
-      >esc · cerrar</button>
+        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.3)')}
+      >✕</button>
 
       <div style={{
-        position: 'absolute', top: '2rem', left: '2.5rem',
-        fontSize: '0.45rem', letterSpacing: '0.3em', color: 'rgba(250,232,240,0.14)',
+        position: 'absolute', top: '1.5rem', left: '1.5rem',
+        fontSize: '0.42rem', letterSpacing: '0.25em', color: 'rgba(250,232,240,0.14)',
         fontVariantNumeric: 'tabular-nums',
       }}>
         {String(index + 1).padStart(2, '0')} / {String(allWork.length).padStart(2, '0')}
       </div>
 
+      {/* prev/next — sides on desktop, bottom on mobile */}
       {(['prev', 'next'] as const).map(dir => (
         <button key={dir} onClick={e => { e.stopPropagation(); dir === 'prev' ? onPrev() : onNext() }}
           data-hover style={{
-            position: 'absolute', [dir === 'prev' ? 'left' : 'right']: '1.5rem',
-            top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', color: 'rgba(250,232,240,0.1)',
-            fontSize: '1.6rem', cursor: 'none', padding: '1.2rem',
+            position: 'absolute',
+            ...(mobile
+              ? { bottom: '1.2rem', [dir === 'prev' ? 'left' : 'right']: '2rem', top: 'auto', transform: 'none' }
+              : { [dir === 'prev' ? 'left' : 'right']: '1.5rem', top: '50%', transform: 'translateY(-50%)' }
+            ),
+            background: 'none', border: 'none', color: 'rgba(250,232,240,0.2)',
+            fontSize: mobile ? '1.4rem' : '1.6rem', cursor: 'none', padding: '0.8rem',
             transition: 'color 0.2s', zIndex: 10,
           }}
           onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.1)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.2)')}
         >
           {dir === 'prev' ? '←' : '→'}
         </button>
       ))}
 
       <div onClick={e => e.stopPropagation()} style={{
-        display: 'flex', alignItems: 'center', gap: '4rem',
-        maxWidth: '88vw', maxHeight: '92vh',
+        display: 'flex',
+        flexDirection: mobile ? 'column' : 'row',
+        alignItems: 'center',
+        gap: mobile ? '1.5rem' : '4rem',
+        maxWidth: mobile ? '92vw' : '88vw',
+        maxHeight: '92vh',
+        paddingBottom: mobile ? '3.5rem' : '0',
       }}>
-        <div style={{ position: 'relative', width: 'min(42vw, 420px)', height: 'min(62vh, 560px)' }}>
+        <div style={{
+          position: 'relative',
+          width: mobile ? '80vw' : 'min(42vw, 420px)',
+          height: mobile ? '50vw' : 'min(62vh, 560px)',
+          flexShrink: 0,
+        }}>
           <Image key={item.src} src={item.src} alt={item.title} fill
-            style={{ objectFit: 'contain' }} sizes="42vw" priority />
+            style={{ objectFit: 'contain' }} sizes={mobile ? '80vw' : '42vw'} priority />
         </div>
-        <div style={{ maxWidth: '13rem' }}>
+        <div style={{ maxWidth: mobile ? '80vw' : '13rem', textAlign: mobile ? 'center' : 'left' }}>
           <p style={{
             fontSize: '0.44rem', letterSpacing: '0.35em', textTransform: 'uppercase',
-            color: 'var(--mark)', marginBottom: '1.4rem',
+            color: 'var(--mark)', marginBottom: '0.8rem',
           }}>✦ {item.style}</p>
           <h3 className="font-display" style={{
-            fontSize: 'clamp(2rem,4vw,3.4rem)', lineHeight: 0.92,
-            letterSpacing: '-0.02em', fontStyle: 'italic', color: '#FAE8F0', marginBottom: '1.2rem',
+            fontSize: mobile ? 'clamp(1.6rem,7vw,2.4rem)' : 'clamp(2rem,4vw,3.4rem)',
+            lineHeight: 0.92, letterSpacing: '-0.02em', fontStyle: 'italic',
+            color: '#FAE8F0', marginBottom: '0.8rem',
           }}>{item.title}</h3>
-          <div style={{ display: 'flex', gap: '5px', marginTop: '2.8rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '5px', marginTop: '1.5rem', flexWrap: 'wrap', justifyContent: mobile ? 'center' : 'flex-start' }}>
             {allWork.map((_, i) => (
               <div key={i} style={{
                 width: i === index ? '22px' : '4px', height: '2px',
@@ -169,6 +198,7 @@ function ExhibitionPiece({ piece, index, onOpen }: {
   const numRef = useRef<HTMLDivElement>(null)
   const metaRef = useRef<HTMLDivElement>(null)
   const [revealed, setRevealed] = useState(false)
+  const mobile = useMobile()
 
   // Reveal on entry
   useEffect(() => {
@@ -199,6 +229,124 @@ function ExhibitionPiece({ piece, index, onOpen }: {
 
   const delay = (ms: number) => `${ms}ms`
 
+  if (mobile) {
+    // ── MOBILE: full-bleed image with text overlay ──
+    return (
+      <div ref={sectionRef} style={{ position: 'relative', height: '150vh' }}>
+        <div style={{
+          position: 'sticky', top: 0, height: '100vh',
+          background: '#0C0A0A', overflow: 'hidden',
+        }}
+          onClick={onOpen}
+          data-cursor="view"
+        >
+          {/* image */}
+          <div ref={imgWrapRef} style={{
+            position: 'absolute', inset: '-8% 0 -8% 0', willChange: 'transform',
+          }}>
+            <Image
+              src={piece.src} alt={piece.title} fill
+              style={{
+                objectFit: 'cover', objectPosition: 'center top',
+                transform: revealed ? 'scale(1)' : 'scale(1.06)',
+                transition: 'transform 1.4s cubic-bezier(0.25,0.46,0.45,0.94)',
+                filter: 'brightness(0.7)',
+              }}
+              sizes="100vw"
+              priority={index === 0}
+            />
+          </div>
+
+          {/* gradient overlay — heavy bottom for text legibility */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to top, rgba(12,10,10,0.95) 0%, rgba(12,10,10,0.4) 45%, transparent 70%)',
+            zIndex: 1,
+          }} />
+
+          {/* clip reveal */}
+          <div style={{
+            position: 'absolute', inset: 0, background: '#0C0A0A',
+            transform: revealed ? 'translateY(-100%)' : 'translateY(0)',
+            transition: `transform 1.1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 80)}`,
+            zIndex: 2,
+          }} />
+
+          {/* top: meta */}
+          <div style={{
+            position: 'absolute', top: '1.8rem', left: '1.5rem', zIndex: 3,
+            opacity: revealed ? 1 : 0,
+            transition: `opacity 0.8s ease ${delay(index * 60 + 200)}`,
+          }}>
+            <p style={{
+              fontSize: '0.4rem', letterSpacing: '0.35em', textTransform: 'uppercase',
+              color: 'var(--mark)',
+            }}>✦ {piece.style}</p>
+          </div>
+
+          {/* top-right: number */}
+          <div style={{
+            position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 3,
+            fontFamily: "'Playfair Display', serif", fontWeight: 900,
+            fontSize: 'clamp(4rem, 14vw, 8rem)',
+            letterSpacing: '-0.06em',
+            color: 'rgba(250,232,240,0.07)',
+            lineHeight: 1,
+          }}>
+            {piece.num}
+          </div>
+
+          {/* bottom: title + note + cta */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            padding: '0 1.5rem 2.5rem',
+            zIndex: 3,
+          }}>
+            <div style={{ overflow: 'hidden', marginBottom: '0.8rem' }}>
+              <h2 className="font-display" style={{
+                fontSize: 'clamp(2.2rem, 9vw, 4rem)',
+                lineHeight: 0.9, letterSpacing: '-0.03em', fontStyle: 'italic',
+                color: 'rgba(250,232,240,0.95)',
+                transform: revealed ? 'translateY(0)' : 'translateY(110%)',
+                transition: `transform 1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 300)}`,
+                display: 'block',
+              }}>
+                {piece.title}
+              </h2>
+            </div>
+            <p style={{
+              fontSize: '0.8rem', lineHeight: 1.6,
+              color: 'rgba(250,232,240,0.45)',
+              fontStyle: 'italic', fontFamily: "'Playfair Display', serif",
+              marginBottom: '1.5rem',
+              opacity: revealed ? 1 : 0,
+              transition: `opacity 0.8s ease ${delay(index * 60 + 500)}`,
+            }}>
+              {piece.note}
+            </p>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.6rem',
+              opacity: revealed ? 1 : 0,
+              transition: `opacity 0.8s ease ${delay(index * 60 + 600)}`,
+            }}>
+              <span style={{
+                fontSize: '0.4rem', letterSpacing: '0.3em', textTransform: 'uppercase',
+                color: 'rgba(250,232,240,0.35)',
+              }}>tocar para ver</span>
+              <div style={{ width: '2rem', height: '1px', background: 'rgba(250,232,240,0.15)' }} />
+            </div>
+          </div>
+
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
+            background: 'rgba(232,24,95,0.12)',
+          }} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── DESKTOP ──
   return (
     <div ref={sectionRef} style={{ height: '200vh', position: 'relative' }}>
       {/* STICKY PANEL */}
@@ -495,6 +643,7 @@ export default function Portfolio() {
   const [active, setActive] = useState<number | null>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const [headerVis, setHeaderVis] = useState(false)
+  const mobile = useMobile()
 
   const prev = useCallback(() => setActive(i => i !== null ? (i - 1 + allWork.length) % allWork.length : null), [])
   const next = useCallback(() => setActive(i => i !== null ? (i + 1) % allWork.length : null), [])
@@ -514,7 +663,7 @@ export default function Portfolio() {
 
       {/* ── SECTION HEADER ─── */}
       <div ref={headerRef} style={{
-        padding: '8rem 3rem 6rem',
+        padding: mobile ? '5rem 1.5rem 4rem' : '8rem 3rem 6rem',
         borderBottom: '1px solid rgba(250,232,240,0.05)',
         overflow: 'hidden',
         position: 'relative',
@@ -531,7 +680,7 @@ export default function Portfolio() {
           whiteSpace: 'nowrap',
         }}>Obra</div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-end', gap: '2rem' }}>
           <div>
             <p style={{
               fontSize: '0.44rem', letterSpacing: '0.4em', textTransform: 'uppercase',
@@ -596,7 +745,7 @@ export default function Portfolio() {
 
       {/* ── MORE WORK HEADER ─── */}
       <div style={{
-        padding: '5rem 3rem 3rem',
+        padding: mobile ? '3rem 1.5rem 2rem' : '5rem 3rem 3rem',
         borderTop: '1px solid rgba(250,232,240,0.05)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -622,7 +771,7 @@ export default function Portfolio() {
       {/* ── GRID ─── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
         gap: '2px',
         padding: '0 0 2px',
         background: '#0C0A0A',
