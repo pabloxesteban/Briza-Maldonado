@@ -43,7 +43,7 @@ export default function Hero() {
           priority
           style={{
             objectFit: 'cover',
-            objectPosition: 'center top',
+            objectPosition: 'center 65%',
             opacity: 0,
             animation: 'fadeIn 2s ease 0.6s forwards',
             maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.6) 55%, black 100%)',

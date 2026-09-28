@@ -165,7 +165,7 @@ function GalleryItem({ item, index, onClick }: { item: typeof gallery[0]; index:
       <Image
         src={item.src} alt={item.title} fill
         style={{
-          objectFit: 'cover', objectPosition: 'center top',
+          objectFit: 'cover', objectPosition: 'center 25%',
           transform: hovered ? 'scale(1.07)' : 'scale(1)',
           transition: 'transform 1s cubic-bezier(0.25,0.46,0.45,0.94)',
         }}
@@ -261,8 +261,8 @@ export default function Portfolio() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: '260px',
-        gap: '2px',
+        gridAutoRows: '340px',
+        gap: '3px',
       }}>
         {gallery.map((item, i) => (
           <GalleryItem key={i} item={item} index={i} onClick={() => setActive(i)} />
