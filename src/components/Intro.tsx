@@ -2,25 +2,31 @@
 
 import { useEffect, useState } from 'react'
 
-// Brief signature on first visit per session: the name, a pen stroke, then it lifts away
+const BASE = '/Briza-Maldonado/_img/brand/'
+
+// First visit per session: the heart gets "tattooed" — black line and shading first, then the colour —
+// and the screen lifts away.
 export default function Intro() {
-  const [phase, setPhase] = useState<'show' | 'out' | 'gone'>('show')
+  const [phase, setPhase] = useState<'line' | 'color' | 'out' | 'gone'>('line')
   useEffect(() => {
     let seen = false
     try { seen = sessionStorage.getItem('bm-intro') === '1'; sessionStorage.setItem('bm-intro', '1') } catch {}
     if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setPhase('gone'); return }
-    const a = setTimeout(() => setPhase('out'), 1050)
-    const b = setTimeout(() => setPhase('gone'), 1850)
-    return () => { clearTimeout(a); clearTimeout(b) }
+    const t = [
+      setTimeout(() => setPhase('color'), 950),
+      setTimeout(() => setPhase('out'), 1850),
+      setTimeout(() => setPhase('gone'), 2600),
+    ]
+    return () => t.forEach(clearTimeout)
   }, [])
   if (phase === 'gone') return null
   return (
     <div className={`intro ${phase === 'out' ? 'out' : ''}`} aria-hidden>
-      <div>
-        <p className="intro-name">Briza Maldonado</p>
-        <svg viewBox="0 0 360 24" preserveAspectRatio="none">
-          <path pathLength={1} d="M4 14 C 60 8, 120 18, 190 12 S 300 6, 356 11" />
-        </svg>
+      <div className="intro-logo">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${BASE}logo-ink-640.webp`} alt="" className="intro-ink" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${BASE}logo-640.webp`} alt="" className={`intro-color ${phase !== 'line' ? 'on' : ''}`} />
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const links = [
@@ -77,6 +78,7 @@ export default function Navbar() {
         {/* Logo → home */}
         <Link
           href="/"
+          aria-label="Briza Maldonado — inicio"
           style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: '0.9rem',
@@ -90,7 +92,9 @@ export default function Navbar() {
             zIndex: 1,
           }}
         >
-          Briza <span style={{ color: 'var(--mark)', fontSize: '0.65rem' }}>✦</span> Maldonado
+          <Image src="/Briza-Maldonado/brand/logo.png" alt="" width={900} height={689} priority
+            sizes="80px" style={{ width: 68, height: 'auto', display: 'block' }} />
+          <span>Maldonado</span>
         </Link>
 
         {/* Desktop links */}

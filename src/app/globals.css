@@ -362,12 +362,15 @@ body { cursor: none; }
 .ink-line path { stroke: var(--mark); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--t-slow) var(--ease); }
 .ink-line.drawn path { stroke-dashoffset: 0; }
 
-/* ─── INTRO ─── */
+/* ─── INTRO: the heart gets tattooed ─── */
 .intro { position: fixed; inset: 0; z-index: 10000; background: var(--bg); display: grid; place-items: center; clip-path: inset(0 0 0 0); transition: clip-path .75s var(--ease); }
 .intro.out { clip-path: inset(0 0 100% 0); }
-.intro-name { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(1.6rem, 4vw, 2.6rem); color: var(--ink); animation: penReveal .6s var(--ease) .15s both; }
-.intro svg { display: block; width: min(70vw, 360px); height: 24px; margin-top: .4rem; overflow: visible; }
-.intro path { stroke: var(--mark); stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: inkDraw .7s var(--ease) .3s forwards; }
+.intro-logo { position: relative; width: min(62vw, 360px); aspect-ratio: 900 / 689; }
+.intro-logo img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro-ink { animation: needle .9s cubic-bezier(.65,0,.35,1) both; }
+.intro-color { opacity: 0; transition: opacity .45s var(--ease); }
+.intro-color.on { opacity: 1; }
+@keyframes needle { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes inkDraw { to { stroke-dashoffset: 0; } }
 
 /* ─── ABOUT ─── */
