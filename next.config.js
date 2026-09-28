@@ -3,7 +3,8 @@ const nextConfig = {
   output: 'export',
   basePath: '/Briza-Maldonado',
   images: {
-    unoptimized: true,
+    loader: 'custom',
+    loaderFile: './src/lib/imageLoader.ts',
   },
 }
 
