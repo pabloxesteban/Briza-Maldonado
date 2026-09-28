@@ -6,7 +6,7 @@ import Image from 'next/image'
 type Place = { x: number; y: number; s: number; rot: number } // x,s: fraction of page width · y: fraction of page height
 type Note = { x: number; y: number; w: number } // x,w: fraction of width · y: fraction of height (snapped to a ruled line)
 type FlashDef = {
-  src: string; name: string; price: string; available: boolean
+  src: string; name: string; price: string; cm: number; available: boolean
   p: Place; note: Note
   aspect: number // image height / width
   dots: [number, number][] // dot centres on the cut edge, as fractions of the image
@@ -15,25 +15,25 @@ type FlashDef = {
 const BASE = '/Briza-Maldonado/flash/'
 const PAGES: FlashDef[][] = [
   [
-    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]],
+    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]],
       p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
-    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]],
+    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', cm: 5, available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]],
       p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
   ],
   [
-    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, aspect: 0.816, dots: [[0.95, 0.568], [0.627, 0.897], [0.037, 0.316], [0.622, 0.037]],
+    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', cm: 7, available: true, aspect: 0.816, dots: [[0.95, 0.568], [0.627, 0.897], [0.037, 0.316], [0.622, 0.037]],
       p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
-    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, aspect: 1.167, dots: [[0.943, 0.133], [0.731, 0.73], [0.049, 0.731], [0.435, 0.101]],
+    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', cm: 9, available: false, aspect: 1.167, dots: [[0.943, 0.133], [0.731, 0.73], [0.049, 0.731], [0.435, 0.101]],
       p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
   ],
   [
-    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, aspect: 1.161, dots: [[0.925, 0.16], [0.339, 0.921], [0.075, 0.06]],
+    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', cm: 6, available: true, aspect: 1.161, dots: [[0.925, 0.16], [0.339, 0.921], [0.075, 0.06]],
       p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
-    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, aspect: 0.95, dots: [[0.947, 0.283], [0.541, 0.939], [0.039, 0.6], [0.485, 0.043]],
+    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', cm: 9, available: true, aspect: 0.95, dots: [[0.947, 0.283], [0.541, 0.939], [0.039, 0.6], [0.485, 0.043]],
       p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
   ],
   [
-    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, aspect: 1.003, dots: [[0.944, 0.122], [0.654, 0.686], [0.051, 0.703], [0.405, 0.31]],
+    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', cm: 8, available: true, aspect: 1.003, dots: [[0.944, 0.122], [0.654, 0.686], [0.051, 0.703], [0.405, 0.31]],
       p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
@@ -299,6 +299,7 @@ function FlashNote({ flash, W, H }: { flash: FlashDef; W: number; H: number }) {
         · {flash.available ? 'disponible ✓' : <span style={{ textDecoration: 'line-through' }}>disponible</span>}
         {!flash.available && ' agotado'}
       </p>
+      <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>· {flash.cm} cm aprox</p>
       <p style={{ ...hand(gap), paddingLeft: gap * 0.5, position: 'relative', display: 'inline-block', fontSize: gap * 0.82 }}>
         {flash.price}
         {flash.available && <Underline w={gap * 2.9} />}
@@ -419,7 +420,7 @@ export default function Flash() {
 
   useEffect(() => {
     if (moving === null) return
-    const id = setTimeout(() => setMoving(null), 900)
+    const id = setTimeout(() => setMoving(null), 1250)
     return () => clearTimeout(id)
   }, [moving, turned])
 
@@ -518,7 +519,7 @@ export default function Flash() {
           <div style={{
             position: 'relative', width: W, height: H, marginLeft: 24,
             transform: `translateX(${shift}px)`,
-            transition: 'transform .8s cubic-bezier(.3,.7,.2,1)',
+            transition: 'transform 1.15s cubic-bezier(.42,.1,.28,1)',
           }}>
             {/* Page block + back cover under the right side */}
             <div style={{ position: 'absolute', inset: 0, transform: 'translate(7px, 8px)', background: '#aeb9d3', borderRadius: '0 14px 14px 0', boxShadow: '0 30px 60px rgba(40,30,60,.35), 0 8px 18px rgba(40,30,60,.25)' }} />
@@ -555,16 +556,16 @@ export default function Flash() {
                 const depth = live || moving === i ? 8 : i < turned ? i * 1.5 - 20 : (SHEETS - i) * 1.5
                 const hidden = !spread && i < turned - 1 && !live && moving !== i
                 // Safari ignores backface-visibility when the face has transformed children (the rotated flashes),
-                // so faces are swapped explicitly when the sheet passes edge-on (~0.16s into the eased turn).
+                // so faces are swapped explicitly when the sheet passes edge-on (~0.43s into the eased turn).
                 const faceUp = angle > -90
-                const flipAt = live ? 'none' : 'visibility 0s linear .16s'
+                const flipAt = live ? 'none' : 'visibility 0s linear .43s'
                 const peek = i === 0 && turned === 0 && !drag && !hinted
                 return (
                   <div key={i} style={{
                     position: 'absolute', inset: 0, zIndex: z, visibility: hidden ? 'hidden' : 'visible', willChange: 'transform',
                     transformStyle: 'preserve-3d', transformOrigin: '0 50%',
                     transform: `translateZ(${depth}px) rotateY(${angle}deg)`,
-                    transition: live ? 'none' : 'transform .85s cubic-bezier(.3,.7,.2,1)',
+                    transition: live ? 'none' : 'transform 1.15s cubic-bezier(.42,.1,.28,1)',
                   }}>
                     <div style={{
                       position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transformOrigin: '0 50%',
