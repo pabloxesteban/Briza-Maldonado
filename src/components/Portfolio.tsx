@@ -89,6 +89,8 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
 }) {
   const item = allWork[index]
   const mobile = useMobile()
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -101,14 +103,31 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
     return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
   }, [onClose, onPrev, onNext])
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    // only trigger if horizontal swipe is dominant and >40px
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      dx < 0 ? onNext() : onPrev()
+    }
+  }
+
   if (mobile) {
     return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 3000,
-        background: '#080606',
-        display: 'flex', flexDirection: 'column',
-        animation: 'fadeIn 0.2s ease',
-      }}>
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          background: '#080606',
+          display: 'flex', flexDirection: 'column',
+          animation: 'fadeIn 0.2s ease',
+        }}>
         {/* top bar */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -142,10 +161,7 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
         </div>
 
         {/* image — takes most of screen */}
-        <div
-          onClick={onClose}
-          style={{ position: 'relative', flex: 1, minHeight: 0 }}
-        >
+        <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
           <Image key={item.src} src={item.src} alt={item.title} fill
             style={{ objectFit: 'contain', padding: '0 0.5rem' }}
             sizes="100vw" priority />
