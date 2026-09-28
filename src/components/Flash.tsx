@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
 type Place = { x: number; y: number; s: number; rot: number } // x,s: fraction of page width · y: fraction of page height
@@ -295,8 +295,7 @@ function FlashNote({ flash, W, H, mirror = false }: { flash: FlashDef; W: number
         <Underline w={Math.min(flash.note.w * W, flash.name.length * gap * 0.36)} />
       </p>
       <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>
-        · {flash.available ? 'disponible ✓' : <span style={{ textDecoration: 'line-through' }}>disponible</span>}
-        {!flash.available && ' agotado'}
+        · {flash.available ? 'disponible ✓' : 'agotado ✗'}
       </p>
       <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>· {flash.cm} cm aprox</p>
       <p style={{ ...hand(gap), paddingLeft: gap * 0.5, position: 'relative', display: 'inline-block', fontSize: gap * 0.82 }}>
@@ -392,12 +391,16 @@ function Holes({ right = false }: { right?: boolean }) {
 // ─── Notebook ─────────────────────────────────────────────────────────────
 export default function Flash() {
   const [wrapRef, wrap] = useSize<HTMLDivElement>()
-  const [turned, setTurned] = useState(0) // how many sheets are flipped; 0 = closed
+  // turned: sheets flipped (0 = closed). left: on narrow screens, whether the view shows the left page of the spread
+  const [nav, setNav] = useState({ turned: 0, left: false })
+  const navRef = useRef(nav)
+  navRef.current = nav
+  const turned = nav.turned
   const [drag, setDrag] = useState<{ sheet: number; angle: number } | null>(null)
   const [moving, setMoving] = useState<number | null>(null)
   const [hinted, setHinted] = useState(false)
   const stageRef = useRef<HTMLDivElement>(null)
-  const gesture = useRef<{ x: number; y: number; t: number; dragging: boolean; sheet: number; dir: 1 | -1 } | null>(null)
+  const gesture = useRef<{ x: number; y: number; t: number; dragging: boolean; pan: boolean; sheet: number; dir: 1 | -1 } | null>(null)
   const suppressClick = useRef(false)
   const wheelAcc = useRef(0)
   const wheelLock = useRef(0)
@@ -405,26 +408,44 @@ export default function Flash() {
   const W = Math.max(0, Math.min(460, wrap.w - 30))
   const H = W / RATIO
   const spread = wrap.w >= W * 2 + 80
-  // Desktop spreads use both sides of each sheet, like a real notebook; mobile shows one side
-  const perSheet = spread ? 2 : 1
-  const SHEETS = 1 + Math.ceil(PAGES.length / perSheet)
-  // On a spread the last sheet can also be turned, revealing the inside of the back cover
-  const MAX_TURN = spread ? SHEETS : SHEETS - 1
-  const frontPage = (i: number) => (i - 1) * perSheet
-  const backPage = (i: number) => (spread ? (i - 1) * 2 + 1 : -1)
-  useEffect(() => { setTurned(0); setDrag(null) }, [spread])
+  // Every sheet carries a different page on each side, like a real notebook
+  const SHEETS = 1 + Math.ceil(PAGES.length / 2)
+  const frontPage = (i: number) => (i - 1) * 2
+  const backPage = (i: number) => (i - 1) * 2 + 1
+  const hasBack = (i: number) => i >= 1 && backPage(i) < PAGES.length
+  // Last sheet can be turned when its back has content (or on a spread, to show the back cover)
+  const MAX_TURN = spread || hasBack(SHEETS - 1) ? SHEETS : SHEETS - 1
+  useEffect(() => { setNav({ turned: 0, left: false }); setDrag(null) }, [spread])
   const open = turned > 0
 
-  const go = useCallback((dir: 1 | -1) => {
-    setTurned(t => {
-      const next = Math.min(MAX_TURN, Math.max(0, t + dir))
-      if (next !== t) {
-        setMoving(dir === 1 ? t : t - 1)
-        setHinted(true)
-      }
-      return next
-    })
-  }, [MAX_TURN])
+  // What one step forward/back does: flip a sheet, or (narrow screens) slide between the two pages of a spread
+  const step = (dir: 1 | -1, cur = navRef.current) => {
+    const { turned: t, left } = cur
+    if (spread) {
+      const n = Math.min(MAX_TURN, Math.max(0, t + dir))
+      return n === t ? null : { next: { turned: n, left: false }, flip: dir === 1 ? t : t - 1 }
+    }
+    if (dir === 1) {
+      if (left) return { next: { turned: t, left: false }, flip: -1 }
+      if (t >= MAX_TURN) return null
+      // after flipping a page sheet, look at its back; flipping the cover shows the first page
+      return { next: { turned: t + 1, left: t >= 1 && hasBack(t) }, flip: t }
+    }
+    if (left) return { next: { turned: t - 1, left: false }, flip: t - 1 }
+    if (t === 0) return null
+    if (t >= 2 && hasBack(t - 1)) return { next: { turned: t, left: true }, flip: -1 }
+    return { next: { turned: t - 1, left: false }, flip: t - 1 }
+  }
+
+  const go = (dir: 1 | -1) => {
+    const r = step(dir)
+    if (!r) return
+    if (r.flip >= 0) setMoving(r.flip)
+    setHinted(true)
+    setNav(r.next)
+  }
+  const goRef = useRef(go)
+  goRef.current = go
 
   useEffect(() => {
     if (moving === null) return
@@ -442,18 +463,18 @@ export default function Flash() {
       if (Date.now() < wheelLock.current) return
       wheelAcc.current += e.deltaX
       if (Math.abs(wheelAcc.current) > 50) {
-        go(wheelAcc.current > 0 ? 1 : -1)
+        goRef.current(wheelAcc.current > 0 ? 1 : -1)
         wheelAcc.current = 0
         wheelLock.current = Date.now() + 750
       }
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [go, W])
+  }, [W])
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
-    gesture.current = { x: e.clientX, y: e.clientY, t: performance.now(), dragging: false, sheet: -1, dir: 1 }
+    gesture.current = { x: e.clientX, y: e.clientY, t: performance.now(), dragging: false, pan: false, sheet: -1, dir: 1 }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -466,11 +487,12 @@ export default function Flash() {
         return
       }
       const dir: 1 | -1 = dx < 0 ? 1 : -1
-      const sheet = dir === 1 ? turned : turned - 1
-      if (sheet < 0 || sheet > MAX_TURN - 1) { gesture.current = null; return }
-      g.dragging = true; g.sheet = sheet; g.dir = dir
+      const r = step(dir)
+      if (!r) { gesture.current = null; return }
+      g.dragging = true; g.dir = dir; g.pan = r.flip < 0; g.sheet = r.flip
       stageRef.current?.setPointerCapture(e.pointerId)
     }
+    if (g.pan) return
     const k = Math.min(1, Math.max(0, (g.dir === 1 ? -dx : dx) / (W * 1.1)))
     setDrag({ sheet: g.sheet, angle: g.dir === 1 ? -180 * k : -180 + 180 * k })
   }
@@ -485,24 +507,32 @@ export default function Flash() {
       const dx = e.clientX - g.x
       const v = dx / Math.max(1, performance.now() - g.t)
       const k = Math.min(1, Math.max(0, (g.dir === 1 ? -dx : dx) / (W * 1.1)))
-      const commit = k > 0.3 || (g.dir === 1 ? v < -0.35 : v > 0.35)
+      const commit = (g.pan ? Math.abs(dx) > 40 : k > 0.3) || (g.dir === 1 ? v < -0.35 : v > 0.35)
       setDrag(null)
-      setMoving(g.sheet)
-      if (commit) { setTurned(t => t + g.dir); setHinted(true) }
+      if (!g.pan) setMoving(g.sheet)
+      if (commit) go(g.dir)
       return
     }
-    // Tap: cover opens; page edges turn
-    const rect = stageRef.current!.getBoundingClientRect()
-    const rel = (e.clientX - rect.left) / W
+    // Tap: cover opens; the outer edges of what is on screen turn
     const onSticker = (e.target as HTMLElement).closest('[data-hover]') && turned > 0
     if (onSticker) return
-    if (turned === 0) go(1)
-    else if (rel < 0 || rel < 0.12) go(-1)
-    else if (rel > 0.8) go(1)
+    if (turned === 0) { go(1); return }
+    const box = wrapRef.current!.getBoundingClientRect()
+    if (spread) {
+      const rel = (e.clientX - stageRef.current!.getBoundingClientRect().left) / W
+      if (rel < 0.12) go(-1)
+      else if (rel > 0.8) go(1)
+    } else {
+      const rel = (e.clientX - box.left) / box.width
+      if (rel < 0.18) go(-1)
+      else if (rel > 0.78) go(1)
+    }
   }
 
   const angleOf = (i: number) => (drag?.sheet === i ? drag.angle : i < turned ? -180 : 0)
-  const shift = spread && (open || (drag && drag.sheet === 0)) ? W / 2 : 0
+  const shift = spread
+    ? (open || (drag && drag.sheet === 0) ? W / 2 : 0)
+    : (nav.left ? W - 8 : 0)
 
   return (
     <section
@@ -581,12 +611,12 @@ export default function Flash() {
                     }}>
                       {/* Front */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'visible' : 'hidden', transition: flipAt, borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverFront /> : <PageFront n={frontPage(i)} W={W} H={H} />}
+                        {i === 0 ? <CoverFront /> : frontPage(i) < PAGES.length ? <PageFront n={frontPage(i)} W={W} H={H} /> : <PageBlank n={i + 20} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)` }} />
                       </div>
                       {/* Back */}
                       <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'hidden' : 'visible', transition: flipAt, transform: 'rotateY(180deg) translateZ(.5px)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverBack /> : backPage(i) >= 0 && backPage(i) < PAGES.length ? <PageFront n={backPage(i)} W={W} H={H} mirror /> : <PageBlank n={i - 1} W={W} H={H} />}
+                        {i === 0 ? <CoverBack /> : hasBack(i) ? <PageFront n={backPage(i)} W={W} H={H} mirror /> : <PageBlank n={i - 1} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)` }} />
                       </div>
                     </div>
