@@ -101,6 +101,103 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
     return () => { document.removeEventListener('keydown', h); document.body.style.overflow = '' }
   }, [onClose, onPrev, onNext])
 
+  if (mobile) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 3000,
+        background: '#080606',
+        display: 'flex', flexDirection: 'column',
+        animation: 'fadeIn 0.2s ease',
+      }}>
+        {/* top bar */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '1rem 1.2rem',
+          flexShrink: 0,
+        }}>
+          <span style={{
+            fontSize: '0.4rem', letterSpacing: '0.25em',
+            color: 'rgba(250,232,240,0.25)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {String(index + 1).padStart(2, '0')} / {String(allWork.length).padStart(2, '0')}
+          </span>
+          {/* X button — big and obvious */}
+          <button
+            onClick={onClose}
+            style={{
+              width: '2.8rem', height: '2.8rem',
+              borderRadius: '50%',
+              background: 'rgba(250,232,240,0.1)',
+              border: '1px solid rgba(250,232,240,0.15)',
+              color: '#FAE8F0',
+              fontSize: '1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', zIndex: 10,
+              transition: 'background 0.2s',
+            }}
+            onTouchStart={e => (e.currentTarget.style.background = 'rgba(232,24,95,0.3)')}
+            onTouchEnd={e => (e.currentTarget.style.background = 'rgba(250,232,240,0.1)')}
+          >✕</button>
+        </div>
+
+        {/* image — takes most of screen */}
+        <div
+          onClick={onClose}
+          style={{ position: 'relative', flex: 1, minHeight: 0 }}
+        >
+          <Image key={item.src} src={item.src} alt={item.title} fill
+            style={{ objectFit: 'contain', padding: '0 0.5rem' }}
+            sizes="100vw" priority />
+        </div>
+
+        {/* bottom: title + nav */}
+        <div style={{ flexShrink: 0, padding: '1rem 1.5rem 2rem' }}>
+          <p style={{
+            fontSize: '0.38rem', letterSpacing: '0.35em', textTransform: 'uppercase',
+            color: 'var(--mark)', marginBottom: '0.4rem',
+          }}>✦ {item.style}</p>
+          <h3 className="font-display" style={{
+            fontSize: 'clamp(1.6rem, 7vw, 2.4rem)',
+            lineHeight: 0.9, letterSpacing: '-0.02em', fontStyle: 'italic',
+            color: '#FAE8F0', marginBottom: '1rem',
+          }}>{item.title}</h3>
+
+          {/* dots + arrows */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '60%' }}>
+              {allWork.map((_, i) => (
+                <div key={i} style={{
+                  width: i === index ? '18px' : '3px', height: '2px',
+                  background: i === index ? 'var(--mark)' : 'rgba(250,232,240,0.08)',
+                  transition: 'all 0.3s', borderRadius: '1px',
+                }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              {(['prev', 'next'] as const).map(dir => (
+                <button key={dir}
+                  onClick={e => { e.stopPropagation(); dir === 'prev' ? onPrev() : onNext() }}
+                  style={{
+                    width: '2.6rem', height: '2.6rem', borderRadius: '50%',
+                    background: 'rgba(250,232,240,0.07)',
+                    border: '1px solid rgba(250,232,240,0.12)',
+                    color: '#FAE8F0', fontSize: '1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {dir === 'prev' ? '←' : '→'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── DESKTOP lightbox ──
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, zIndex: 3000,
@@ -127,17 +224,13 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
         {String(index + 1).padStart(2, '0')} / {String(allWork.length).padStart(2, '0')}
       </div>
 
-      {/* prev/next — sides on desktop, bottom on mobile */}
       {(['prev', 'next'] as const).map(dir => (
         <button key={dir} onClick={e => { e.stopPropagation(); dir === 'prev' ? onPrev() : onNext() }}
           data-hover style={{
             position: 'absolute',
-            ...(mobile
-              ? { bottom: '1.2rem', [dir === 'prev' ? 'left' : 'right']: '2rem', top: 'auto', transform: 'none' }
-              : { [dir === 'prev' ? 'left' : 'right']: '1.5rem', top: '50%', transform: 'translateY(-50%)' }
-            ),
+            [dir === 'prev' ? 'left' : 'right']: '1.5rem', top: '50%', transform: 'translateY(-50%)',
             background: 'none', border: 'none', color: 'rgba(250,232,240,0.2)',
-            fontSize: mobile ? '1.4rem' : '1.6rem', cursor: 'none', padding: '0.8rem',
+            fontSize: '1.6rem', cursor: 'none', padding: '1.2rem',
             transition: 'color 0.2s', zIndex: 10,
           }}
           onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
@@ -148,34 +241,30 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
       ))}
 
       <div onClick={e => e.stopPropagation()} style={{
-        display: 'flex',
-        flexDirection: mobile ? 'column' : 'row',
-        alignItems: 'center',
-        gap: mobile ? '1.5rem' : '4rem',
-        maxWidth: mobile ? '92vw' : '88vw',
-        maxHeight: '92vh',
-        paddingBottom: mobile ? '3.5rem' : '0',
+        display: 'flex', alignItems: 'center',
+        gap: '4rem',
+        maxWidth: '88vw', maxHeight: '92vh',
       }}>
         <div style={{
           position: 'relative',
-          width: mobile ? '80vw' : 'min(42vw, 420px)',
-          height: mobile ? '50vw' : 'min(62vh, 560px)',
+          width: 'min(42vw, 420px)',
+          height: 'min(62vh, 560px)',
           flexShrink: 0,
         }}>
           <Image key={item.src} src={item.src} alt={item.title} fill
-            style={{ objectFit: 'contain' }} sizes={mobile ? '80vw' : '42vw'} priority />
+            style={{ objectFit: 'contain' }} sizes="42vw" priority />
         </div>
-        <div style={{ maxWidth: mobile ? '80vw' : '13rem', textAlign: mobile ? 'center' : 'left' }}>
+        <div style={{ maxWidth: '13rem' }}>
           <p style={{
             fontSize: '0.44rem', letterSpacing: '0.35em', textTransform: 'uppercase',
             color: 'var(--mark)', marginBottom: '0.8rem',
           }}>✦ {item.style}</p>
           <h3 className="font-display" style={{
-            fontSize: mobile ? 'clamp(1.6rem,7vw,2.4rem)' : 'clamp(2rem,4vw,3.4rem)',
+            fontSize: 'clamp(2rem,4vw,3.4rem)',
             lineHeight: 0.92, letterSpacing: '-0.02em', fontStyle: 'italic',
             color: '#FAE8F0', marginBottom: '0.8rem',
           }}>{item.title}</h3>
-          <div style={{ display: 'flex', gap: '5px', marginTop: '1.5rem', flexWrap: 'wrap', justifyContent: mobile ? 'center' : 'flex-start' }}>
+          <div style={{ display: 'flex', gap: '5px', marginTop: '1.5rem', flexWrap: 'wrap' }}>
             {allWork.map((_, i) => (
               <div key={i} style={{
                 width: i === index ? '22px' : '4px', height: '2px',
