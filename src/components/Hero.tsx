@@ -155,11 +155,11 @@ export default function Hero() {
         overflow: 'hidden',
       }}
     >
-      {/* Portrait — far right, shows Briza */}
+      {/* Portrait — far right */}
       <div style={{
         position: 'absolute',
         top: 0, right: 0,
-        width: '62%',
+        width: '46%',
         height: '100%',
         zIndex: 1,
         overflow: 'hidden',
@@ -170,21 +170,21 @@ export default function Hero() {
           fill priority
           style={{
             objectFit: 'cover',
-            objectPosition: '75% 60%',
+            objectPosition: '30% 55%',
             opacity: 0,
             animation: 'fadeIn 2.2s ease 0.5s forwards',
           }}
-          sizes="62vw"
+          sizes="46vw"
         />
-        {/* left fade — blend with background */}
+        {/* left fade */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to right, var(--bg) 0%, rgba(245,232,238,0.7) 20%, rgba(245,232,238,0.2) 45%, transparent 70%)',
+          background: 'linear-gradient(to right, var(--bg) 0%, rgba(245,232,238,0.5) 15%, transparent 45%)',
         }} />
         {/* bottom fade */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to top, var(--bg) 0%, transparent 18%)',
+          background: 'linear-gradient(to top, var(--bg) 0%, transparent 22%)',
         }} />
       </div>
 

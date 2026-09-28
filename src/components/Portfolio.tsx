@@ -4,42 +4,52 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 
 const gallery = [
-  { title: 'La Garza',           style: 'Blackwork',    note: 'Antebrazo. Alas abiertas, plumas en capas.',      src: '/Briza-Maldonado/portfolio/garza.jpg',             aspect: 1.35 },
-  { title: 'Polilla 777',        style: 'Ornamental',   note: 'Esterno. Grande, oscura, simétrica.',             src: '/Briza-Maldonado/portfolio/polilla-esterno.jpg',   aspect: 1.1 },
-  { title: 'Cocodrilo',          style: 'Blackwork',    note: 'Antebrazo. Escamas en capas, cola enroscada.',    src: '/Briza-Maldonado/portfolio/cocodrilo.jpg',          aspect: 0.85 },
-  { title: 'Alambre y Corazón',  style: 'Blackwork',    note: 'Brazo. Alambre de púas, corazón rojo, daga.',     src: '/Briza-Maldonado/portfolio/alambre-daga-corazon.jpg', aspect: 1.5 },
-  { title: 'Daga con Serpiente', style: 'Traditional',  note: 'Antebrazo. La daga como eje.',                    src: '/Briza-Maldonado/portfolio/daga-serpiente.jpg',    aspect: 1.2 },
-  { title: 'Lockets de Gatos',   style: 'Fineline',     note: 'Antebrazo. Tres gatitos en medallones.',          src: '/Briza-Maldonado/portfolio/lockets-gatos.jpg',     aspect: 0.75 },
-  { title: 'El Lobo',            style: 'Blackwork',    note: 'Brazo. Feroz, peludo, libre.',                    src: '/Briza-Maldonado/portfolio/lobo.jpg',              aspect: 1.0 },
-  { title: 'Mariposas Rodillas', style: 'Blackwork',    note: 'Rodillas. Dos polillas simétricas.',              src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg', aspect: 1.4 },
-  { title: 'Patchwork Sleeve',   style: 'Traditional',  note: 'Sol, delfín, vaquero, olas.',                    src: '/Briza-Maldonado/portfolio/patchwork-sleeve.jpg',  aspect: 0.9 },
-  { title: 'Moño y Corazón',     style: 'Ornamental',   note: 'Antebrazo. Un moño con corazón.',                src: '/Briza-Maldonado/portfolio/mono-corazon.jpg',      aspect: 1.25 },
-  { title: 'Rosa',               style: 'Traditional',  note: 'Rosa con alambre de púas.',                       src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg',      aspect: 1.15 },
-  { title: 'Espinas',            style: 'Fineline',     note: 'Rama de espinas abstracta.',                      src: '/Briza-Maldonado/portfolio/espinas.jpg',           aspect: 0.7 },
-  { title: 'Mariposa',           style: 'Blackwork',    note: 'Mariposa en pierna.',                             src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg',   aspect: 1.3 },
-  { title: 'Conejo',             style: 'Illustrativo', note: 'Conejo tierno y extraño.',                        src: '/Briza-Maldonado/portfolio/conejo.jpg',            aspect: 1.05 },
-  { title: 'Elefante Skater',    style: 'Cute',         note: 'Un elefante en skate.',                           src: '/Briza-Maldonado/portfolio/elefante-skate.jpg',    aspect: 0.95 },
-  { title: 'Pingüino',           style: 'Fineline',     note: 'Pingüino con estrellitas.',                       src: '/Briza-Maldonado/portfolio/pinguino.jpg',          aspect: 1.45 },
-  { title: 'Vegan',              style: 'Lettering',    note: 'Lettering en pie.',                               src: '/Briza-Maldonado/portfolio/vegan-script.jpg',      aspect: 0.8 },
+  { title: 'La Garza',           style: 'Blackwork',    note: 'Antebrazo. Alas abiertas, plumas en capas.',         src: '/Briza-Maldonado/portfolio/garza.jpg' },
+  { title: 'Polilla 777',        style: 'Ornamental',   note: 'Esterno. Grande, oscura, simétrica.',                src: '/Briza-Maldonado/portfolio/polilla-esterno.jpg' },
+  { title: 'Cocodrilo',          style: 'Blackwork',    note: 'Antebrazo. Escamas en capas, cola enroscada.',       src: '/Briza-Maldonado/portfolio/cocodrilo.jpg' },
+  { title: 'Alambre y Corazón',  style: 'Blackwork',    note: 'Brazo. Alambre de púas, corazón rojo, daga.',        src: '/Briza-Maldonado/portfolio/alambre-daga-corazon.jpg' },
+  { title: 'Daga con Serpiente', style: 'Traditional',  note: 'Antebrazo. La daga como eje.',                       src: '/Briza-Maldonado/portfolio/daga-serpiente.jpg' },
+  { title: 'Lockets de Gatos',   style: 'Fineline',     note: 'Antebrazo. Tres gatitos en medallones.',             src: '/Briza-Maldonado/portfolio/lockets-gatos.jpg' },
+  { title: 'El Lobo',            style: 'Blackwork',    note: 'Brazo. Feroz, peludo, libre.',                       src: '/Briza-Maldonado/portfolio/lobo.jpg' },
+  { title: 'Mariposas Rodillas', style: 'Blackwork',    note: 'Rodillas. Dos polillas simétricas.',                 src: '/Briza-Maldonado/portfolio/mariposas-rodillas.jpg' },
+  { title: 'Patchwork Sleeve',   style: 'Traditional',  note: 'Sol, delfín, vaquero, olas.',                       src: '/Briza-Maldonado/portfolio/patchwork-sleeve.jpg' },
+  { title: 'Moño y Corazón',     style: 'Ornamental',   note: 'Antebrazo. Un moño con corazón.',                   src: '/Briza-Maldonado/portfolio/mono-corazon.jpg' },
+  { title: 'Rosa',               style: 'Traditional',  note: 'Rosa con alambre de púas.',                          src: '/Briza-Maldonado/portfolio/rosa-alambre.jpg' },
+  { title: 'Espinas',            style: 'Fineline',     note: 'Rama de espinas abstracta.',                         src: '/Briza-Maldonado/portfolio/espinas.jpg' },
+  { title: 'Mariposa',           style: 'Blackwork',    note: 'Mariposa en pierna.',                                src: '/Briza-Maldonado/portfolio/mariposa-pierna.jpg' },
+  { title: 'Conejo',             style: 'Illustrativo', note: 'Conejo tierno y extraño.',                           src: '/Briza-Maldonado/portfolio/conejo.jpg' },
+  { title: 'Elefante Skater',    style: 'Cute',         note: 'Un elefante en skate.',                              src: '/Briza-Maldonado/portfolio/elefante-skate.jpg' },
+  { title: 'Pingüino',           style: 'Fineline',     note: 'Pingüino con estrellitas.',                          src: '/Briza-Maldonado/portfolio/pinguino.jpg' },
+  { title: 'Vegan',              style: 'Lettering',    note: 'Lettering en pie.',                                  src: '/Briza-Maldonado/portfolio/vegan-script.jpg' },
 ]
 
-// Distribute into 4 columns for masonry
-const COLS = 4
-function buildColumns() {
-  const cols: (typeof gallery[0] & { colIndex: number; globalIndex: number })[][] = Array.from({ length: COLS }, () => [])
-  gallery.forEach((item, i) => {
-    cols[i % COLS].push({ ...item, colIndex: i % COLS, globalIndex: i })
-  })
-  return cols
-}
-const columns = buildColumns()
+// Bento layout: span 1 or 2 columns, tall or short rows
+// 3-column grid. span:2 = full-width feature cell
+const bento: { span: 1 | 2; tall: boolean }[] = [
+  { span: 2, tall: true  },  // 0 La Garza — hero piece
+  { span: 1, tall: true  },  // 1
+  { span: 1, tall: false },  // 2
+  { span: 1, tall: false },  // 3
+  { span: 1, tall: true  },  // 4
+  { span: 2, tall: false },  // 5 Lockets — wide
+  { span: 1, tall: true  },  // 6
+  { span: 1, tall: false },  // 7
+  { span: 1, tall: false },  // 8
+  { span: 2, tall: true  },  // 9 Moño — hero
+  { span: 1, tall: false },  // 10
+  { span: 1, tall: true  },  // 11
+  { span: 1, tall: false },  // 12
+  { span: 1, tall: true  },  // 13
+  { span: 2, tall: false },  // 14 Elefante — wide
+  { span: 1, tall: false },  // 15
+  { span: 1, tall: true  },  // 16
+]
 
 /* ─── LIGHTBOX ─── */
 function Lightbox({ index, onClose, onPrev, onNext }: {
   index: number; onClose: () => void; onPrev: () => void; onNext: () => void
 }) {
   const item = gallery[index]
-
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -52,24 +62,20 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
   }, [onClose, onPrev, onNext])
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 3000,
-        background: 'rgba(8,6,6,0.96)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        animation: 'fadeIn 0.2s ease',
-        cursor: 'none',
-      }}
-    >
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, zIndex: 3000,
+      background: 'rgba(8,6,6,0.97)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      animation: 'fadeIn 0.2s ease', cursor: 'none',
+    }}>
       <button onClick={onClose} data-hover style={{
         position: 'absolute', top: '2rem', right: '2.5rem',
-        background: 'none', border: 'none', color: 'rgba(250,232,240,0.22)',
+        background: 'none', border: 'none', color: 'rgba(250,232,240,0.2)',
         fontSize: '0.48rem', letterSpacing: '0.3em', textTransform: 'uppercase',
         cursor: 'none', zIndex: 10, transition: 'color 0.2s',
       }}
         onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.22)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.2)')}
       >esc · cerrar</button>
 
       <div style={{
@@ -84,32 +90,30 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
         <button key={dir} onClick={e => { e.stopPropagation(); dir === 'prev' ? onPrev() : onNext() }} data-hover style={{
           position: 'absolute', [dir === 'prev' ? 'left' : 'right']: '1.5rem',
           top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', color: 'rgba(250,232,240,0.12)',
+          background: 'none', border: 'none', color: 'rgba(250,232,240,0.1)',
           fontSize: '1.6rem', cursor: 'none', padding: '1.2rem',
           transition: 'color 0.2s', zIndex: 10,
         }}
           onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.12)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.1)')}
         >
           {dir === 'prev' ? '←' : '→'}
         </button>
       ))}
 
       <div onClick={e => e.stopPropagation()} style={{
-        display: 'flex', alignItems: 'center', gap: '5rem',
+        display: 'flex', alignItems: 'center', gap: '4rem',
         maxWidth: '88vw', maxHeight: '92vh',
       }}>
         <div style={{
           position: 'relative',
-          width: 'min(42vw, 400px)',
-          height: 'min(62vh, 540px)',
-          overflow: 'hidden',
+          width: 'min(42vw, 420px)',
+          height: 'min(62vh, 560px)',
         }}>
           <Image key={item.src} src={item.src} alt={item.title} fill
             style={{ objectFit: 'contain' }} sizes="42vw" priority />
         </div>
-
-        <div style={{ maxWidth: '14rem' }}>
+        <div style={{ maxWidth: '13rem' }}>
           <p style={{
             fontSize: '0.44rem', letterSpacing: '0.35em', textTransform: 'uppercase',
             color: 'var(--mark)', marginBottom: '1.4rem',
@@ -137,9 +141,11 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
   )
 }
 
-/* ─── MASONRY ITEM ─── */
-function MasonryItem({ item, onOpen }: {
-  item: typeof gallery[0] & { colIndex: number; globalIndex: number }
+/* ─── BENTO CELL ─── */
+function BentoCell({ item, layout, index, onOpen }: {
+  item: typeof gallery[0]
+  layout: typeof bento[0]
+  index: number
   onOpen: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -149,15 +155,14 @@ function MasonryItem({ item, onOpen }: {
   useEffect(() => {
     const el = ref.current; if (!el) return
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), item.globalIndex * 40); obs.disconnect() } },
+      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), (index % 6) * 60); obs.disconnect() } },
       { threshold: 0.05 }
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [item.globalIndex])
+  }, [index])
 
-  // Alternate offset: even columns start slightly lower for staggered feel
-  const colOffset = item.colIndex % 2 === 1 ? '2.2rem' : '0rem'
+  const height = layout.tall ? '420px' : '280px'
 
   return (
     <div
@@ -167,93 +172,87 @@ function MasonryItem({ item, onOpen }: {
       onMouseLeave={() => setHovered(false)}
       data-hover
       style={{
-        marginTop: item.globalIndex < COLS ? colOffset : '0',
-        marginBottom: '1.2rem',
+        gridColumn: `span ${layout.span}`,
+        position: 'relative',
+        height,
+        overflow: 'hidden',
         cursor: 'none',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(28px)',
-        transition: `opacity 0.7s ease ${item.globalIndex * 35}ms, transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94) ${item.globalIndex * 35}ms`,
-        position: 'relative',
-        overflow: 'hidden',
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
+        transition: `opacity 0.75s ease ${(index % 6) * 55}ms, transform 0.75s cubic-bezier(0.25,0.46,0.45,0.94) ${(index % 6) * 55}ms`,
       }}
     >
-      {/* image */}
+      <Image
+        src={item.src}
+        alt={item.title}
+        fill
+        style={{
+          objectFit: 'cover',
+          objectPosition: 'center top',
+          transform: hovered ? 'scale(1.05)' : 'scale(1)',
+          transition: 'transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94)',
+        }}
+        sizes={layout.span === 2 ? '66vw' : '33vw'}
+      />
+
+      {/* permanent subtle gradient bottom */}
       <div style={{
-        position: 'relative',
-        width: '100%',
-        paddingBottom: `${(item.aspect) * 100}%`,
-        overflow: 'hidden',
-        background: '#111',
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(to top, rgba(8,6,6,0.72) 0%, rgba(8,6,6,0.1) 40%, transparent 65%)',
+        transition: 'opacity 0.4s ease',
+        opacity: hovered ? 1 : 0.6,
+      }} />
+
+      {/* index — top right */}
+      <div style={{
+        position: 'absolute', top: '1rem', right: '1rem',
+        fontSize: '0.4rem', letterSpacing: '0.1em',
+        color: 'rgba(250,232,240,0.25)',
+        fontVariantNumeric: 'tabular-nums',
+        transition: 'opacity 0.3s',
+        opacity: hovered ? 0 : 1,
       }}>
-        <Image
-          src={item.src}
-          alt={item.title}
-          fill
-          style={{
-            objectFit: 'cover',
-            objectPosition: 'center top',
-            transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)',
-            transform: hovered ? 'scale(1.06)' : 'scale(1)',
-          }}
-          sizes="25vw"
-        />
+        {String(index + 1).padStart(2, '0')}
+      </div>
 
-        {/* hover overlay */}
+      {/* style tag — top right on hover */}
+      <div style={{
+        position: 'absolute', top: '1rem', right: '1rem',
+        fontSize: '0.38rem', letterSpacing: '0.2em', textTransform: 'uppercase',
+        color: 'var(--mark)',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.3s ease',
+      }}>
+        {item.style}
+      </div>
+
+      {/* title — bottom */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: '1.5rem 1.2rem 1.1rem',
+        transform: hovered ? 'translateY(0)' : 'translateY(6px)',
+        transition: 'transform 0.4s ease',
+      }}>
+        <p className="font-display" style={{
+          fontSize: layout.span === 2
+            ? 'clamp(1.2rem, 2.5vw, 2rem)'
+            : 'clamp(0.9rem, 1.5vw, 1.25rem)',
+          fontStyle: 'italic',
+          color: '#FAE8F0',
+          lineHeight: 1.05,
+          letterSpacing: '-0.01em',
+          opacity: hovered ? 1 : 0.7,
+          transition: 'opacity 0.3s',
+        }}>
+          {item.title}
+        </p>
         <div style={{
-          position: 'absolute', inset: 0,
-          background: hovered
-            ? 'linear-gradient(to top, rgba(8,6,6,0.88) 0%, rgba(8,6,6,0.3) 50%, transparent 75%)'
-            : 'linear-gradient(to top, rgba(8,6,6,0.55) 0%, transparent 50%)',
-          transition: 'background 0.4s ease',
+          height: '1px',
+          background: 'var(--mark)',
+          marginTop: '0.5rem',
+          width: hovered ? (layout.span === 2 ? '8rem' : '4rem') : '0',
+          transition: 'width 0.5s cubic-bezier(0.77,0,0.175,1)',
         }} />
-
-        {/* style tag — top left */}
-        <div style={{
-          position: 'absolute', top: '0.8rem', left: '0.8rem',
-          fontSize: '0.38rem', letterSpacing: '0.22em', textTransform: 'uppercase',
-          color: hovered ? 'var(--mark)' : 'rgba(250,232,240,0.35)',
-          transition: 'color 0.3s',
-          fontFamily: "'DM Sans', sans-serif",
-        }}>
-          {item.style}
-        </div>
-
-        {/* index number — top right */}
-        <div style={{
-          position: 'absolute', top: '0.75rem', right: '0.8rem',
-          fontSize: '0.38rem', letterSpacing: '0.15em',
-          color: 'rgba(250,232,240,0.15)',
-          fontVariantNumeric: 'tabular-nums',
-          fontFamily: "'DM Sans', sans-serif",
-        }}>
-          {String(item.globalIndex + 1).padStart(2, '0')}
-        </div>
-
-        {/* title — bottom, slides up on hover */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: '1.2rem 0.9rem 0.9rem',
-          transform: hovered ? 'translateY(0)' : 'translateY(8px)',
-          opacity: hovered ? 1 : 0.6,
-          transition: 'transform 0.35s ease, opacity 0.35s ease',
-        }}>
-          <p className="font-display" style={{
-            fontSize: 'clamp(0.75rem, 1.2vw, 1rem)',
-            fontStyle: 'italic',
-            color: '#FAE8F0',
-            lineHeight: 1.1,
-            letterSpacing: '-0.01em',
-          }}>
-            {item.title}
-          </p>
-          <div style={{
-            height: '1px',
-            background: 'var(--mark)',
-            width: hovered ? '100%' : '0%',
-            transition: 'width 0.5s cubic-bezier(0.77,0,0.175,1)',
-            marginTop: '0.4rem',
-          }} />
-        </div>
       </div>
     </div>
   )
@@ -286,7 +285,6 @@ export default function Portfolio() {
             ))}
           </div>
         </div>
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem' }}>
           <h2 className="font-display" style={{
             fontSize: 'clamp(4rem, 13vw, 14rem)',
@@ -304,33 +302,22 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* MASONRY GRID */}
+      {/* BENTO GRID */}
       <div style={{
-        padding: '3rem 1.5rem 5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '3px',
         background: '#0C0A0A',
       }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '1.2rem',
-          alignItems: 'start',
-        }}>
-          {columns.map((col, ci) => (
-            <div key={ci} style={{
-              display: 'flex',
-              flexDirection: 'column',
-              marginTop: ci % 2 === 1 ? '3rem' : '0',
-            }}>
-              {col.map(item => (
-                <MasonryItem
-                  key={item.globalIndex}
-                  item={item}
-                  onOpen={() => setActive(item.globalIndex)}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+        {gallery.map((item, i) => (
+          <BentoCell
+            key={i}
+            item={item}
+            layout={bento[i]}
+            index={i}
+            onOpen={() => setActive(i)}
+          />
+        ))}
       </div>
 
       {active !== null && (
