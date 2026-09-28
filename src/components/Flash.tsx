@@ -15,25 +15,25 @@ type FlashDef = {
 const BASE = '/Briza-Maldonado/flash/'
 const PAGES: FlashDef[][] = [
   [
-    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, aspect: 1.308, dots: [[0.568, 0.047], [0.821, 0.429], [0.427, 0.666], [0.073, 0.329]],
+    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]],
       p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
-    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, aspect: 1.243, dots: [[0.376, 0.099], [0.85, 0.593], [0.098, 0.723]],
+    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]],
       p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
   ],
   [
-    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, aspect: 0.816, dots: [[0.676, 0.032], [0.93, 0.63], [0.448, 0.801], [0.114, 0.267]],
+    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, aspect: 0.816, dots: [[0.95, 0.568], [0.627, 0.897], [0.037, 0.316], [0.622, 0.037]],
       p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
-    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, aspect: 1.167, dots: [[0.456, 0.086], [0.898, 0.448], [0.526, 0.767], [0.174, 0.502]],
+    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, aspect: 1.167, dots: [[0.943, 0.133], [0.731, 0.73], [0.049, 0.731], [0.435, 0.101]],
       p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
   ],
   [
-    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, aspect: 1.161, dots: [[0.443, 0.187], [0.698, 0.434], [0.371, 0.89], [0.141, 0.391]],
+    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, aspect: 1.161, dots: [[0.925, 0.16], [0.339, 0.921], [0.075, 0.06]],
       p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
-    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, aspect: 0.95, dots: [[0.619, 0.09], [0.844, 0.594], [0.415, 0.892], [0.11, 0.387]],
+    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, aspect: 0.95, dots: [[0.947, 0.283], [0.541, 0.939], [0.039, 0.6], [0.485, 0.043]],
       p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
   ],
   [
-    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, aspect: 1.003, dots: [[0.489, 0.282], [0.75, 0.511], [0.489, 0.756], [0.258, 0.511]],
+    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, aspect: 1.003, dots: [[0.944, 0.122], [0.654, 0.686], [0.051, 0.703], [0.405, 0.31]],
       p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
@@ -554,6 +554,10 @@ export default function Flash() {
                 // Distinct depth per sheet so resting pages never z-fight at the binding (iOS Safari sorts by depth, not z-index)
                 const depth = live || moving === i ? 8 : i < turned ? i * 1.5 - 20 : (SHEETS - i) * 1.5
                 const hidden = !spread && i < turned - 1 && !live && moving !== i
+                // Safari ignores backface-visibility when the face has transformed children (the rotated flashes),
+                // so faces are swapped explicitly when the sheet passes edge-on (~0.16s into the eased turn).
+                const faceUp = angle > -90
+                const flipAt = live ? 'none' : 'visibility 0s linear .16s'
                 const peek = i === 0 && turned === 0 && !drag && !hinted
                 return (
                   <div key={i} style={{
@@ -567,12 +571,12 @@ export default function Flash() {
                       animation: peek ? 'nbPeek 4.5s ease-in-out 1.5s infinite' : 'none',
                     }}>
                       {/* Front */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'visible' : 'hidden', transition: flipAt, borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
                         {i === 0 ? <CoverFront /> : <PageFront n={i - 1} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)` }} />
                       </div>
                       {/* Back */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'hidden' : 'visible', transition: flipAt, transform: 'rotateY(180deg) translateZ(.5px)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
                         {i === 0 ? <CoverBack /> : <PageBack n={i - 1} W={W} H={H} />}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)` }} />
                       </div>
