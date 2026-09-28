@@ -62,7 +62,7 @@ function Entrance({ mobile }: { mobile: boolean }) {
     // Starts already filling the screen (no empty start), then opens a space for the title
     const open = smooth(seg(p, 0.08, 0.78))
     const t = smooth(seg(p, 0.45, 0.85))
-    if (grid.current) grid.current.style.transform = `scale(${1.28 - open * 0.2})`
+    if (grid.current) grid.current.style.transform = `scale(${(mobile ? 1.7 : 1.6) - open * (mobile ? 0.55 : 0.6)})`
     colEls.current.forEach((el, c) => {
       if (!el) return
       const side = c - mid

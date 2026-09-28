@@ -384,7 +384,7 @@ body { cursor: none; }
 .archive { background: var(--bg); position: relative; }
 .arch-entrance { position: relative; }
 .arch-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; place-items: center; }
-.arch-grid { display: grid; gap: clamp(8px, 1.2vw, 16px); width: min(92vw, 1000px); will-change: transform; }
+.arch-grid { display: grid; gap: clamp(8px, 1.2vw, 16px); width: min(96vw, 1400px); will-change: transform; }
 .arch-col { display: grid; gap: clamp(8px, 1.2vw, 16px); will-change: transform; }
 .arch-tile { position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 2px; background: #e9d3dc; will-change: transform; }
 .arch-entrance-title { position: absolute; text-align: center; pointer-events: none; padding: 1.4rem 2rem 1.6rem; background: rgba(245,232,238,.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 4px; }
