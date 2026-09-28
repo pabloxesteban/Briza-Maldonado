@@ -3,232 +3,382 @@
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
-const stickers = [
-  { src: '/Briza-Maldonado/flash/mariposa-daga.png', alt: 'Mariposa con daga', rot: -8, x: 0, y: 0, scale: 1.05 },
-  { src: '/Briza-Maldonado/flash/corazon-vegan.png', alt: 'Corazón Vegan', rot: 4, x: 2, y: 1, scale: 0.95 },
-  { src: '/Briza-Maldonado/flash/frutilla.png', alt: 'Frutilla', rot: -3, x: -1, y: 2, scale: 0.88 },
-  { src: '/Briza-Maldonado/flash/flor-hojas.png', alt: 'Flor con hojas', rot: 7, x: 1, y: -1, scale: 0.92 },
-  { src: '/Briza-Maldonado/flash/gorrion.png', alt: 'Gorrión', rot: -5, x: 0, y: 1, scale: 1.0 },
-  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', alt: 'Rosa con alambre', rot: 9, x: -2, y: 0, scale: 0.97 },
-  { src: '/Briza-Maldonado/flash/cerdo-cabra.png', alt: 'Cerdo y cabra', rot: -6, x: 1, y: -2, scale: 1.02 },
-]
-
 const flashes = [
-  { id: 'F—01', name: 'Mariposa con Daga', style: 'Blackwork', price: '$50.000', available: true },
-  { id: 'F—02', name: 'Corazón Vegan', style: 'Traditional', price: '$55.000', available: true },
-  { id: 'F—03', name: 'Frutilla', style: 'Blackwork', price: '$40.000', available: true },
-  { id: 'F—04', name: 'Flor con Hojas', style: 'Traditional', price: '$45.000', available: true },
-  { id: 'F—05', name: 'Gorrión', style: 'Traditional', price: '$60.000', available: false },
-  { id: 'F—06', name: 'Rosa con Alambre', style: 'Blackwork', price: '$50.000', available: true },
-  { id: 'F—07', name: 'Cerdo & Cabra', style: 'Traditional', price: '$65.000', available: true },
+  { src: '/Briza-Maldonado/flash/mariposa-daga.png',     name: 'Mariposa con Daga', style: 'Blackwork',   price: '$50.000', available: true,  top: '8%',  left: '12%',  rot: -8,  size: 160 },
+  { src: '/Briza-Maldonado/flash/corazon-vegan.png',      name: 'Corazón Vegan',     style: 'Traditional', price: '$55.000', available: true,  top: '6%',  left: '55%',  rot: 5,   size: 130 },
+  { src: '/Briza-Maldonado/flash/frutilla.png',           name: 'Frutilla',          style: 'Blackwork',   price: '$40.000', available: true,  top: '24%', left: '38%',  rot: -12, size: 115 },
+  { src: '/Briza-Maldonado/flash/flor-hojas.png',         name: 'Flor con Hojas',    style: 'Traditional', price: '$45.000', available: true,  top: '28%', left: '72%',  rot: 9,   size: 125 },
+  { src: '/Briza-Maldonado/flash/gorrion.png',            name: 'Gorrión',           style: 'Traditional', price: '$60.000', available: false, top: '44%', left: '5%',   rot: 6,   size: 140 },
+  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre',  style: 'Blackwork',   price: '$50.000', available: true,  top: '50%', left: '48%',  rot: -7,  size: 135 },
+  { src: '/Briza-Maldonado/flash/cerdo-cabra.png',        name: 'Cerdo & Cabra',     style: 'Traditional', price: '$65.000', available: true,  top: '66%', left: '22%',  rot: 11,  size: 145 },
 ]
 
-function StickerItem({ sticker, index }: { sticker: typeof stickers[0]; index: number }) {
-  const [hovered, setHovered] = useState(false)
-  const [revealed, setRevealed] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+function SpiralBinding() {
+  return (
+    <div style={{
+      position: 'absolute',
+      left: -18,
+      top: '4%',
+      height: '92%',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-around',
+      zIndex: 10,
+    }}>
+      {Array.from({ length: 18 }).map((_, i) => (
+        <div key={i} style={{
+          width: 28,
+          height: 18,
+          borderRadius: '50%',
+          border: '3px solid #1a1a1a',
+          backgroundColor: 'transparent',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)',
+        }} />
+      ))}
+    </div>
+  )
+}
 
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setRevealed(true), index * 80)
-          obs.disconnect()
-        }
-      },
-      { threshold: 0.1 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [index])
+function NotebookCover({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false)
 
   return (
     <div
-      ref={ref}
+      onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       data-hover
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio: '1 / 1',
-        transform: revealed
-          ? hovered
-            ? `rotate(0deg) scale(1.12) translateY(-8px)`
-            : `rotate(${sticker.rot}deg) scale(${sticker.scale})`
-          : `rotate(${sticker.rot}deg) scale(0.7)`,
-        opacity: revealed ? 1 : 0,
-        transition: hovered
-          ? 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.6s ease, filter 0.25s ease'
-          : 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.6s ease, filter 0.3s ease',
-        filter: hovered
-          ? 'drop-shadow(0 16px 32px rgba(28,28,28,0.25)) drop-shadow(0 4px 8px rgba(28,28,28,0.15))'
-          : 'drop-shadow(0 4px 12px rgba(28,28,28,0.12))',
+        maxWidth: 520,
+        margin: '0 auto',
+        aspectRatio: '3/4',
         cursor: 'none',
-        zIndex: hovered ? 10 : 1,
+        transform: hovered ? 'rotate(-1deg) scale(1.02)' : 'rotate(0deg) scale(1)',
+        transition: 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+        filter: hovered
+          ? 'drop-shadow(0 32px 64px rgba(232,24,95,0.35)) drop-shadow(0 8px 24px rgba(0,0,0,0.5))'
+          : 'drop-shadow(0 16px 40px rgba(0,0,0,0.5))',
       }}
     >
-      <Image
-        src={sticker.src}
-        alt={sticker.alt}
-        fill
-        style={{ objectFit: 'contain' }}
-        sizes="(max-width: 768px) 40vw, 14vw"
-      />
-      {/* Flash number on hover */}
-      <div
-        style={{
+      {/* Cover body */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundColor: 'var(--mark)',
+        borderRadius: '0 8px 8px 0',
+        overflow: 'hidden',
+      }}>
+        {/* texture overlay */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E")`,
+          opacity: 0.6,
+        }} />
+        {/* subtle worn-cover gradient */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(0,0,0,0.15) 0%, transparent 50%)',
+        }} />
+
+        {/* Tape label — title */}
+        <div style={{
           position: 'absolute',
-          bottom: '-1.5rem',
+          top: '22%',
           left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: '0.5rem',
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: 'var(--mark)',
-          opacity: hovered ? 1 : 0,
-          transition: 'opacity 0.2s ease',
-          whiteSpace: 'nowrap',
-          fontFamily: 'inherit',
-        }}
-      >
-        {flashes[index]?.id} — {flashes[index]?.name}
+          transform: 'translateX(-50%) rotate(-2deg)',
+          backgroundColor: '#f0e8d8',
+          padding: '0.7rem 2.2rem',
+          width: '78%',
+          textAlign: 'center',
+          boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
+        }}>
+          <p style={{
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: 900,
+            fontSize: 'clamp(1.8rem, 5vw, 3rem)',
+            letterSpacing: '-0.02em',
+            color: '#140E0E',
+            lineHeight: 1,
+          }}>Flash</p>
+        </div>
+
+        {/* Tape label — subtitle */}
+        <div style={{
+          position: 'absolute',
+          top: '42%',
+          left: '50%',
+          transform: 'translateX(-50%) rotate(1.5deg)',
+          backgroundColor: '#f0e8d8',
+          padding: '0.5rem 1.8rem',
+          width: '65%',
+          textAlign: 'center',
+          boxShadow: '0 3px 10px rgba(0,0,0,0.2)',
+        }}>
+          <p style={{
+            fontFamily: "'Playfair Display', serif",
+            fontStyle: 'italic',
+            fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
+            color: '#140E0E',
+            letterSpacing: '-0.01em',
+          }}>Disponibles</p>
+        </div>
+
+        {/* ring holes — left side */}
+        <div style={{ position: 'absolute', left: 18, top: '10%', width: 12, height: 12, borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.4)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }} />
+        <div style={{ position: 'absolute', left: 18, top: '50%', width: 12, height: 12, borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.4)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }} />
+        <div style={{ position: 'absolute', left: 18, top: '90%', width: 12, height: 12, borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.4)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }} />
+
+        {/* click hint */}
+        <div style={{
+          position: 'absolute',
+          bottom: '8%',
+          width: '100%',
+          textAlign: 'center',
+          opacity: hovered ? 0.7 : 0.35,
+          transition: 'opacity 0.3s',
+        }}>
+          <p style={{
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '0.45rem',
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: 'rgba(250,232,240,0.9)',
+          }}>
+            abrir ↓
+          </p>
+        </div>
       </div>
+
+      {/* Spiral binding */}
+      <SpiralBinding />
     </div>
   )
 }
 
-function FlashRow({ flash, index }: { flash: typeof flashes[0]; index: number }) {
-  const ref = useRef<HTMLDivElement>(null)
+function FlashItem({ flash, index, visible }: { flash: typeof flashes[0]; index: number; visible: boolean }) {
   const [hovered, setHovered] = useState(false)
-  const [revealed, setRevealed] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setRevealed(true), index * 60)
-          obs.disconnect()
-        }
-      },
-      { threshold: 0.5 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [index])
+  const [popped, setPopped] = useState(false)
 
   return (
     <div
-      ref={ref}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => setPopped(v => !v)}
       data-hover
       style={{
-        display: 'grid',
-        gridTemplateColumns: '5rem 1fr 8rem 7rem 5rem',
-        alignItems: 'center',
-        padding: '1.6rem 0',
-        borderTop: '1px solid rgba(28,28,28,0.08)',
-        opacity: revealed ? 1 : 0,
-        transform: revealed ? 'translateX(0)' : 'translateX(-20px)',
-        transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94)',
-        backgroundColor: hovered && flash.available ? 'rgba(240,40,122,0.03)' : 'transparent',
-        cursor: flash.available ? 'none' : 'default',
+        position: 'absolute',
+        top: flash.top,
+        left: flash.left,
+        width: flash.size,
+        cursor: 'none',
+        opacity: visible ? 1 : 0,
+        transform: visible
+          ? hovered
+            ? `rotate(0deg) scale(1.15) translateY(-10px)`
+            : `rotate(${flash.rot}deg) scale(1)`
+          : `rotate(${flash.rot}deg) scale(0.6)`,
+        transition: visible
+          ? hovered
+            ? 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.5s ease'
+            : 'transform 0.4s ease, opacity 0.5s ease'
+          : 'none',
+        transitionDelay: visible ? `${index * 70}ms` : '0ms',
+        zIndex: hovered || popped ? 20 : index + 1,
+        filter: hovered
+          ? 'drop-shadow(0 16px 32px rgba(0,0,0,0.3))'
+          : 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))',
       }}
     >
-      <span style={{
-        fontSize: '0.6rem',
-        letterSpacing: '0.1em',
-        color: hovered ? 'var(--mark)' : 'var(--ink-muted)',
-        transition: 'color 0.2s',
-      }}>
-        {flash.id}
-      </span>
-
-      <div>
-        <span className="font-display" style={{
-          fontSize: 'clamp(1rem, 2vw, 1.5rem)',
-          fontStyle: 'italic',
-          color: 'var(--ink)',
-          display: 'block',
-          lineHeight: 1.2,
-        }}>
-          {flash.name}
-        </span>
-        <div style={{
-          height: '1px',
-          backgroundColor: 'var(--mark)',
-          width: hovered && flash.available ? '100%' : '0%',
-          transition: 'width 0.5s cubic-bezier(0.77,0,0.175,1)',
-          marginTop: '0.4rem',
-          maxWidth: '14rem',
-        }} />
+      <div style={{ position: 'relative', width: flash.size, height: flash.size }}>
+        <Image src={flash.src} alt={flash.name} fill style={{ objectFit: 'contain' }} sizes={`${flash.size}px`} />
       </div>
 
-      <span style={{
-        fontSize: '0.55rem',
-        letterSpacing: '0.15em',
-        textTransform: 'uppercase',
-        color: 'var(--ink-muted)',
-        opacity: 0.6,
+      {/* price tag that appears on hover */}
+      <div style={{
+        position: 'absolute',
+        bottom: -28,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        whiteSpace: 'nowrap',
+        opacity: hovered ? 1 : 0,
+        transition: 'opacity 0.2s ease',
+        pointerEvents: 'none',
+        textAlign: 'center',
       }}>
-        {flash.style}
-      </span>
-
-      <span style={{
-        fontSize: '0.8rem',
-        color: 'var(--ink)',
-      }}>
-        {flash.price}
-      </span>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        {flash.available ? (
-          <a
-            href="https://instagram.com/bri.t4tts"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: '0.55rem',
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: hovered ? 'var(--mark)' : 'var(--ink-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-              borderBottom: hovered ? '1px solid var(--mark)' : '1px solid transparent',
-              paddingBottom: '1px',
-            }}
-          >
-            consultar →
-          </a>
-        ) : (
-          <span style={{
-            fontSize: '0.55rem',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-            opacity: 0.3,
-          }}>
-            agotado
-          </span>
+        <p style={{
+          fontFamily: "'Caveat', cursive",
+          fontSize: '0.95rem',
+          color: flash.available ? '#c0392b' : '#888',
+          letterSpacing: '0.01em',
+          lineHeight: 1.1,
+        }}>
+          {flash.price}
+        </p>
+        {!flash.available && (
+          <p style={{
+            fontFamily: "'Caveat', cursive",
+            fontSize: '0.7rem',
+            color: '#aaa',
+          }}>agotado</p>
         )}
       </div>
     </div>
   )
 }
 
+function NotebookInterior({ onClose }: { onClose: () => void }) {
+  const [visible, setVisible] = useState(false)
+  const [itemsVisible, setItemsVisible] = useState(false)
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setVisible(true), 50)
+    const t2 = setTimeout(() => setItemsVisible(true), 300)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
+
+  return (
+    <div style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'scale(1)' : 'scale(0.96)',
+      transition: 'opacity 0.4s ease, transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)',
+      position: 'relative',
+    }}>
+      {/* Notebook outer */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 800,
+        margin: '0 auto',
+        minHeight: 700,
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+        borderRadius: '0 8px 8px 0',
+        overflow: 'visible',
+      }}>
+        <SpiralBinding />
+
+        {/* Lined paper */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          minHeight: 700,
+          borderRadius: '0 8px 8px 0',
+          overflow: 'hidden',
+          backgroundColor: '#f7f4ee',
+          backgroundImage: `
+            repeating-linear-gradient(
+              transparent,
+              transparent 29px,
+              #b8cfe0 29px,
+              #b8cfe0 30px
+            ),
+            linear-gradient(to right, transparent 52px, #dfa0a0 52px, #dfa0a0 53px, transparent 53px)
+          `,
+          padding: '2.5rem 2.5rem 3rem 4rem',
+        }}>
+
+          {/* Header handwritten */}
+          <div style={{ marginBottom: '1.5rem', paddingLeft: '0.5rem' }}>
+            <p style={{
+              fontFamily: "'Caveat', cursive",
+              fontSize: 'clamp(1.6rem, 4vw, 2.8rem)',
+              color: '#1a1a5e',
+              lineHeight: 1,
+              letterSpacing: '-0.01em',
+            }}>
+              Flash disponibles
+            </p>
+            <p style={{
+              fontFamily: "'Caveat', cursive",
+              fontSize: '1rem',
+              color: '#c0392b',
+              marginTop: '0.2rem',
+            }}>
+              ✦ consultá por turno → @bri.t4tts
+            </p>
+          </div>
+
+          {/* Flash items scattered on the paper */}
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            height: 520,
+          }}>
+            {flashes.map((flash, i) => (
+              <FlashItem key={i} flash={flash} index={i} visible={itemsVisible} />
+            ))}
+
+            {/* handwritten annotations */}
+            <div style={{
+              position: 'absolute', bottom: '5%', right: '2%',
+              fontFamily: "'Caveat', cursive",
+              fontSize: '0.85rem',
+              color: '#5a5a8a',
+              transform: 'rotate(-3deg)',
+              opacity: itemsVisible ? 0.7 : 0,
+              transition: 'opacity 0.8s ease 0.6s',
+            }}>
+              1 diseño por cliente ✦
+            </div>
+
+            <div style={{
+              position: 'absolute', bottom: '18%', left: '55%',
+              fontFamily: "'Caveat', cursive",
+              fontSize: '0.8rem',
+              color: '#c0392b',
+              transform: 'rotate(4deg)',
+              opacity: itemsVisible ? 0.6 : 0,
+              transition: 'opacity 0.8s ease 0.8s',
+            }}>
+              ← hover para ver precio
+            </div>
+          </div>
+
+          {/* close button */}
+          <div style={{ textAlign: 'center', paddingTop: '1rem' }}>
+            <button
+              onClick={onClose}
+              data-hover
+              style={{
+                background: 'none',
+                border: 'none',
+                fontFamily: "'Caveat', cursive",
+                fontSize: '1rem',
+                color: '#c0392b',
+                cursor: 'none',
+                textDecoration: 'underline',
+                opacity: 0.7,
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+            >
+              cerrar cuaderno ↑
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Flash() {
+  const [open, setOpen] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
+
+  const handleOpen = () => {
+    setOpen(true)
+    setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
+
   return (
     <section
       id="flash"
+      ref={sectionRef}
       style={{
         borderTop: '1px solid rgba(28,28,28,0.1)',
         padding: '5rem 2.5rem 6rem',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* Header */}
@@ -236,7 +386,7 @@ export default function Flash() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        marginBottom: '5rem',
+        marginBottom: '4rem',
       }}>
         <h2 className="font-display" style={{
           fontSize: 'clamp(0.6rem, 1vw, 0.75rem)',
@@ -259,46 +409,23 @@ export default function Flash() {
         </div>
       </div>
 
-      {/* Sticker wall */}
+      {/* Notebook */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        gap: '2rem',
-        marginBottom: '6rem',
+        display: 'flex',
+        justifyContent: 'center',
         padding: '2rem 0 3rem',
+        minHeight: open ? 'auto' : 480,
+        transition: 'min-height 0.4s ease',
       }}>
-        {stickers.map((s, i) => (
-          <StickerItem key={i} sticker={s} index={i} />
-        ))}
+        {open
+          ? <NotebookInterior onClose={() => setOpen(false)} />
+          : <NotebookCover onClick={handleOpen} />
+        }
       </div>
 
-      {/* Table */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '5rem 1fr 8rem 7rem 5rem',
-        padding: '0.75rem 0',
-        borderBottom: '1px solid rgba(28,28,28,0.15)',
-        marginBottom: '0.5rem',
-      }}>
-        {['Ref', 'Diseño', 'Estilo', 'Precio', ''].map((col, i) => (
-          <span key={i} style={{
-            fontSize: '0.55rem',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-            opacity: 0.5,
-            textAlign: i === 4 ? 'right' : 'left',
-          }}>
-            {col}
-          </span>
-        ))}
-      </div>
-
-      {flashes.map((f, i) => (
-        <FlashRow key={f.id} flash={f} index={i} />
-      ))}
-
-      <div style={{ borderTop: '1px solid rgba(28,28,28,0.08)' }} />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+      `}</style>
     </section>
   )
 }
