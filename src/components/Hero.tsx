@@ -4,22 +4,26 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
 const flashStickers = [
-  { src: '/Briza-Maldonado/flash/mariposa-daga.png',     name: 'Mariposa con Daga', style: 'Blackwork',   price: '$50.000', available: true,  size: 140, top: '4%',  left: '30%', rot: -14, anim: 'floatA 6.5s ease-in-out infinite', delay: '0s' },
-  { src: '/Briza-Maldonado/flash/gorrion.png',            name: 'Gorrión',           style: 'Traditional', price: '$60.000', available: false, size: 120, top: '16%', left: '5%',  rot: -8,  anim: 'floatC 8.5s ease-in-out infinite', delay: '0.5s' },
-  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre',  style: 'Blackwork',   price: '$50.000', available: true,  size: 130, top: '30%', left: '38%', rot: -4,  anim: 'floatC 7.8s ease-in-out infinite', delay: '1.3s' },
-  { src: '/Briza-Maldonado/flash/frutilla.png',           name: 'Frutilla',          style: 'Blackwork',   price: '$40.000', available: true,  size: 110, top: '46%', left: '2%',  rot: 11,  anim: 'floatB 7.2s ease-in-out infinite', delay: '1s' },
-  { src: '/Briza-Maldonado/flash/cerdo-cabra.png',        name: 'Cerdo & Cabra',     style: 'Traditional', price: '$65.000', available: true,  size: 125, top: '58%', left: '28%', rot: 5,   anim: 'driftRight 7s ease-in-out infinite', delay: '2s' },
-  { src: '/Briza-Maldonado/flash/flor-hojas.png',         name: 'Flor con Hojas',    style: 'Traditional', price: '$45.000', available: true,  size: 108, top: '72%', left: '6%',  rot: 7,   anim: 'floatA 5.8s ease-in-out infinite', delay: '1.8s' },
-  { src: '/Briza-Maldonado/flash/corazon-vegan.png',      name: 'Corazón Vegan',     style: 'Traditional', price: '$55.000', available: true,  size: 100, top: '84%', left: '35%', rot: -10, anim: 'floatB 9s ease-in-out infinite', delay: '0.8s' },
+  { src: '/Briza-Maldonado/flash/mariposa-daga.png',     name: 'Mariposa con Daga', style: 'Blackwork',   price: '$50.000', available: true,  size: 150, top: '5%',  left: '28%', rot: -14, anim: 'floatA 6.5s ease-in-out infinite', delay: '0s' },
+  { src: '/Briza-Maldonado/flash/gorrion.png',            name: 'Gorrión',           style: 'Traditional', price: '$60.000', available: false, size: 130, top: '14%', left: '62%', rot: -8,  anim: 'floatC 8.5s ease-in-out infinite', delay: '0.5s' },
+  { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre',  style: 'Blackwork',   price: '$50.000', available: true,  size: 140, top: '32%', left: '45%', rot: -4,  anim: 'floatC 7.8s ease-in-out infinite', delay: '1.3s' },
+  { src: '/Briza-Maldonado/flash/frutilla.png',           name: 'Frutilla',          style: 'Blackwork',   price: '$40.000', available: true,  size: 115, top: '50%', left: '4%',  rot: 11,  anim: 'floatB 7.2s ease-in-out infinite', delay: '1s' },
+  { src: '/Briza-Maldonado/flash/cerdo-cabra.png',        name: 'Cerdo & Cabra',     style: 'Traditional', price: '$65.000', available: true,  size: 135, top: '58%', left: '55%', rot: 5,   anim: 'driftRight 7s ease-in-out infinite', delay: '2s' },
+  { src: '/Briza-Maldonado/flash/flor-hojas.png',         name: 'Flor con Hojas',    style: 'Traditional', price: '$45.000', available: true,  size: 112, top: '74%', left: '18%', rot: 7,   anim: 'floatA 5.8s ease-in-out infinite', delay: '1.8s' },
+  { src: '/Briza-Maldonado/flash/corazon-vegan.png',      name: 'Corazón Vegan',     style: 'Traditional', price: '$55.000', available: true,  size: 105, top: '80%', left: '40%', rot: -10, anim: 'floatB 9s ease-in-out infinite', delay: '0.8s' },
 ]
 
 type Sticker = typeof flashStickers[0]
 
-function StickerPin({ s, mouseX, mouseY }: { s: Sticker; mouseX: number; mouseY: number }) {
-  const [open, setOpen] = useState(false)
+function StickerPin({ s, mouseX, mouseY, isOpen, onToggle }: {
+  s: Sticker; mouseX: number; mouseY: number; isOpen: boolean; onToggle: () => void
+}) {
+  const px = (mouseX - 0.5) * -28 * (s.size / 130)
+  const py = (mouseY - 0.5) * -18 * (s.size / 130)
 
-  const px = (mouseX - 0.5) * -20 * (s.size / 130)
-  const py = (mouseY - 0.5) * -14 * (s.size / 130)
+  // Determine if sticker is in top half → tooltip goes below; bottom half → tooltip goes above
+  const topPct = parseFloat(s.top)
+  const tooltipAbove = topPct >= 45
 
   return (
     <div
@@ -30,32 +34,31 @@ function StickerPin({ s, mouseX, mouseY }: { s: Sticker; mouseX: number; mouseY:
         top: s.top,
         left: s.left,
         ['--rot' as string]: `${s.rot}deg`,
-        animation: open ? 'none' : s.anim,
+        animation: isOpen ? 'none' : s.anim,
         animationDelay: s.delay,
         cursor: 'pointer',
-        zIndex: open ? 100 : 30,
-        transform: open ? 'scale(1.2)' : `translate(${px}px, ${py}px)`,
-        transition: open ? 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' : 'transform 0.7s ease',
+        zIndex: isOpen ? 100 : 30,
+        transform: isOpen ? 'scale(1.18)' : `translate(${px}px, ${py}px)`,
+        transition: isOpen ? 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1)' : 'transform 0.7s ease',
       }}
-      onClick={() => setOpen(v => !v)}
+      onClick={onToggle}
     >
       <div
         style={{
           position: 'relative', width: '100%', height: '100%',
-          filter: open
+          filter: isOpen
             ? 'drop-shadow(0 18px 38px rgba(20,14,14,0.4))'
             : 'drop-shadow(0 6px 18px rgba(20,14,14,0.18))',
-          transform: open ? 'scale(1)' : 'scale(1)',
           transition: 'filter 0.25s',
         }}
         onMouseEnter={e => {
-          if (!open) {
+          if (!isOpen) {
             const el = e.currentTarget as HTMLElement
             el.style.filter = 'drop-shadow(0 14px 28px rgba(20,14,14,0.32))'
           }
         }}
         onMouseLeave={e => {
-          if (!open) {
+          if (!isOpen) {
             const el = e.currentTarget as HTMLElement
             el.style.filter = 'drop-shadow(0 6px 18px rgba(20,14,14,0.18))'
           }
@@ -64,12 +67,15 @@ function StickerPin({ s, mouseX, mouseY }: { s: Sticker; mouseX: number; mouseY:
         <Image src={s.src} alt={s.name} fill style={{ objectFit: 'contain' }} sizes={`${s.size}px`} />
       </div>
 
-      {open && (
+      {isOpen && (
         <>
-          <div onClick={e => { e.stopPropagation(); setOpen(false) }} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
+          <div onClick={e => { e.stopPropagation(); onToggle() }} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
           <div style={{
             position: 'absolute',
-            bottom: '115%', left: '50%',
+            ...(tooltipAbove
+              ? { bottom: '115%' }
+              : { top: '115%' }),
+            left: '50%',
             transform: 'translateX(-50%)',
             background: 'var(--bg)',
             border: '1px solid rgba(20,14,14,0.1)',
@@ -113,6 +119,7 @@ export default function Hero() {
   const nameRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 })
+  const [openIdx, setOpenIdx] = useState<number | null>(null)
 
   useEffect(() => {
     const lines = nameRef.current?.querySelectorAll<HTMLElement>('[data-line]')
@@ -191,7 +198,14 @@ export default function Hero() {
       }}>
         <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'all' }}>
           {flashStickers.map((s, i) => (
-            <StickerPin key={i} s={s} mouseX={mouse.x} mouseY={mouse.y} />
+            <StickerPin
+              key={i}
+              s={s}
+              mouseX={mouse.x}
+              mouseY={mouse.y}
+              isOpen={openIdx === i}
+              onToggle={() => setOpenIdx(openIdx === i ? null : i)}
+            />
           ))}
         </div>
       </div>

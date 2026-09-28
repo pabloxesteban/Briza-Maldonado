@@ -23,28 +23,46 @@ const gallery = [
   { title: 'Vegan',              style: 'Lettering',    note: 'Lettering en pie.',                               src: '/Briza-Maldonado/portfolio/vegan-script.jpg' },
 ]
 
-// scattered positions on the wall — 4 columns, 5 rows, with offsets and rotations
+// More disordered layout — varied positions, stronger rotations, some overlapping
 const layout = [
-  { left: '1%',  top: '2%',   rot: -6,  size: 'md' },
-  { left: '26%', top: '0%',   rot: 3,   size: 'lg' },
-  { left: '52%', top: '3%',   rot: -4,  size: 'md' },
-  { left: '75%', top: '1%',   rot: 7,   size: 'sm' },
-  { left: '4%',  top: '23%',  rot: 5,   size: 'sm' },
-  { left: '28%', top: '21%',  rot: -8,  size: 'md' },
-  { left: '54%', top: '24%',  rot: 2,   size: 'lg' },
-  { left: '76%', top: '22%',  rot: -5,  size: 'md' },
-  { left: '0%',  top: '46%',  rot: -3,  size: 'lg' },
-  { left: '25%', top: '44%',  rot: 6,   size: 'sm' },
-  { left: '50%', top: '47%',  rot: -7,  size: 'md' },
-  { left: '75%', top: '45%',  rot: 4,   size: 'lg' },
-  { left: '3%',  top: '68%',  rot: 8,   size: 'md' },
-  { left: '27%', top: '66%',  rot: -4,  size: 'lg' },
-  { left: '53%', top: '70%',  rot: 3,   size: 'sm' },
-  { left: '76%', top: '67%',  rot: -6,  size: 'md' },
-  { left: '37%', top: '88%',  rot: 2,   size: 'md' },
+  { left: '2%',   top: '2%',   rot: -9,  size: 'md', tape: 'center' },
+  { left: '24%',  top: '0%',   rot: 5,   size: 'lg', tape: 'left' },
+  { left: '51%',  top: '1%',   rot: -13, size: 'sm', tape: 'right' },
+  { left: '72%',  top: '3%',   rot: 8,   size: 'md', tape: 'center' },
+  { left: '6%',   top: '21%',  rot: 11,  size: 'sm', tape: 'left' },
+  { left: '30%',  top: '19%',  rot: -6,  size: 'md', tape: 'center' },
+  { left: '55%',  top: '22%',  rot: 3,   size: 'lg', tape: 'right' },
+  { left: '78%',  top: '18%',  rot: -11, size: 'sm', tape: 'left' },
+  { left: '0%',   top: '43%',  rot: -4,  size: 'lg', tape: 'center' },
+  { left: '27%',  top: '40%',  rot: 14,  size: 'sm', tape: 'right' },
+  { left: '52%',  top: '44%',  rot: -8,  size: 'md', tape: 'left' },
+  { left: '76%',  top: '41%',  rot: 6,   size: 'lg', tape: 'center' },
+  { left: '5%',   top: '64%',  rot: 10,  size: 'md', tape: 'right' },
+  { left: '29%',  top: '62%',  rot: -15, size: 'lg', tape: 'center' },
+  { left: '57%',  top: '66%',  rot: 4,   size: 'sm', tape: 'left' },
+  { left: '78%',  top: '63%',  rot: -7,  size: 'md', tape: 'right' },
+  { left: '38%',  top: '84%',  rot: 3,   size: 'md', tape: 'center' },
 ]
 
-const sizeMap = { sm: 190, md: 220, lg: 255 }
+const sizeMap = { sm: 180, md: 215, lg: 255 }
+
+/* ─── TAPE STRIP ─── */
+function TapeStrip({ position }: { position: 'left' | 'right' | 'center' }) {
+  const leftMap = { left: '15%', center: '42%', right: '65%' }
+  return (
+    <div style={{
+      position: 'absolute',
+      top: -10,
+      left: leftMap[position],
+      width: 38,
+      height: 18,
+      background: 'rgba(240,230,200,0.55)',
+      transform: `rotate(${position === 'left' ? -8 : position === 'right' ? 6 : -2}deg)`,
+      zIndex: 3,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+    }} />
+  )
+}
 
 /* ─── LIGHTBOX ─── */
 function Lightbox({ index, onClose, onPrev, onNext }: {
@@ -64,12 +82,16 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
   }, [onClose, onPrev, onNext])
 
   return (
-    <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, zIndex: 3000,
-      background: 'rgba(10,8,8,0.97)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      animation: 'fadeIn 0.22s ease',
-    }}>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 3000,
+        background: 'rgba(10,8,8,0.97)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        animation: 'fadeIn 0.22s ease',
+        cursor: 'none',
+      }}
+    >
       {/* close */}
       <button onClick={onClose} data-hover style={{
         position: 'absolute', top: '2rem', right: '2.5rem',
@@ -177,7 +199,7 @@ function PolaroidCard({ item, pos, index, onOpen }: {
     const el = ref.current; if (!el) return
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), index * 55); obs.disconnect() } },
-      { threshold: 0.05 }
+      { threshold: 0.02 }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -197,28 +219,22 @@ function PolaroidCard({ item, pos, index, onOpen }: {
         width: imgW + 24,
         cursor: 'none',
         transform: hovered
-          ? `rotate(0deg) scale(1.06) translateY(-8px)`
+          ? `rotate(0deg) scale(1.08) translateY(-12px)`
           : visible
             ? `rotate(${pos.rot}deg) scale(1)`
             : `rotate(${pos.rot}deg) scale(0.88) translateY(20px)`,
         opacity: visible ? 1 : 0,
         transition: hovered
-          ? 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease, box-shadow 0.3s ease'
+          ? 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease, box-shadow 0.3s ease, z-index 0s'
           : 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.6s ease',
         boxShadow: hovered
-          ? '0 28px 60px rgba(0,0,0,0.65)'
-          : '0 8px 28px rgba(0,0,0,0.45)',
-        zIndex: hovered ? 20 : index % 4 + 1,
+          ? '0 28px 60px rgba(0,0,0,0.7), 0 8px 20px rgba(0,0,0,0.4)'
+          : '0 8px 28px rgba(0,0,0,0.5)',
+        zIndex: hovered ? 50 : index % 4 + 1,
       }}
     >
-      {/* pin */}
-      <div style={{
-        position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)',
-        width: 12, height: 12, borderRadius: '50%',
-        background: 'var(--mark)',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-        zIndex: 2,
-      }} />
+      {/* tape strip */}
+      <TapeStrip position={pos.tape as 'left' | 'right' | 'center'} />
 
       {/* polaroid frame */}
       <div style={{
@@ -280,9 +296,6 @@ export default function Portfolio() {
   const next = useCallback(() => setActive(i => i !== null ? (i + 1) % gallery.length : null), [])
   const close = useCallback(() => setActive(null), [])
 
-  // compute wall height from deepest polaroid
-  const WALL_H = '1080px'
-
   return (
     <section id="obra" style={{ backgroundColor: '#0C0A0A' }}>
       {/* Header */}
@@ -325,12 +338,12 @@ export default function Portfolio() {
       <div style={{
         position: 'relative',
         width: '100%',
-        minHeight: WALL_H,
+        minHeight: '2000px',
         background: '#0C0A0A',
         backgroundImage: `radial-gradient(ellipse at 20% 40%, rgba(232,24,95,0.04) 0%, transparent 60%),
           radial-gradient(ellipse at 80% 70%, rgba(107,79,87,0.06) 0%, transparent 50%)`,
-        padding: '60px 3% 80px',
-        overflow: 'hidden',
+        padding: '80px 3% 120px',
+        overflow: 'visible',
       }}>
         {/* grain overlay */}
         <div style={{
@@ -340,7 +353,7 @@ export default function Portfolio() {
 
         {/* watermark text */}
         <div style={{
-          position: 'absolute', bottom: '12%', right: '3%',
+          position: 'absolute', bottom: '8%', right: '3%',
           fontFamily: "'Playfair Display', serif",
           fontSize: 'clamp(5rem, 14vw, 16rem)',
           fontStyle: 'italic', fontWeight: 900,
