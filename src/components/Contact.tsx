@@ -53,6 +53,7 @@ export default function Contact() {
     <section
       id="turno"
       ref={ref}
+      data-cursor="book"
       style={{
         borderTop: '1px solid rgba(28,28,28,0.1)',
         padding: 'clamp(5rem, 10vw, 10rem) 2.5rem',

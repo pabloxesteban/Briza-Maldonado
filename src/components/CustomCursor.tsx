@@ -2,13 +2,35 @@
 
 import { useEffect, useRef } from 'react'
 
+type CursorState = 'default' | 'hover' | 'view' | 'book' | 'drag'
+
+function getCursorState(el: Element | null): CursorState {
+  if (!el) return 'default'
+  const closest = el.closest('[data-cursor], a, button, [role="button"], [data-hover]')
+  if (!closest) return 'default'
+  const state = (closest as HTMLElement).dataset.cursor
+  if (state === 'view') return 'view'
+  if (state === 'book') return 'book'
+  if (state === 'drag') return 'drag'
+  return 'hover'
+}
+
+const STATE_STYLES: Record<CursorState, { size: number; border: string; opacity: number; label?: string; bg?: string }> = {
+  default: { size: 32,  border: 'var(--ink)',  opacity: 0.25 },
+  hover:   { size: 56,  border: 'var(--mark)', opacity: 0.6 },
+  view:    { size: 72,  border: 'var(--mark)', opacity: 1,   label: 'VER',  bg: 'var(--mark)' },
+  book:    { size: 72,  border: 'var(--mark)', opacity: 1,   label: 'TURNO', bg: 'var(--ink)' },
+  drag:    { size: 56,  border: 'var(--ink)',  opacity: 0.5, label: '⟷' },
+}
+
 export default function CustomCursor() {
-  const dotRef = useRef<HTMLDivElement>(null)
+  const dotRef  = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
-  const pos = useRef({ x: 0, y: 0 })
-  const ring = useRef({ x: 0, y: 0 })
-  const raf = useRef<number>(0)
-  const hovering = useRef(false)
+  const labelRef = useRef<HTMLSpanElement>(null)
+  const pos     = useRef({ x: 0, y: 0 })
+  const ring    = useRef({ x: 0, y: 0 })
+  const raf     = useRef<number>(0)
+  const curState = useRef<CursorState>('default')
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -16,16 +38,29 @@ export default function CustomCursor() {
       if (dotRef.current) {
         dotRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`
       }
+
       const el = document.elementFromPoint(e.clientX, e.clientY)
-      const isHover = !!(el?.closest('[data-hover], a, button, [role="button"]'))
-      if (isHover !== hovering.current) {
-        hovering.current = isHover
-        if (ringRef.current) {
-          ringRef.current.style.width = isHover ? '56px' : '32px'
-          ringRef.current.style.height = isHover ? '56px' : '32px'
-          ringRef.current.style.borderColor = isHover ? 'var(--mark)' : 'var(--ink)'
-          ringRef.current.style.opacity = isHover ? '0.6' : '0.25'
-        }
+      const state = getCursorState(el)
+      if (state === curState.current) return
+      curState.current = state
+
+      const s = STATE_STYLES[state]
+      const r = ringRef.current
+      const l = labelRef.current
+      if (!r || !l) return
+
+      r.style.width  = `${s.size}px`
+      r.style.height = `${s.size}px`
+      r.style.borderColor = s.border
+      r.style.opacity = String(s.opacity)
+      r.style.backgroundColor = s.bg ?? 'transparent'
+
+      if (s.label) {
+        l.textContent = s.label
+        l.style.opacity = '1'
+        l.style.color = s.bg === 'var(--mark)' ? '#FAE8F0' : '#FAE8F0'
+      } else {
+        l.style.opacity = '0'
       }
     }
 
@@ -53,7 +88,6 @@ export default function CustomCursor() {
 
   return (
     <>
-      {/* dot */}
       <div ref={dotRef} style={{
         position: 'fixed', top: 0, left: 0,
         width: '5px', height: '5px',
@@ -64,7 +98,6 @@ export default function CustomCursor() {
         transform: 'translate(-100px,-100px)',
         marginLeft: '-2.5px', marginTop: '-2.5px',
       }} />
-      {/* ring */}
       <div ref={ringRef} style={{
         position: 'fixed', top: 0, left: 0,
         width: '32px', height: '32px',
@@ -73,8 +106,22 @@ export default function CustomCursor() {
         opacity: 0.25,
         pointerEvents: 'none',
         zIndex: 9998,
-        transition: 'width 0.3s ease, height 0.3s ease, border-color 0.3s, opacity 0.3s',
-      }} />
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'width 0.3s ease, height 0.3s ease, border-color 0.25s, opacity 0.25s, background-color 0.25s',
+      }}>
+        <span ref={labelRef} style={{
+          fontSize: '0.38rem',
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: '#FAE8F0',
+          fontFamily: "'DM Sans', sans-serif",
+          fontWeight: 700,
+          opacity: 0,
+          transition: 'opacity 0.2s',
+          userSelect: 'none',
+          pointerEvents: 'none',
+        }} />
+      </div>
     </>
   )
 }

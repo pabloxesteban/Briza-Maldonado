@@ -17,11 +17,11 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
       <Hero />
+      <About />
       <ImageStrip />
       <Portfolio />
-      <Process />
       <Flash />
-      <About />
+      <Process />
       <Contact />
       <Footer />
     </main>

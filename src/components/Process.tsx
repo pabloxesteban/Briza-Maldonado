@@ -181,6 +181,7 @@ export default function Process() {
       <div
         ref={scrollRef}
         className="h-scroll-container"
+        data-cursor="drag"
         style={{
           display: 'flex',
           padding: '0 2.5rem 5rem',
