@@ -96,8 +96,13 @@ export default function Contact() {
       setA(p => ({ ...p, idea: 'Un flash del cuaderno', detail: name }))
       setStep(0); setDone(null)
     }
+    const onIdea = (e: Event) => {
+      setA(p => ({ ...p, idea: 'Un diseño propio', detail: (e as CustomEvent<string>).detail }))
+      setStep(0); setDone(null)
+    }
     window.addEventListener('book:flash', onPick)
-    return () => window.removeEventListener('book:flash', onPick)
+    window.addEventListener('book:idea', onIdea)
+    return () => { window.removeEventListener('book:flash', onPick); window.removeEventListener('book:idea', onIdea) }
   }, [])
 
   const send = async (via: 'whatsapp' | 'instagram') => {

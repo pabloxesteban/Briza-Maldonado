@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
-import Portfolio from '@/components/Portfolio'
+import Archive from '@/components/Archive'
 import ImageStrip from '@/components/ImageStrip'
 import Process from '@/components/Process'
 import Flash from '@/components/Flash'
@@ -32,7 +32,7 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
       <Hero />
-      <Portfolio />
+      <Archive />
       <ImageStrip />
       <InkLine />
       <Flash />

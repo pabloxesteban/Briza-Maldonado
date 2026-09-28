@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import Portfolio from '@/components/Portfolio'
+import Archive from '@/components/Archive'
 import Footer from '@/components/Footer'
 import CustomCursor from '@/components/CustomCursor'
 import ScrollProgress from '@/components/ScrollProgress'
@@ -22,7 +22,7 @@ export default function ObraPage() {
       <CustomCursor />
       <ScrollProgress />
       <Navbar />
-      <Portfolio />
+      <Archive />
       <Footer />
     </main>
   )
