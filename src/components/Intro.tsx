@@ -12,6 +12,7 @@ export default function Intro() {
     let seen = false
     try { seen = sessionStorage.getItem('bm-intro') === '1'; sessionStorage.setItem('bm-intro', '1') } catch {}
     if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setPhase('gone'); return }
+    document.documentElement.dataset.intro = 'playing'
     const t = [
       setTimeout(() => setPhase('color'), 950),
       setTimeout(() => setPhase('out'), 1850),

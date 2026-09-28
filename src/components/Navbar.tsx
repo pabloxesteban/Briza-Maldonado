@@ -181,17 +181,17 @@ export default function Navbar() {
           flexDirection: 'column',
           justifyContent: 'center',
           padding: '6rem 2.5rem 3rem',
-          opacity: menuOpen ? 1 : 0,
+          clipPath: menuOpen ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
           pointerEvents: menuOpen ? 'all' : 'none',
-          transition: 'opacity 0.35s ease',
+          transition: 'clip-path 0.7s cubic-bezier(0.76,0,0.24,1)',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
           {links.map((l, i) => {
             const active = pathname === l.href || pathname === l.href + '/'
             return (
+              <div key={l.href} style={{ overflow: 'hidden', paddingBottom: '0.12em' }}>
               <Link
-                key={l.href}
                 href={l.href}
                 style={{
                   fontFamily: 'var(--font-display)',
@@ -201,13 +201,14 @@ export default function Navbar() {
                   lineHeight: 1,
                   color: active ? 'var(--mark)' : 'var(--ink)',
                   textDecoration: 'none',
-                  opacity: menuOpen ? 1 : 0,
-                  transform: menuOpen ? 'translateY(0)' : 'translateY(16px)',
-                  transition: `opacity 0.4s ease ${i * 60 + 80}ms, transform 0.4s ease ${i * 60 + 80}ms`,
+                  display: 'block',
+                  transform: menuOpen ? 'translateY(0)' : 'translateY(110%)',
+                  transition: `transform 0.9s cubic-bezier(0.22,1,0.36,1) ${menuOpen ? i * 80 + 280 : 0}ms`,
                 }}
               >
                 {l.label}
               </Link>
+              </div>
             )
           })}
         </div>

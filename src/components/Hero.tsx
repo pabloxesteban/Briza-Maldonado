@@ -8,13 +8,18 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    // Lines rise from behind a mask, after the logo intro when it plays
+    const introPlaying = document.documentElement.dataset.intro === 'playing' || (() => { try { return sessionStorage.getItem('bm-intro') !== '1' } catch { return false } })()
+    const start = introPlaying ? 2300 : 250
     const lines = nameRef.current?.querySelectorAll<HTMLElement>('[data-line]')
     lines?.forEach((el, i) => {
       setTimeout(() => {
         el.style.opacity = '1'
         el.style.clipPath = 'inset(0 0% 0 0)'
-      }, 300 + i * 220)
+        el.style.transform = 'translateY(0)'
+      }, start + i * 180)
     })
+    nameRef.current?.style.setProperty('--hero-delay', `${start / 1000 + 0.45}s`)
   }, [])
 
   return (
@@ -82,8 +87,8 @@ export default function Hero() {
             fontSize: 'clamp(4.2rem, 18vw, 20rem)',
             fontWeight: 900, letterSpacing: '-0.04em',
             color: 'var(--ink)', lineHeight: 0.85, display: 'block',
-            clipPath: 'inset(0 100% 0 0)', opacity: 0,
-            transition: 'clip-path 1.3s cubic-bezier(0.77,0,0.175,1), opacity 0.01s',
+            clipPath: 'inset(0 0% 0 0)', opacity: 0, transform: 'translateY(105%)',
+            transition: 'transform 1.1s cubic-bezier(0.22,1,0.36,1), opacity 0.01s',
           }}>
             Briza
           </h1>
@@ -95,15 +100,15 @@ export default function Hero() {
             fontSize: 'clamp(3.3rem, 14vw, 16rem)',
             fontWeight: 700, fontStyle: 'italic', letterSpacing: '-0.03em',
             color: 'var(--ink)', lineHeight: 0.88, display: 'block',
-            clipPath: 'inset(0 100% 0 0)', opacity: 0,
-            transition: 'clip-path 1.3s cubic-bezier(0.77,0,0.175,1) 0.2s, opacity 0.01s 0.2s',
+            clipPath: 'inset(0 0% 0 0)', opacity: 0, transform: 'translateY(105%)',
+            transition: 'transform 1.1s cubic-bezier(0.22,1,0.36,1), opacity 0.01s',
           }}>
             Maldonado
           </h1>
         </div>
 
         {/* What she does, where, and the two ways forward */}
-        <div style={{ opacity: 0, animation: 'fadeIn 0.9s var(--ease) 1.3s forwards', marginTop: '1.8rem', paddingLeft: 'clamp(0rem, 1vw, 1rem)' }}>
+        <div style={{ opacity: 0, animation: 'riseIn 0.9s var(--ease) var(--hero-delay, 1.3s) forwards', marginTop: '1.8rem', paddingLeft: 'clamp(0rem, 1vw, 1rem)' }}>
           <p style={{ fontSize: 'clamp(.8rem, 1.2vw, .95rem)', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink)', lineHeight: 1.5, textShadow: '0 0 12px var(--bg), 0 0 4px var(--bg)' }}>
             <span style={{ display: 'block' }}>Tatuadora <span style={{ color: 'var(--mark)' }}>✦</span> Traditional &amp; blackwork</span>
             <span style={{ display: 'block', color: 'var(--ink-muted)', marginTop: '.35em' }}>Palermo, Buenos Aires</span>
