@@ -258,7 +258,7 @@ function PaperFlash({ flash, index, W, H, mirror = false }: { flash: FlashDef; i
           : 'drop-shadow(0 .3px .4px rgba(40,30,20,.35)) drop-shadow(0 1px 1.5px rgba(60,50,30,.1))',
         transition: 'filter .4s ease',
       }}>
-        <Image src={flash.src} alt={flash.name} fill draggable={false} sizes={`${Math.round(size)}px`}
+        <Image src={flash.src} alt={flash.name} fill draggable={false} loading="eager" sizes={`${Math.round(size)}px`}
           style={{ objectFit: 'contain', filter: 'contrast(1.12) saturate(.8) brightness(1.04)' }} />
       </div>
 
@@ -408,20 +408,22 @@ export default function Flash() {
   const W = Math.max(0, Math.min(460, wrap.w - 30))
   const H = W / RATIO
   const spread = wrap.w >= W * 2 + 80
-  // Every sheet carries a different page on each side, like a real notebook
-  const SHEETS = 1 + Math.ceil(PAGES.length / 2)
-  const frontPage = (i: number) => (i - 1) * 2
+  // Desktop spreads use both sides of every sheet; phones show one page at a time (backs stay blank)
+  const perSheet = spread ? 2 : 1
+  const SHEETS = 1 + Math.ceil(PAGES.length / perSheet)
+  const frontPage = (i: number) => (i - 1) * perSheet
   const backPage = (i: number) => (i - 1) * 2 + 1
-  const hasBack = (i: number) => i >= 1 && backPage(i) < PAGES.length
-  // Last sheet can be turned when its back has content (or on a spread, to show the back cover)
-  const MAX_TURN = spread || hasBack(SHEETS - 1) ? SHEETS : SHEETS - 1
+  const hasBack = (i: number) => spread && i >= 1 && backPage(i) < PAGES.length
+  // On a spread the last sheet can also be turned, revealing the inside of the back cover
+  const MAX_TURN = spread ? SHEETS : SHEETS - 1
   useEffect(() => { setNav({ turned: 0, left: false }); setDrag(null) }, [spread])
+  useEffect(() => { loadGrain() }, [])
   const open = turned > 0
 
   // What one step forward/back does: flip a sheet, or (narrow screens) slide between the two pages of a spread
   const step = (dir: 1 | -1, cur = navRef.current) => {
     const { turned: t, left } = cur
-    if (spread) {
+    if (spread || !left) {
       const n = Math.min(MAX_TURN, Math.max(0, t + dir))
       return n === t ? null : { next: { turned: n, left: false }, flip: dir === 1 ? t : t - 1 }
     }
@@ -514,19 +516,10 @@ export default function Flash() {
       return
     }
     // Tap: cover opens; the outer edges of what is on screen turn
-    const onSticker = (e.target as HTMLElement).closest('[data-hover]') && turned > 0
-    if (onSticker) return
     if (turned === 0) { go(1); return }
-    const box = wrapRef.current!.getBoundingClientRect()
-    if (spread) {
-      const rel = (e.clientX - stageRef.current!.getBoundingClientRect().left) / W
-      if (rel < 0.12) go(-1)
-      else if (rel > 0.8) go(1)
-    } else {
-      const rel = (e.clientX - box.left) / box.width
-      if (rel < 0.18) go(-1)
-      else if (rel > 0.78) go(1)
-    }
+    // Right side of what you see turns forward, left side turns back
+    const rel = (e.clientX - stageRef.current!.getBoundingClientRect().left) / W
+    go(spread ? (rel < 0 ? -1 : 1) : (rel < 0.4 ? -1 : 1))
   }
 
   const angleOf = (i: number) => (drag?.sheet === i ? drag.angle : i < turned ? -180 : 0)

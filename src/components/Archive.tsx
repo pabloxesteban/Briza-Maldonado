@@ -19,61 +19,119 @@ function useViewport() {
   return vp
 }
 
-// Progress (0..1) of a tall element scrolling past the viewport
-function useScrollProgress(ref: React.RefObject<HTMLElement>, mode: 'pin' | 'pass') {
-  const [p, setP] = useState(0)
+
+// Runs fn(progress) on every frame while mounted, easing toward the real scroll position.
+// Writes go straight to the DOM (no React state), so scrolling never re-renders the gallery.
+function useSmoothProgress(ref: React.RefObject<HTMLElement>, fn: (p: number) => void, deps: unknown[]) {
+  const fnRef = useRef(fn)
+  fnRef.current = fn
   useEffect(() => {
-    let raf = 0
-    const update = () => {
-      raf = 0
+    let raf = 0, cur = -1
+    const tick = () => {
       const el = ref.current
-      if (!el) return
-      const r = el.getBoundingClientRect(), vh = window.innerHeight
-      setP(mode === 'pin'
-        ? clamp(-r.top / Math.max(1, r.height - vh))
-        : clamp((vh - r.top) / (r.height + vh)))
+      const r = el?.getBoundingClientRect()
+      if (el && r && r.bottom > -200 && r.top < window.innerHeight + 200) {
+        const target = clamp(-r.top / Math.max(1, r.height - window.innerHeight))
+        cur = cur < 0 ? target : cur + (target - cur) * 0.12
+        if (Math.abs(target - cur) < 0.0002) cur = target
+        fnRef.current(cur)
+      }
+      raf = requestAnimationFrame(tick)
     }
-    const on = () => { if (!raf) raf = requestAnimationFrame(update) }
-    update()
-    window.addEventListener('scroll', on, { passive: true })
-    window.addEventListener('resize', on)
-    return () => { window.removeEventListener('scroll', on); window.removeEventListener('resize', on); cancelAnimationFrame(raf) }
-  }, [ref, mode])
-  return p
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
 }
 
-// ─── The wall: alternate column scroll ────────────────────────────────────
-// The "moving" column scrolls with the page; the others stay pinned to the viewport and
-// travel the opposite way (content runs downward), so the columns cross as you scroll.
+const smooth = (t: number) => t * t * (3 - 2 * t)
+const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a))
+
+// ─── Act 1: the entrance — big photos open around the title ───────────────
+function Entrance({ mobile }: { mobile: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const grid = useRef<HTMLDivElement>(null)
+  const colEls = useRef<(HTMLDivElement | null)[]>([])
+  const title = useRef<HTMLDivElement>(null)
+  const cols = mobile ? 2 : 3
+  const rows = 3
+  const tiles = WORKS.slice(0, cols * rows)
+  const mid = (cols - 1) / 2
+
+  useSmoothProgress(ref, p => {
+    // Starts already filling the screen (no empty start), then opens a space for the title
+    const open = smooth(seg(p, 0.08, 0.78))
+    const t = smooth(seg(p, 0.45, 0.85))
+    if (grid.current) grid.current.style.transform = `scale(${1.28 - open * 0.2})`
+    colEls.current.forEach((el, c) => {
+      if (!el) return
+      const side = c - mid
+      el.style.transform = side === 0
+        ? `translate3d(0, ${-open * 6}%, 0)`
+        : `translate3d(${side * open * (mobile ? 40 : 55)}%, ${(c % 2 ? 1 : -1) * open * 8}%, 0)`
+      el.style.opacity = side === 0 ? String(1 - open) : '1'
+    })
+    if (title.current) {
+      title.current.style.opacity = String(t)
+      title.current.style.transform = `translate3d(0, ${(1 - t) * 20}px, 0)`
+    }
+  }, [mobile])
+
+  return (
+    <div ref={ref} className="arch-entrance" style={{ height: mobile ? '190vh' : '220vh' }}>
+      <div className="arch-stage">
+        <div ref={grid} className="arch-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+          {Array.from({ length: cols }).map((_, c) => (
+            <div key={c} ref={el => { colEls.current[c] = el }} className="arch-col">
+              {Array.from({ length: rows }).map((_, r) => {
+                const w = tiles[r * cols + c]
+                return (
+                  <div key={r} className="arch-tile">
+                    <Image src={w.src} alt="" fill sizes={mobile ? '60vw' : '40vw'} style={{ objectFit: 'cover' }} />
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+        <div ref={title} className="arch-entrance-title" style={{ opacity: 0 }}>
+          <h2 className="font-display">Trabajos</h2>
+          <p>{WORKS.length} piezas · Traditional · Black &amp; white · Color</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Act 2: the wall — alternate column scroll ────────────────────────────
+// One column scrolls with the page; the others stay pinned and run the opposite way, so the
+// columns cross. Movement is eased toward the scroll position so it glides instead of jolting.
 function Wall({ still, mobile, onOpen }: { still: boolean; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const colRefs = useRef<(HTMLDivElement | null)[]>([])
-  const p = useScrollProgress(ref, 'pin')
-  const [heights, setHeights] = useState<number[]>([])
   const cols = mobile ? 2 : 3
-  const flowing = mobile ? 0 : 1 // index of the column that scrolls normally
+  const flowing = mobile ? 0 : 1
   const columns: { w: Work; i: number }[][] = Array.from({ length: cols }, () => [])
   WORKS.forEach((w, i) => columns[i % cols].push({ w, i }))
 
-  useEffect(() => {
-    const measure = () => setHeights(colRefs.current.map(el => el?.scrollHeight ?? 0))
-    measure()
-    const ro = new ResizeObserver(measure)
-    colRefs.current.forEach(el => el && ro.observe(el))
-    return () => ro.disconnect()
-  }, [cols])
-
-  const vh = typeof window === 'undefined' ? 800 : window.innerHeight
+  useSmoothProgress(ref, p => {
+    if (still) return
+    const vh = window.innerHeight
+    colRefs.current.forEach((el, c) => {
+      if (!el || c === flowing) return
+      const travel = Math.max(0, el.scrollHeight - vh)
+      el.style.transform = `translate3d(0, ${-travel * (1 - p)}px, 0)`
+    })
+  }, [still, cols])
 
   return (
     <div ref={ref} className={`arch-wall ${still ? 'still' : ''}`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
       {columns.map((col, c) => {
         const pinned = !still && c !== flowing
-        const travel = Math.max(0, (heights[c] ?? 0) - vh)
         return (
           <div key={c} className={pinned ? 'arch-wall-pin' : 'arch-wall-flow'}>
             <div ref={el => { colRefs.current[c] = el }} className="arch-wall-col"
-              style={pinned ? { flexDirection: 'column-reverse', transform: `translate3d(0, ${-travel * (1 - p)}px, 0)` } : undefined}>
+              style={pinned ? { flexDirection: 'column-reverse' } : undefined}>
               {col.map(({ w, i }) => (
                 <button key={w.slug} type="button" className="arch-item" data-cursor="view" data-work={w.slug}
                   onClick={e => onOpen(i, (e.currentTarget.querySelector('.arch-img') as HTMLElement))}>
@@ -290,6 +348,7 @@ export default function Archive() {
 
   return (
     <section id="obra" className="archive">
+      {!still && <Entrance mobile={mobile} />}
       <div className="arch-bar">
         <p className="arch-bar-title"><span className="font-display">Trabajos</span> <span className="arch-count">{WORKS.length}</span></p>
         <div className="arch-toggle" role="tablist" aria-label="Vista">
