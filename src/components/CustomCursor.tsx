@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type CursorState = 'default' | 'hover' | 'view' | 'book' | 'drag'
 
@@ -24,44 +24,40 @@ const STATE_STYLES: Record<CursorState, { size: number; border: string; opacity:
 }
 
 export default function CustomCursor() {
-  const dotRef  = useRef<HTMLDivElement>(null)
-  const ringRef = useRef<HTMLDivElement>(null)
+  const [isTouch, setIsTouch] = useState(true) // assume touch until proven otherwise
+  const dotRef   = useRef<HTMLDivElement>(null)
+  const ringRef  = useRef<HTMLDivElement>(null)
   const labelRef = useRef<HTMLSpanElement>(null)
-  const pos     = useRef({ x: 0, y: 0 })
-  const ring    = useRef({ x: 0, y: 0 })
-  const raf     = useRef<number>(0)
+  const pos      = useRef({ x: 0, y: 0 })
+  const ring     = useRef({ x: 0, y: 0 })
+  const raf      = useRef<number>(0)
   const curState = useRef<CursorState>('default')
 
   useEffect(() => {
+    const touch = window.matchMedia('(pointer: coarse)').matches
+    setIsTouch(touch)
+    if (touch) return
+
     const onMove = (e: MouseEvent) => {
       pos.current = { x: e.clientX, y: e.clientY }
       if (dotRef.current) {
         dotRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`
       }
-
       const el = document.elementFromPoint(e.clientX, e.clientY)
       const state = getCursorState(el)
       if (state === curState.current) return
       curState.current = state
-
       const s = STATE_STYLES[state]
       const r = ringRef.current
       const l = labelRef.current
       if (!r || !l) return
-
       r.style.width  = `${s.size}px`
       r.style.height = `${s.size}px`
       r.style.borderColor = s.border
       r.style.opacity = String(s.opacity)
       r.style.backgroundColor = s.bg ?? 'transparent'
-
-      if (s.label) {
-        l.textContent = s.label
-        l.style.opacity = '1'
-        l.style.color = s.bg === 'var(--mark)' ? '#FAE8F0' : '#FAE8F0'
-      } else {
-        l.style.opacity = '0'
-      }
+      if (s.label) { l.textContent = s.label; l.style.opacity = '1' }
+      else { l.style.opacity = '0' }
     }
 
     const lerp = () => {
@@ -75,9 +71,6 @@ export default function CustomCursor() {
       raf.current = requestAnimationFrame(lerp)
     }
 
-    // Only enable on non-touch/desktop
-    if (window.matchMedia('(pointer: coarse)').matches) return
-
     document.addEventListener('mousemove', onMove, { passive: true })
     raf.current = requestAnimationFrame(lerp)
     document.body.style.cursor = 'none'
@@ -89,8 +82,11 @@ export default function CustomCursor() {
     }
   }, [])
 
+  // Render nothing on touch devices — no DOM nodes, no flicker
+  if (isTouch) return null
+
   return (
-    <div className="custom-cursor-root">
+    <>
       <div ref={dotRef} style={{
         position: 'fixed', top: 0, left: 0,
         width: '5px', height: '5px',
@@ -125,6 +121,6 @@ export default function CustomCursor() {
           pointerEvents: 'none',
         }} />
       </div>
-    </div>
+    </>
   )
 }
