@@ -13,25 +13,25 @@ type FlashDef = {
 const BASE = '/Briza-Maldonado/flash/'
 const PAGES: FlashDef[][] = [
   [
-    { src: BASE + 'mariposa-daga.png', name: 'Mariposa con daga', price: '$50.000', available: true, fix: 'tape',
+    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', available: true, fix: 'tape',
       p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
-    { src: BASE + 'frutilla.png', name: 'Frutilla', price: '$40.000', available: true, fix: 'dots',
+    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', available: true, fix: 'dots',
       p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
   ],
   [
-    { src: BASE + 'corazon-vegan.png', name: 'Corazón vegan', price: '$55.000', available: true, fix: 'dots',
+    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', available: true, fix: 'dots',
       p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
-    { src: BASE + 'gorrion.png', name: 'Gorrión', price: '$60.000', available: false, fix: 'tape',
+    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', available: false, fix: 'tape',
       p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
   ],
   [
-    { src: BASE + 'flor-hojas.png', name: 'Flor con hojas', price: '$45.000', available: true, fix: 'tape',
+    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', available: true, fix: 'tape',
       p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
-    { src: BASE + 'cerdo-cabra.png', name: 'Cerdo & cabra', price: '$65.000', available: true, fix: 'dots',
+    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', available: true, fix: 'dots',
       p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
   ],
   [
-    { src: BASE + 'rosa-alambre-flash.png', name: 'Rosa con alambre', price: '$50.000', available: true, fix: 'tape',
+    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', available: true, fix: 'tape',
       p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
   ],
 ]
@@ -64,7 +64,7 @@ function useSize<T extends HTMLElement>() {
 }
 
 const HOLE_X = 16
-const PAPER = '#f1eee2'
+const PAPER = '#faf6ea'
 const PEN = '#26318c'
 const GRAIN = `url(${BASE}paper-grain.png)`
 const lineTop = (H: number) => Math.round(H * 0.075)
@@ -99,7 +99,7 @@ function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number
   }
   gc.putImageData(id, 0, 0)
   ctx.save()
-  ctx.globalAlpha = 0.35
+  ctx.globalAlpha = 0.18
   ctx.globalCompositeOperation = 'soft-light'
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(g, -W * 0.2, -H * 0.2, W * 1.4, H * 1.4)
@@ -116,7 +116,7 @@ function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number
       ctx.beginPath()
       ctx.moveTo(px, yy)
       ctx.lineTo(nx, yy)
-      ctx.strokeStyle = `rgba(92,94,96,${0.34 + r() * 0.12})`
+      ctx.strokeStyle = `rgba(120,122,124,${0.28 + r() * 0.1})`
       ctx.lineWidth = 0.75
       ctx.stroke()
       px = nx
@@ -148,7 +148,7 @@ function PaperCanvas({ w, h, seed, mirror = false }: { w: number; h: number; see
 }
 
 // Grain photographed from the real notebook, layered with overlay blend
-function Grain({ opacity = 0.9, size = 300 }: { opacity?: number; size?: number }) {
+function Grain({ opacity = 0.5, size = 300 }: { opacity?: number; size?: number }) {
   return (
     <div style={{
       position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -166,7 +166,7 @@ function Paper({ W, H, seed, mirror = false }: { W: number; H: number; seed: num
       {/* Warm daylight from the top, slight falloff at the bottom */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', mixBlendMode: 'multiply',
-        background: 'radial-gradient(130% 80% at 60% 0%, rgba(255,255,255,0) 45%, rgba(120,110,90,.10) 100%)',
+        background: 'radial-gradient(130% 80% at 60% 0%, rgba(255,255,255,0) 45%, rgba(150,130,90,.05) 100%)',
       }} />
     </>
   )
@@ -227,9 +227,9 @@ function Tape({ seed, w, h, style }: { seed: number; w: number; h: number; style
       <div style={{
         position: 'relative', width: w, height: h, clipPath: tornEnds(seed),
         background: `
-          repeating-linear-gradient(${88 + (seed % 5)}deg, rgba(255,255,255,.07) 0 1px, rgba(120,110,70,.05) 1px 2.5px),
+          repeating-linear-gradient(${88 + (seed % 5)}deg, rgba(255,255,255,.07) 0 1px, rgba(150,130,80,.04) 1px 2.5px),
           linear-gradient(160deg, rgba(255,255,245,.35), rgba(255,255,245,0) 55%),
-          rgba(236,229,190,.66)
+          rgba(244,236,204,.72)
         `,
       }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: GRAIN, backgroundSize: '160px', mixBlendMode: 'overlay', opacity: .7 }} />
@@ -280,14 +280,16 @@ function PaperFlash({ flash, index, W, H }: { flash: FlashDef; index: number; W:
         position: 'absolute', inset: 0,
         // Paper lies flat: a tight contact shadow, barely any ambient shadow
         filter: lift
-          ? 'drop-shadow(0 .6px .5px rgba(40,30,20,.3)) drop-shadow(1px 4px 5px rgba(60,50,30,.18))'
-          : 'drop-shadow(0 .5px .4px rgba(40,30,20,.32)) drop-shadow(.5px 1.5px 2px rgba(60,50,30,.12))',
+          ? 'drop-shadow(0 .5px .4px rgba(40,30,20,.3)) drop-shadow(.5px 3px 4px rgba(60,50,30,.12))'
+          : 'drop-shadow(0 .3px .4px rgba(40,30,20,.35)) drop-shadow(0 1px 1.5px rgba(60,50,30,.1))',
         transition: 'filter .4s ease',
       }}>
         <Image src={flash.src} alt={flash.name} fill draggable={false} sizes={`${Math.round(size)}px`}
           style={{ objectFit: 'contain', filter: 'contrast(1.12) saturate(.8) brightness(1.04)' }} />
         {/* Printer-paper grain + toner sitting on the fibres */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, backgroundImage: GRAIN, backgroundSize: '220px', mixBlendMode: 'multiply', opacity: .18 }} />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, backgroundImage: GRAIN, backgroundSize: '200px', mixBlendMode: 'overlay', opacity: .45 }} />
+        {/* Printer paper held by tape never lies perfectly flat: faint cockling */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', ...mask, background: 'linear-gradient(118deg, rgba(0,0,0,0) 20%, rgba(90,80,60,.07) 48%, rgba(255,255,255,.1) 62%, rgba(0,0,0,0) 80%)', mixBlendMode: 'soft-light' }} />
       </div>
 
       {flash.fix === 'tape' ? (
@@ -587,12 +589,15 @@ export default function Flash() {
                 const shade = Math.sin((Math.abs(angle) * Math.PI) / 180)
                 const live = drag?.sheet === i
                 const z = live || moving === i ? 100 : i < turned ? 10 + i : 60 - i
+                // Distinct depth per sheet so resting pages never z-fight at the binding (iOS Safari sorts by depth, not z-index)
+                const depth = live || moving === i ? 3 : i < turned ? i * 0.4 - SHEETS : (SHEETS - i) * 0.4
+                const hidden = !spread && i < turned - 1 && !live && moving !== i
                 const peek = i === 0 && turned === 0 && !drag && !hinted
                 return (
                   <div key={i} style={{
-                    position: 'absolute', inset: 0, zIndex: z,
+                    position: 'absolute', inset: 0, zIndex: z, visibility: hidden ? 'hidden' : 'visible', willChange: 'transform',
                     transformStyle: 'preserve-3d', transformOrigin: '0 50%',
-                    transform: `rotateY(${angle}deg)`,
+                    transform: `translateZ(${depth}px) rotateY(${angle}deg)`,
                     transition: live ? 'none' : 'transform .85s cubic-bezier(.3,.7,.2,1)',
                   }}>
                     <div style={{
