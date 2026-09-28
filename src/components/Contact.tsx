@@ -44,7 +44,7 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
       className="book-chip"
       style={{
         padding: '0.8rem 1.15rem',
-        border: `1px solid ${on ? 'var(--ink)' : 'rgba(20,14,14,0.2)'}`,
+        border: `1px solid ${on ? 'var(--ink)' : 'rgba(255,255,255,0.2)'}`,
         background: on ? 'var(--ink)' : 'transparent',
         color: on ? 'var(--bg)' : 'var(--ink)',
         borderRadius: 999,
@@ -125,7 +125,7 @@ export default function Contact() {
       data-cursor="book"
       className="booking"
       style={{
-        borderTop: '1px solid rgba(28,28,28,0.1)',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
         padding: 'clamp(5rem, 10vw, 9rem) clamp(1.25rem, 4vw, 2.5rem)',
         minHeight: '90vh',
       }}
@@ -150,7 +150,7 @@ export default function Contact() {
                     disabled={i >= step}
                     data-hover={i < step ? '' : undefined}
                     aria-current={i === step ? 'step' : undefined}
-                    style={{ color: i === step ? 'var(--ink)' : i < step ? 'var(--ink-muted)' : 'rgba(107,79,87,.4)' }}
+                    style={{ color: i === step ? 'var(--ink)' : i < step ? 'var(--ink-muted)' : 'rgba(185,167,174,.4)' }}
                   >
                     <span style={{ color: i <= step ? 'var(--mark)' : 'inherit' }}>0{i + 1}</span> {s}
                   </button>

@@ -23,8 +23,8 @@ export default function ImageStrip() {
     <div
       style={{
         overflow: 'hidden',
-        borderTop: '1px solid rgba(28,28,28,0.08)',
-        borderBottom: '1px solid rgba(28,28,28,0.08)',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
         position: 'relative',
         userSelect: 'none',
       }}

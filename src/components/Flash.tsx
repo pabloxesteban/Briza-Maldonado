@@ -531,7 +531,7 @@ export default function Flash() {
     <section
       id="flash"
       style={{
-        borderTop: '1px solid rgba(28,28,28,0.1)',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
         padding: '5rem clamp(1rem, 4vw, 2.5rem) 6rem',
         overflow: 'hidden',
       }}
