@@ -136,9 +136,9 @@ export default function Navbar() {
             gap: '5px',
             background: 'none',
             border: 'none',
-            cursor: 'pointer',
             padding: '4px',
             zIndex: 1,
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
           <span style={{

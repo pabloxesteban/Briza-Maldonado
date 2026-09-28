@@ -34,7 +34,8 @@ export default function CustomCursor() {
   const curState = useRef<CursorState>('default')
 
   useEffect(() => {
-    const touch = window.matchMedia('(pointer: coarse)').matches
+    // Most reliable touch detection: checks actual touch capability
+    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
     setIsTouch(touch)
     if (touch) return
 
