@@ -14,6 +14,9 @@ function useMobile() {
   return mobile
 }
 
+// CSS-driven mobile — no JS branching needed for layout
+// See globals.css .exhibit-panel, .exhibit-text-col, .exhibit-img-col
+
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 
 const exhibition = [
@@ -229,314 +232,140 @@ function ExhibitionPiece({ piece, index, onOpen }: {
 
   const delay = (ms: number) => `${ms}ms`
 
-  if (mobile) {
-    // ── MOBILE: full-bleed image with text overlay ──
-    return (
-      <div ref={sectionRef} style={{ position: 'relative', height: '150vh' }}>
-        <div style={{
-          position: 'sticky', top: 0, height: '100vh',
-          background: '#0C0A0A', overflow: 'hidden',
-        }}
-          onClick={onOpen}
-          data-cursor="view"
-        >
-          {/* image */}
-          <div ref={imgWrapRef} style={{
-            position: 'absolute', inset: '-8% 0 -8% 0', willChange: 'transform',
-          }}>
-            <Image
-              src={piece.src} alt={piece.title} fill
-              style={{
-                objectFit: 'cover', objectPosition: 'center top',
-                transform: revealed ? 'scale(1)' : 'scale(1.06)',
-                transition: 'transform 1.4s cubic-bezier(0.25,0.46,0.45,0.94)',
-                filter: 'brightness(0.7)',
-              }}
-              sizes="100vw"
-              priority={index === 0}
-            />
-          </div>
-
-          {/* gradient overlay — heavy bottom for text legibility */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(12,10,10,0.95) 0%, rgba(12,10,10,0.4) 45%, transparent 70%)',
-            zIndex: 1,
-          }} />
-
-          {/* clip reveal */}
-          <div style={{
-            position: 'absolute', inset: 0, background: '#0C0A0A',
-            transform: revealed ? 'translateY(-100%)' : 'translateY(0)',
-            transition: `transform 1.1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 80)}`,
-            zIndex: 2,
-          }} />
-
-          {/* top: meta */}
-          <div style={{
-            position: 'absolute', top: '1.8rem', left: '1.5rem', zIndex: 3,
-            opacity: revealed ? 1 : 0,
-            transition: `opacity 0.8s ease ${delay(index * 60 + 200)}`,
-          }}>
-            <p style={{
-              fontSize: '0.4rem', letterSpacing: '0.35em', textTransform: 'uppercase',
-              color: 'var(--mark)',
-            }}>✦ {piece.style}</p>
-          </div>
-
-          {/* top-right: number */}
-          <div style={{
-            position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 3,
-            fontFamily: "'Playfair Display', serif", fontWeight: 900,
-            fontSize: 'clamp(4rem, 14vw, 8rem)',
-            letterSpacing: '-0.06em',
-            color: 'rgba(250,232,240,0.07)',
-            lineHeight: 1,
-          }}>
-            {piece.num}
-          </div>
-
-          {/* bottom: title + note + cta */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: '0 1.5rem 2.5rem',
-            zIndex: 3,
-          }}>
-            <div style={{ overflow: 'hidden', marginBottom: '0.8rem' }}>
-              <h2 className="font-display" style={{
-                fontSize: 'clamp(2.2rem, 9vw, 4rem)',
-                lineHeight: 0.9, letterSpacing: '-0.03em', fontStyle: 'italic',
-                color: 'rgba(250,232,240,0.95)',
-                transform: revealed ? 'translateY(0)' : 'translateY(110%)',
-                transition: `transform 1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 300)}`,
-                display: 'block',
-              }}>
-                {piece.title}
-              </h2>
-            </div>
-            <p style={{
-              fontSize: '0.8rem', lineHeight: 1.6,
-              color: 'rgba(250,232,240,0.45)',
-              fontStyle: 'italic', fontFamily: "'Playfair Display', serif",
-              marginBottom: '1.5rem',
-              opacity: revealed ? 1 : 0,
-              transition: `opacity 0.8s ease ${delay(index * 60 + 500)}`,
-            }}>
-              {piece.note}
-            </p>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.6rem',
-              opacity: revealed ? 1 : 0,
-              transition: `opacity 0.8s ease ${delay(index * 60 + 600)}`,
-            }}>
-              <span style={{
-                fontSize: '0.4rem', letterSpacing: '0.3em', textTransform: 'uppercase',
-                color: 'rgba(250,232,240,0.35)',
-              }}>tocar para ver</span>
-              <div style={{ width: '2rem', height: '1px', background: 'rgba(250,232,240,0.15)' }} />
-            </div>
-          </div>
-
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
-            background: 'rgba(232,24,95,0.12)',
-          }} />
-        </div>
-      </div>
-    )
-  }
-
-  // ── DESKTOP ──
   return (
     <div ref={sectionRef} style={{ height: '200vh', position: 'relative' }}>
-      {/* STICKY PANEL */}
       <div style={{
         position: 'sticky', top: 0, height: '100vh',
-        display: 'grid',
-        gridTemplateColumns: '38% 62%',
-        background: '#0C0A0A',
-        overflow: 'hidden',
+        background: '#0C0A0A', overflow: 'hidden',
       }}>
+        {/* CSS grid handles layout — .exhibit-panel collapses on mobile via media query */}
+        <div className="exhibit-panel" style={{ height: '100%' }}>
 
-        {/* ── LEFT: text column ────────────────────── */}
-        <div style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '3rem 0 3rem 3rem',
-          zIndex: 2,
-          borderRight: '1px solid rgba(250,232,240,0.04)',
-        }}>
-          {/* top meta: style + index */}
-          <div ref={metaRef} style={{
-            opacity: revealed ? 1 : 0,
-            transform: revealed ? 'translateY(0)' : 'translateY(-12px)',
-            transition: `opacity 0.8s ease ${delay(index * 60 + 200)}, transform 0.8s ease ${delay(index * 60 + 200)}`,
-          }}>
-            <p style={{
-              fontSize: '0.42rem', letterSpacing: '0.4em', textTransform: 'uppercase',
-              color: 'var(--mark)', marginBottom: '0.6rem',
-            }}>✦ {piece.style}</p>
-            <p style={{
-              fontSize: '0.4rem', letterSpacing: '0.25em', textTransform: 'uppercase',
-              color: 'rgba(250,232,240,0.25)',
-            }}>{piece.placement}</p>
-          </div>
-
-          {/* center: number — oversized */}
-          <div ref={numRef} style={{
-            lineHeight: 0.85,
-            opacity: revealed ? 1 : 0,
-            transition: `opacity 1.2s ease ${delay(index * 60 + 100)}`,
-          }}>
-            <span className="font-display" style={{
-              fontSize: 'clamp(7rem, 16vw, 18rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.06em',
-              color: 'rgba(250,232,240,0.06)',
-              display: 'block',
-              lineHeight: 0.85,
-            }}>
-              {piece.num}
-            </span>
-          </div>
-
-          {/* bottom: title + note + cta */}
-          <div>
-            <div ref={titleRef} style={{ overflow: 'hidden', marginBottom: '1.2rem' }}>
-              <h2 className="font-display" style={{
-                fontSize: 'clamp(2rem, 4vw, 4rem)',
-                lineHeight: 0.9,
-                letterSpacing: '-0.03em',
-                fontStyle: 'italic',
-                color: 'rgba(250,232,240,0.9)',
-                display: 'block',
-                transform: revealed ? 'translateY(0)' : 'translateY(110%)',
-                transition: `transform 1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 300)}`,
-              }}>
-                {piece.title}
-              </h2>
-            </div>
-            <p style={{
-              fontSize: '0.75rem',
-              lineHeight: 1.7,
-              color: 'rgba(250,232,240,0.3)',
-              fontStyle: 'italic',
-              fontFamily: "'Playfair Display', serif",
-              maxWidth: '22rem',
-              marginBottom: '2rem',
+          {/* ── TEXT COLUMN (desktop left / mobile overlay) ── */}
+          <div className="exhibit-text-col">
+            {/* top meta */}
+            <div ref={metaRef} style={{
               opacity: revealed ? 1 : 0,
-              transition: `opacity 0.8s ease ${delay(index * 60 + 500)}`,
+              transform: revealed ? 'translateY(0)' : 'translateY(-12px)',
+              transition: `opacity 0.8s ease ${delay(index * 60 + 200)}, transform 0.8s ease ${delay(index * 60 + 200)}`,
             }}>
-              {piece.note}
-            </p>
-            <button
-              onClick={onOpen}
-              data-cursor="view"
-              data-hover
-              style={{
-                background: 'none', border: 'none', cursor: 'none',
-                display: 'flex', alignItems: 'center', gap: '0.8rem',
-                opacity: revealed ? 1 : 0,
-                transition: `opacity 0.8s ease ${delay(index * 60 + 600)}`,
-              }}
-            >
-              <span style={{
-                fontSize: '0.42rem', letterSpacing: '0.3em', textTransform: 'uppercase',
-                color: 'rgba(250,232,240,0.4)',
+              <p style={{
+                fontSize: '0.42rem', letterSpacing: '0.4em', textTransform: 'uppercase',
+                color: 'var(--mark)', marginBottom: '0.5rem',
+              }}>✦ {piece.style}</p>
+              <p style={{
+                fontSize: '0.4rem', letterSpacing: '0.25em', textTransform: 'uppercase',
+                color: 'rgba(250,232,240,0.25)',
+              }}>{piece.placement}</p>
+            </div>
+
+            {/* ghost number — hidden on mobile via .exhibit-num-ghost */}
+            <div className="exhibit-num-ghost" ref={numRef} style={{
+              lineHeight: 0.85,
+              opacity: revealed ? 1 : 0,
+              transition: `opacity 1.2s ease ${delay(index * 60 + 100)}`,
+            }}>
+              <span className="font-display" style={{
+                fontSize: 'clamp(7rem, 16vw, 18rem)',
+                fontWeight: 900, letterSpacing: '-0.06em',
+                color: 'rgba(250,232,240,0.06)',
+                display: 'block', lineHeight: 0.85,
               }}>
-                Ver obra
+                {piece.num}
               </span>
-              <div style={{
-                width: '2rem', height: '1px', background: 'rgba(250,232,240,0.2)',
-              }} />
-            </button>
+            </div>
+
+            {/* title + note + cta */}
+            <div>
+              <div ref={titleRef} style={{ overflow: 'hidden', marginBottom: '1rem' }}>
+                <h2 className="font-display" style={{
+                  fontSize: 'clamp(2rem, 4vw, 4rem)',
+                  lineHeight: 0.9, letterSpacing: '-0.03em', fontStyle: 'italic',
+                  color: 'rgba(250,232,240,0.9)', display: 'block',
+                  transform: revealed ? 'translateY(0)' : 'translateY(110%)',
+                  transition: `transform 1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 300)}`,
+                }}>
+                  {piece.title}
+                </h2>
+              </div>
+              <p style={{
+                fontSize: '0.75rem', lineHeight: 1.7,
+                color: 'rgba(250,232,240,0.3)',
+                fontStyle: 'italic', fontFamily: "'Playfair Display', serif",
+                maxWidth: '22rem', marginBottom: '1.8rem',
+                opacity: revealed ? 1 : 0,
+                transition: `opacity 0.8s ease ${delay(index * 60 + 500)}`,
+              }}>
+                {piece.note}
+              </p>
+              <button
+                onClick={onOpen}
+                data-cursor="view"
+                data-hover
+                style={{
+                  background: 'none', border: 'none', cursor: 'none',
+                  display: 'flex', alignItems: 'center', gap: '0.8rem',
+                  opacity: revealed ? 1 : 0,
+                  transition: `opacity 0.8s ease ${delay(index * 60 + 600)}`,
+                }}
+              >
+                <span style={{
+                  fontSize: '0.42rem', letterSpacing: '0.3em', textTransform: 'uppercase',
+                  color: 'rgba(250,232,240,0.4)',
+                }}>Ver obra</span>
+                <div style={{ width: '2rem', height: '1px', background: 'rgba(250,232,240,0.2)' }} />
+              </button>
+            </div>
+          </div>
+
+          {/* ── IMAGE PANEL (desktop right / mobile full-bleed behind) ── */}
+          <div className="exhibit-img-col" onClick={onOpen} data-cursor="view">
+            <div ref={imgWrapRef} style={{
+              position: 'absolute', inset: '-10% 0 -10% 0', willChange: 'transform',
+            }}>
+              <Image
+                src={piece.src} alt={piece.title} fill
+                style={{
+                  objectFit: 'cover', objectPosition: 'center top',
+                  transform: revealed ? 'scale(1)' : 'scale(1.06)',
+                  transition: 'transform 1.4s cubic-bezier(0.25,0.46,0.45,0.94)',
+                  filter: 'brightness(0.82)',
+                }}
+                sizes="(max-width:767px) 100vw, 62vw"
+                priority={index === 0}
+              />
+            </div>
+
+            {/* clip reveal */}
+            <div style={{
+              position: 'absolute', inset: 0, background: '#0C0A0A', zIndex: 2,
+              transform: revealed ? 'translateY(-100%)' : 'translateY(0)',
+              transition: `transform 1.1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 80)}`,
+            }} />
+
+            {/* desktop-only blends */}
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 1,
+              background: 'linear-gradient(to right, rgba(12,10,10,0.7) 0%, transparent 30%)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 1,
+              background: 'linear-gradient(to top, rgba(12,10,10,0.65) 0%, transparent 40%)',
+            }} />
+
+            {/* piece counter */}
+            <div style={{
+              position: 'absolute', bottom: '1.5rem', right: '2rem',
+              fontSize: '0.4rem', letterSpacing: '0.15em',
+              color: 'rgba(250,232,240,0.2)',
+              fontVariantNumeric: 'tabular-nums', zIndex: 3,
+            }}>
+              {piece.num} / 05
+            </div>
           </div>
         </div>
 
-        {/* ── RIGHT: image panel ───────────────────── */}
-        <div
-          onClick={onOpen}
-          data-cursor="view"
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            cursor: 'none',
-          }}
-        >
-          {/* image with parallax */}
-          <div ref={imgWrapRef} style={{
-            position: 'absolute',
-            inset: '-10% 0 -10% 0',
-            willChange: 'transform',
-          }}>
-            <Image
-              src={piece.src}
-              alt={piece.title}
-              fill
-              style={{
-                objectFit: 'cover',
-                objectPosition: 'center top',
-                transform: revealed ? 'scale(1)' : 'scale(1.06)',
-                transition: 'transform 1.4s cubic-bezier(0.25,0.46,0.45,0.94)',
-                filter: 'brightness(0.82)',
-              }}
-              sizes="62vw"
-              priority={index === 0}
-            />
-          </div>
-
-          {/* clip reveal overlay */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: '#0C0A0A',
-            transform: revealed ? 'translateY(-100%)' : 'translateY(0)',
-            transition: `transform 1.1s cubic-bezier(0.77,0,0.175,1) ${delay(index * 60 + 80)}`,
-            zIndex: 2,
-          }} />
-
-          {/* left blend */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to right, rgba(12,10,10,0.7) 0%, transparent 30%)',
-            zIndex: 1,
-          }} />
-
-          {/* bottom gradient */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(12,10,10,0.65) 0%, transparent 40%)',
-            zIndex: 1,
-          }} />
-
-          {/* vertical style tag — right edge */}
-          <div style={{
-            position: 'absolute', right: '1.5rem', top: '50%',
-            transform: 'translateY(-50%) rotate(90deg)',
-            fontSize: '0.38rem', letterSpacing: '0.4em', textTransform: 'uppercase',
-            color: 'rgba(250,232,240,0.18)',
-            transformOrigin: 'center',
-            zIndex: 3,
-            opacity: revealed ? 1 : 0,
-            transition: `opacity 1s ease ${delay(index * 60 + 700)}`,
-          }}>
-            {piece.style} — Briza Maldonado
-          </div>
-
-          {/* piece number bled over right edge */}
-          <div style={{
-            position: 'absolute', bottom: '1.5rem', right: '2rem',
-            fontSize: '0.4rem', letterSpacing: '0.15em',
-            color: 'rgba(250,232,240,0.2)',
-            fontVariantNumeric: 'tabular-nums',
-            zIndex: 3,
-          }}>
-            {piece.num} / 05
-          </div>
-        </div>
-
-        {/* ── BOTTOM BORDER ─── thin pink line as separator when next piece loads */}
+        {/* separator */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
           background: 'rgba(232,24,95,0.12)',
@@ -662,12 +491,7 @@ export default function Portfolio() {
     <section id="obra" style={{ background: '#0C0A0A' }}>
 
       {/* ── SECTION HEADER ─── */}
-      <div ref={headerRef} style={{
-        padding: mobile ? '5rem 1.5rem 4rem' : '8rem 3rem 6rem',
-        borderBottom: '1px solid rgba(250,232,240,0.05)',
-        overflow: 'hidden',
-        position: 'relative',
-      }}>
+      <div ref={headerRef} className="portfolio-header">
         {/* background ghost text */}
         <div style={{
           position: 'absolute', right: '-2%', bottom: '-10%',
@@ -680,7 +504,7 @@ export default function Portfolio() {
           whiteSpace: 'nowrap',
         }}>Obra</div>
 
-        <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: mobile ? 'flex-start' : 'flex-end', gap: '2rem' }}>
+        <div className="portfolio-header-inner">
           <div>
             <p style={{
               fontSize: '0.44rem', letterSpacing: '0.4em', textTransform: 'uppercase',
@@ -744,8 +568,8 @@ export default function Portfolio() {
       ))}
 
       {/* ── MORE WORK HEADER ─── */}
-      <div style={{
-        padding: mobile ? '3rem 1.5rem 2rem' : '5rem 3rem 3rem',
+      <div className="portfolio-more-header" style={{
+        padding: '5rem 3rem 3rem',
         borderTop: '1px solid rgba(250,232,240,0.05)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -769,13 +593,7 @@ export default function Portfolio() {
       </div>
 
       {/* ── GRID ─── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-        gap: '2px',
-        padding: '0 0 2px',
-        background: '#0C0A0A',
-      }}>
+      <div className="portfolio-grid">
         {gridWork.map((item, i) => (
           <GridItem
             key={i}
