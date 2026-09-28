@@ -71,20 +71,20 @@ export default function Process() {
 
           {/* Words for the current stage */}
           <div className="process-copy">
-            <ol className="process-rail">
-              {STAGES.map((s, i) => (
-                <li key={s.n} className={i <= active ? 'on' : ''}><span>{s.n}</span><i style={{ transform: `scaleX(${still ? 1 : seg(i)})` }} /></li>
+            {/* Vertical timeline: scroll down = move down the steps */}
+            <ol className="process-steps">
+              <i className="process-track" aria-hidden><b style={{ transform: `scaleY(${still ? 1 : p})` }} /></i>
+              {STAGES.map((st, i) => (
+                <li key={st.n} className={still || i === active ? 'now' : i < active ? 'done' : ''}>
+                  <span className="process-dot" aria-hidden />
+                  <p className="process-num">{st.n}</p>
+                  <h3 className="font-display">{st.t}</h3>
+                  <p className="process-desc">{st.d}</p>
+                </li>
               ))}
             </ol>
-            {(still ? STAGES : [STAGES[active]]).map(s => (
-              <div key={s.n} className="process-stage">
-                <p className="process-num">{s.n}</p>
-                <h3 className="font-display">{s.t}</h3>
-                <p className="process-desc">{s.d}</p>
-              </div>
-            ))}
             <a href="#turno" className="cta-book process-cta" data-cursor="book" style={{ opacity: still || active === 3 ? 1 : 0, pointerEvents: still || active === 3 ? 'auto' : 'none' }}>
-              Quiero el mío ✦
+              Quiero el mío ●
             </a>
           </div>
         </div>

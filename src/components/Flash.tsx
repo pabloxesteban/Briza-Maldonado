@@ -624,11 +624,6 @@ export default function Flash() {
           </div>
         )}
       </div>
-
-      <style>{`
-        @font-face { font-family: 'Nothing You Could Do'; src: url('/Briza-Maldonado/flash/nothing-you-could-do.ttf') format('truetype'); font-display: swap; }
-        @keyframes nbPeek { 0%, 70%, 100% { transform: rotateY(0deg) } 80% { transform: rotateY(-16deg) } 88% { transform: rotateY(-4deg) } }
-      `}</style>
     </section>
   )
 }
