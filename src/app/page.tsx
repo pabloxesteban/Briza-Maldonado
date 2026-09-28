@@ -8,11 +8,13 @@ import About from '@/components/About'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import ScrollProgress from '@/components/ScrollProgress'
+import FloatingStickers from '@/components/FloatingStickers'
 
 export default function Home() {
   return (
     <main>
       <ScrollProgress />
+      <FloatingStickers />
       <Navbar />
       <Hero />
       <ImageStrip />

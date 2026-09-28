@@ -53,66 +53,39 @@ export default function About() {
         minHeight: '90vh',
       }}
     >
-      {/* Left: photo placeholder */}
+      {/* Left: portrait */}
       <div
         style={{
-          backgroundColor: '#EDD4DF',
           position: 'relative',
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'flex-start',
-          padding: '3rem',
           overflow: 'hidden',
           minHeight: '70vh',
+          backgroundColor: '#EDD4DF',
         }}
       >
-        {/* Large background symbol */}
-        <div
+        <img
+          src="/Briza-Maldonado/briza-portrait.jpg"
+          alt="Briza Maldonado"
           style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            fontSize: '14rem',
-            color: 'var(--mark)',
-            opacity: 0.06,
-            fontFamily: "'Playfair Display', serif",
-            userSelect: 'none',
-            lineHeight: 1,
-          }}
-        >
-          ✦
-        </div>
-
-        {/* Photo caption */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <p
-            style={{
-              fontSize: '0.6rem',
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              color: 'var(--ink-muted)',
-              lineHeight: 1.8,
-            }}
-          >
-            Briza Maldonado<br />
-            Palermo, CABA<br />
-            <span style={{ color: 'var(--mark)' }}>✦</span> Foto próximamente
-          </p>
-        </div>
-
-        {/* Decorative line */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '3rem',
-            right: '3rem',
-            width: '1px',
-            height: '4rem',
-            backgroundColor: 'var(--ink)',
-            opacity: 0.15,
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover', objectPosition: 'center top',
           }}
         />
+        {/* subtle tint so caption reads */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, rgba(14,10,10,0.5) 0%, transparent 50%)',
+        }} />
+        <div style={{ position: 'absolute', bottom: '2.5rem', left: '2.5rem', zIndex: 2 }}>
+          <p style={{
+            fontSize: '0.55rem', letterSpacing: '0.25em',
+            textTransform: 'uppercase', color: 'rgba(250,232,240,0.7)', lineHeight: 1.8,
+          }}>
+            Briza Maldonado<br />
+            Palermo, CABA<br />
+            <span style={{ color: 'var(--mark)' }}>@bri.t4tts</span>
+          </p>
+        </div>
       </div>
 
       {/* Right: inscribing text */}

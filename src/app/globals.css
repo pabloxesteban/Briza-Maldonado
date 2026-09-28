@@ -2,19 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=DM+Sans:ital,wght@0,200;0,300;0,400;0,500;1,300&display=swap');
 
 :root {
-  --bg: #FAE8F0;
-  --bg-soft: #FFF0F5;
-  --ink: #1C1C1C;
+  --bg: #F5E8EE;
+  --bg-dark: #0C0A0A;
+  --ink: #140E0E;
   --ink-muted: #6B4F57;
-  --mark: #F0287A;
+  --mark: #E8185F;
   --mark-soft: #F472B6;
-  --blue: #93C5FD;
-  --yellow: #FDE68A;
-  --green: #A7F3D0;
   --skin: #F5DDE6;
+  --white: #FAE8F0;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,68 +36,86 @@ body {
 .font-display { font-family: 'Playfair Display', serif; }
 
 ::selection {
-  background-color: var(--mark-soft);
+  background-color: var(--mark);
   color: white;
 }
 
 /* ─── CURSOR ─── */
-.cursor {
-  width: 8px;
-  height: 8px;
-  background-color: var(--mark);
-  border-radius: 50%;
+body { cursor: none; }
+@media (max-width: 768px) {
+  body { cursor: auto; }
+  .cursor, .cursor-ring { display: none; }
+}
+
+/* ─── SCROLL PROGRESS ─── */
+.scroll-progress {
   position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: width 0.25s, height 0.25s, background-color 0.25s, border-radius 0.25s;
-  mix-blend-mode: multiply;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--mark);
+  z-index: 9990;
+  transition: width 0.1s linear;
 }
 
-.cursor-ring {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--mark);
-  border-radius: 50%;
-  position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s cubic-bezier(0.25,0.46,0.45,0.94),
-              height 0.4s cubic-bezier(0.25,0.46,0.45,0.94),
-              opacity 0.3s;
-  mix-blend-mode: multiply;
-  opacity: 0.6;
+/* ─── ANIMATIONS ─── */
+@keyframes slideUp {
+  from { transform: translateY(105%); }
+  to   { transform: translateY(0); }
 }
 
-.cursor.is-hovering {
-  width: 0px;
-  height: 0px;
-  background-color: transparent;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.cursor-ring.is-hovering {
-  width: 50px;
-  height: 50px;
-  opacity: 1;
-  border-color: var(--mark);
+@keyframes drawH {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
-/* ─── GRAIN ─── */
+@keyframes inscribe {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0% 0 0); }
+}
+
+/* Sticker float animations */
+@keyframes floatA {
+  0%,100% { transform: translateY(0px) rotate(var(--rot)); }
+  40%     { transform: translateY(-18px) rotate(calc(var(--rot) + 3deg)); }
+  70%     { transform: translateY(-8px) rotate(calc(var(--rot) - 2deg)); }
+}
+@keyframes floatB {
+  0%,100% { transform: translateY(0px) rotate(var(--rot)); }
+  30%     { transform: translateY(-12px) rotate(calc(var(--rot) - 4deg)); }
+  60%     { transform: translateY(-22px) rotate(calc(var(--rot) + 2deg)); }
+}
+@keyframes floatC {
+  0%,100% { transform: translateY(0px) rotate(var(--rot)); }
+  50%     { transform: translateY(-15px) rotate(calc(var(--rot) + 5deg)); }
+}
+@keyframes driftRight {
+  0%,100% { transform: translateX(0) rotate(var(--rot)); }
+  50%     { transform: translateX(12px) rotate(calc(var(--rot) + 3deg)); }
+}
+
+/* Text reveal */
+@keyframes revealLine {
+  from { clip-path: inset(0 100% 0 0); opacity: 0; }
+  to   { clip-path: inset(0 0% 0 0); opacity: 1; }
+}
+
+/* Grain overlay */
 .grain::after {
   content: '';
   position: fixed;
   inset: -200%;
   width: 400%; height: 400%;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.025;
+  opacity: 0.02;
   pointer-events: none;
   z-index: 9000;
   animation: grain 8s steps(10) infinite;
 }
-
 @keyframes grain {
   0%,100% { transform: translate(0,0); }
   10% { transform: translate(-5%,-10%); }
@@ -109,128 +125,39 @@ body {
   90% { transform: translate(-1%,7%); }
 }
 
-/* ─── LINE DRAW ANIMATION ─── */
-@keyframes drawH {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@keyframes drawV {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(105%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes inscribe {
-  from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0 0% 0 0); }
-}
-
-/* ─── STENCIL HOVER ─── */
-.stencil-wrap {
-  position: relative;
-  display: block;
-}
-
-.stencil-wrap svg.stencil-border {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 2;
-  overflow: visible;
-}
-
-.stencil-wrap svg.stencil-border rect {
-  fill: none;
-  stroke: var(--mark);
-  stroke-width: 1.5;
-  stroke-dasharray: 0;
-  stroke-dashoffset: 0;
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-
-.stencil-wrap:hover svg.stencil-border rect {
-  opacity: 1;
-}
-
-/* ─── SCROLL PROGRESS LINE ─── */
-.scroll-progress {
-  position: fixed;
-  bottom: 0; left: 0;
-  height: 1px;
-  background-color: var(--mark);
-  z-index: 9990;
-  transition: width 0.1s linear;
-  mix-blend-mode: multiply;
-}
-
-/* ─── MARQUEE ─── */
-.marquee {
-  display: flex;
-  overflow: hidden;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.marquee-inner {
-  display: flex;
-  animation: marqueeScroll 18s linear infinite;
-}
-
+/* Marquee */
+.marquee { display:flex; overflow:hidden; white-space:nowrap; user-select:none; }
+.marquee-inner { display:flex; animation: marqueeScroll 22s linear infinite; }
 @keyframes marqueeScroll {
-  0% { transform: translateX(0); }
+  0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
-/* ─── HORIZONTAL SCROLL SECTION ─── */
+/* Horizontal scroll */
 .h-scroll-container {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  cursor: grab;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; -ms-overflow-style: none; cursor: grab;
 }
 .h-scroll-container::-webkit-scrollbar { display: none; }
 .h-scroll-container:active { cursor: grabbing; }
 
-/* ─── CONVERSATIONAL FORM ─── */
-.form-step {
+/* Reveal on scroll */
+.reveal {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(32px);
+  transition: opacity 0.9s cubic-bezier(0.25,0.46,0.45,0.94),
+              transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Form steps */
+.form-step {
+  opacity: 0; transform: translateY(16px);
   transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
   pointer-events: none;
 }
-.form-step.active {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: all;
-}
-.form-step.done {
-  opacity: 0.35;
-  transform: translateY(0);
-  pointer-events: none;
-}
-
-/* ─── RESPONSIVE ─── */
-@media (max-width: 768px) {
-  body { cursor: auto; }
-  .cursor, .cursor-ring { display: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+.form-step.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+.form-step.done { opacity: 0.35; transform: translateY(0); pointer-events: none; }
