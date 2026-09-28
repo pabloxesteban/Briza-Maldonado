@@ -536,7 +536,8 @@ export default function Portfolio() {
               transition: 'opacity 0.8s ease 0.3s',
             }}>
               {allWork.length} piezas<br />
-              scroll para descubrir<br />
+              <span className="portfolio-swipe-hint" style={{ color: 'var(--mark)' }}>deslizar →&nbsp;</span>
+              <span style={{ display: 'inline' }}>scroll para descubrir</span><br />
               clic para ampliar
             </p>
           </div>
@@ -557,15 +558,74 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* ── EXHIBITION PIECES ─── */}
-      {exhibition.map((piece, i) => (
-        <ExhibitionPiece
-          key={piece.num}
-          piece={piece}
-          index={i}
-          onOpen={() => setActive(i)}
-        />
-      ))}
+      {/* ── EXHIBITION PIECES — desktop sticky ─── */}
+      <div className="exhibit-desktop">
+        {exhibition.map((piece, i) => (
+          <ExhibitionPiece
+            key={piece.num}
+            piece={piece}
+            index={i}
+            onOpen={() => setActive(i)}
+          />
+        ))}
+      </div>
+
+      {/* ── EXHIBITION PIECES — mobile horizontal carousel ─── */}
+      <div className="exhibit-carousel">
+        {exhibition.map((piece, i) => (
+          <div key={piece.num} className="exhibit-card" onClick={() => setActive(i)}>
+            <Image
+              src={piece.src} alt={piece.title} fill
+              style={{ objectFit: 'cover', objectPosition: 'center top', filter: 'brightness(0.75)' }}
+              sizes="80vw"
+              priority={i === 0}
+            />
+            {/* gradient */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to top, rgba(12,10,10,0.96) 0%, rgba(12,10,10,0.3) 45%, transparent 70%)',
+              zIndex: 1,
+            }} />
+            {/* number top-left */}
+            <div style={{
+              position: 'absolute', top: '1.2rem', left: '1.2rem', zIndex: 2,
+              fontFamily: "'Playfair Display', serif", fontWeight: 900,
+              fontSize: 'clamp(3.5rem, 12vw, 6rem)', letterSpacing: '-0.06em',
+              color: 'rgba(250,232,240,0.08)', lineHeight: 1,
+            }}>{piece.num}</div>
+            {/* style tag top-right */}
+            <div style={{
+              position: 'absolute', top: '1.4rem', right: '1.2rem', zIndex: 2,
+              fontSize: '0.38rem', letterSpacing: '0.3em', textTransform: 'uppercase',
+              color: 'var(--mark)',
+            }}>✦ {piece.style}</div>
+            {/* bottom text */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              padding: '0 1.2rem 1.8rem', zIndex: 2,
+            }}>
+              <h3 className="font-display" style={{
+                fontSize: 'clamp(1.8rem, 7vw, 3rem)', lineHeight: 0.9,
+                letterSpacing: '-0.03em', fontStyle: 'italic',
+                color: 'rgba(250,232,240,0.95)', marginBottom: '0.5rem',
+              }}>{piece.title}</h3>
+              <p style={{
+                fontSize: '0.65rem', lineHeight: 1.6,
+                color: 'rgba(250,232,240,0.4)',
+                fontStyle: 'italic', fontFamily: "'Playfair Display', serif",
+                marginBottom: '1rem',
+              }}>{piece.note}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{
+                  fontSize: '0.38rem', letterSpacing: '0.28em', textTransform: 'uppercase',
+                  color: 'rgba(250,232,240,0.3)',
+                }}>tocar para ampliar</span>
+                <div style={{ width: '1.5rem', height: '1px', background: 'rgba(250,232,240,0.15)' }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* ── MORE WORK HEADER ─── */}
       <div className="portfolio-more-header" style={{

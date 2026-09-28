@@ -157,6 +157,7 @@ body { cursor: none; }
 .exhibit-panel {
   display: grid;
   grid-template-columns: 38% 62%;
+  height: 100%;
 }
 .exhibit-text-col {
   display: flex;
@@ -172,31 +173,39 @@ body { cursor: none; }
   overflow: hidden;
   cursor: none;
 }
-/* mobile: full-bleed image, text overlaid */
+.exhibit-num-ghost { display: block; }
+
+/* Desktop only — hide mobile carousel */
+.exhibit-desktop  { display: block; }
+.exhibit-carousel { display: none;  }
+
 @media (max-width: 767px) {
-  .exhibit-panel {
-    display: block;
-    position: relative;
-    width: 100%;
+  /* hide sticky desktop sections */
+  .exhibit-desktop  { display: none; }
+  /* show horizontal carousel */
+  .exhibit-carousel {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    height: 82vh;
+    gap: 6px;
+    padding: 0 1.5rem 0;
+    background: #0C0A0A;
+  }
+  .exhibit-carousel::-webkit-scrollbar { display: none; }
+  .exhibit-card {
+    flex-shrink: 0;
+    width: 80vw;
     height: 100%;
+    scroll-snap-align: start;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
   }
-  .exhibit-text-col {
-    position: absolute;
-    inset: 0;
-    padding: 1.8rem 1.5rem 2.5rem;
-    border-right: none;
-    z-index: 3;
-    background: linear-gradient(to top, rgba(12,10,10,0.95) 0%, rgba(12,10,10,0.45) 50%, transparent 75%);
-    justify-content: flex-end;
-  }
-  .exhibit-num-ghost {
-    display: none;
-  }
-  .exhibit-img-col {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-  }
+  .exhibit-card:last-child { margin-right: 1.5rem; }
 }
 
 /* ─── PORTFOLIO GRID ─── */
@@ -228,7 +237,7 @@ body { cursor: none; }
 }
 @media (max-width: 767px) {
   .portfolio-header {
-    padding: 5rem 1.5rem 4rem;
+    padding: 5rem 1.5rem 3rem;
   }
   .portfolio-header-inner {
     flex-direction: column;
@@ -237,7 +246,9 @@ body { cursor: none; }
   .portfolio-more-header {
     padding: 3rem 1.5rem 2rem !important;
   }
+  .portfolio-swipe-hint { display: block !important; }
 }
+.portfolio-swipe-hint { display: none; }
 
 /* Form steps */
 .form-step {
