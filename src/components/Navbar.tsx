@@ -92,9 +92,9 @@ export default function Navbar() {
             zIndex: 1,
           }}
         >
-          <Image src="/Briza-Maldonado/brand/logo.png" alt="" width={900} height={689} priority
-            sizes="80px" style={{ width: 68, height: 'auto', display: 'block' }} />
-          <span>Maldonado</span>
+          <Image src="/Briza-Maldonado/brand/logo.png" alt="" width={900} height={687} priority
+            sizes="64px" style={{ width: 54, height: 'auto', display: 'block' }} />
+          <span className="nav-wordmark">Briza</span>
         </Link>
 
         {/* Desktop links */}

@@ -365,7 +365,7 @@ body { cursor: none; }
 /* ─── INTRO: the heart gets tattooed ─── */
 .intro { position: fixed; inset: 0; z-index: 10000; background: var(--bg); display: grid; place-items: center; clip-path: inset(0 0 0 0); transition: clip-path .75s var(--ease); }
 .intro.out { clip-path: inset(0 0 100% 0); }
-.intro-logo { position: relative; width: min(62vw, 360px); aspect-ratio: 900 / 689; }
+.intro-logo { position: relative; width: min(62vw, 360px); aspect-ratio: 900 / 687; }
 .intro-logo img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .intro-ink { animation: needle .9s cubic-bezier(.65,0,.35,1) both; }
 .intro-color { opacity: 0; transition: opacity .45s var(--ease); }
@@ -461,3 +461,6 @@ body { cursor: none; }
   .arch-controls { padding: 1rem 16px; }
   .arch-arrows button { width: 42px; height: 42px; }
 }
+
+/* Name next to the heart in the nav */
+.nav-wordmark { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 900; font-size: 1.55rem; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
