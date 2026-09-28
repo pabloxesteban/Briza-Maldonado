@@ -1,289 +1,93 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 
-const stages = [
-  {
-    num: '01',
-    label: 'Idea',
-    description: 'Todo empieza como una imagen en la mente. Una conversación. Un flash de inspiración.',
-    color: '#F5E6EC',
-    icon: '◯',
-  },
-  {
-    num: '02',
-    label: 'Diseño',
-    description: 'Del concepto al iPad. El boceto toma forma digital antes de tocar ninguna piel.',
-    color: '#EBE6F5',
-    icon: '△',
-  },
-  {
-    num: '03',
-    label: 'Stencil',
-    description: 'El diseño se imprime, se recorta, se prueba sobre el cuerpo. El mapa antes del viaje.',
-    color: '#E6F5EB',
-    icon: '□',
-  },
-  {
-    num: '04',
-    label: 'Agujas',
-    description: 'La aguja toca la piel. El trazo se vuelve permanente. La mano guía.',
-    color: '#F5EBE6',
-    icon: '✦',
-  },
-  {
-    num: '05',
-    label: 'Obra',
-    description: 'Curado, fotografiado, eterno. Del iPad a la piel. El proceso completo.',
-    color: '#FAE8F0',
-    icon: '✿',
-  },
+const STAGES = [
+  { n: '01', t: 'La idea', d: 'Me contás qué querés: referencias, zona y tamaño. Lo anoto todo en el cuaderno.' },
+  { n: '02', t: 'El dibujo', d: 'Lo dibujo a mano, con línea firme y sombra de traditional.' },
+  { n: '03', t: 'El stencil', d: 'El diseño pasa a stencil violeta y lo probamos sobre tu piel hasta que quede perfecto.' },
+  { n: '04', t: 'La piel', d: 'Aguja, tinta y pulso. Del papel a la piel, una sola vez.' },
 ]
 
+const DRAWING = '/Briza-Maldonado/flash/rosa-alambre-flash-paper.png'
+const TATTOO = '/Briza-Maldonado/portfolio/rosa-alambre.jpg'
+const clamp = (v: number) => Math.min(1, Math.max(0, v))
+
 export default function Process() {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState(0)
-  const isDragging = useRef(false)
-  const startX = useRef(0)
-  const scrollStart = useRef(0)
+  const ref = useRef<HTMLElement>(null)
+  const [p, setP] = useState(0) // 0..1 through the pinned sequence
+  const [still, setStill] = useState(false)
 
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-
-    const onScroll = () => {
-      const pct = el.scrollLeft / (el.scrollWidth - el.clientWidth)
-      const idx = Math.round(pct * (stages.length - 1))
-      setActive(Math.max(0, Math.min(stages.length - 1, idx)))
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setStill(true); return }
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const el = ref.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const total = r.height - window.innerHeight
+      setP(clamp(-r.top / Math.max(1, total)))
     }
-
-    const onMouseDown = (e: MouseEvent) => {
-      isDragging.current = true
-      startX.current = e.pageX - el.offsetLeft
-      scrollStart.current = el.scrollLeft
-      el.style.cursor = 'grabbing'
-    }
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return
-      const x = e.pageX - el.offsetLeft
-      el.scrollLeft = scrollStart.current - (x - startX.current)
-    }
-    const onMouseUp = () => {
-      isDragging.current = false
-      el.style.cursor = 'grab'
-    }
-
-    el.addEventListener('scroll', onScroll, { passive: true })
-    el.addEventListener('mousedown', onMouseDown)
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
-
-    return () => {
-      el.removeEventListener('scroll', onScroll)
-      el.removeEventListener('mousedown', onMouseDown)
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
-    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf) }
   }, [])
 
+  // Each stage owns a quarter of the scroll; local progress drives its transition
+  const seg = (i: number) => clamp((p - i / 4) * 4)
+  const active = Math.min(3, Math.floor(p * 4 + 0.0001))
+  const draw = still ? 1 : seg(1)       // pen reveals the drawing
+  const stencil = still ? 0 : seg(2)    // drawing turns violet
+  const skin = still ? 0 : seg(3)       // tattoo spreads from the centre
+  const note = still ? 0 : 1 - clamp(seg(1) * 2)
+
   return (
-    <section
-      id="proceso"
-      style={{
-        borderTop: '1px solid rgba(28,28,28,0.1)',
-        paddingTop: '5rem',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: '0 2.5rem 4rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-        }}
-      >
-        <p
-          className="font-display"
-          style={{
-            fontSize: 'clamp(2.5rem, 6vw, 6rem)',
-            lineHeight: 1,
-            letterSpacing: '-0.03em',
-            color: 'var(--ink)',
-          }}
-        >
-          Del iPad <span style={{ fontStyle: 'italic' }}>a la piel</span>
-        </p>
-      </div>
+    <section ref={ref} id="proceso" className="process" style={{ height: still ? 'auto' : '420vh' }}>
+      <div className="process-pin">
+        <header className="process-head">
+          <p className="process-kicker">Proceso</p>
+          <h2 className="font-display process-title">Del papel <em>a la piel.</em></h2>
+        </header>
 
-      {/* Stage indicators */}
-      <div
-        style={{
-          padding: '0 2.5rem 2rem',
-          display: 'flex',
-          gap: '1rem',
-          alignItems: 'center',
-        }}
-      >
-        {stages.map((s, i) => (
-          <div
-            key={i}
-            onClick={() => {
-              const el = scrollRef.current
-              if (!el) return
-              const pct = i / (stages.length - 1)
-              el.scrollTo({ left: pct * (el.scrollWidth - el.clientWidth), behavior: 'smooth' })
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              cursor: 'pointer',
-              opacity: active === i ? 1 : 0.3,
-              transition: 'opacity 0.3s ease',
-            }}
-            data-hover
-          >
-            <div
-              style={{
-                width: active === i ? '2rem' : '0.4rem',
-                height: '1px',
-                backgroundColor: active === i ? 'var(--mark)' : 'var(--ink)',
-                transition: 'width 0.4s cubic-bezier(0.77,0,0.175,1)',
-              }}
-            />
-            <span
-              style={{
-                fontSize: '0.55rem',
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                color: active === i ? 'var(--mark)' : 'var(--ink-muted)',
-              }}
-            >
-              {s.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Horizontal scroll track */}
-      <div
-        ref={scrollRef}
-        className="h-scroll-container"
-        data-cursor="drag"
-        style={{
-          display: 'flex',
-          padding: '0 2.5rem 5rem',
-          gap: '1.5rem',
-        }}
-      >
-        {stages.map((stage, i) => (
-          <div
-            key={i}
-            style={{
-              flexShrink: 0,
-              width: 'clamp(280px, 35vw, 420px)',
-              backgroundColor: stage.color,
-              padding: '3.5rem 3rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '420px',
-              position: 'relative',
-              transition: 'transform 0.3s ease',
-              transform: active === i ? 'translateY(-8px)' : 'translateY(0)',
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontSize: '0.55rem',
-                  letterSpacing: '0.3em',
-                  textTransform: 'uppercase',
-                  color: 'var(--ink-muted)',
-                  marginBottom: '2rem',
-                }}
-              >
-                {stage.num}
-              </p>
-              <div
-                style={{
-                  fontSize: '3rem',
-                  color: active === i ? 'var(--mark)' : 'var(--ink)',
-                  opacity: active === i ? 0.6 : 0.15,
-                  marginBottom: '2rem',
-                  transition: 'color 0.3s ease, opacity 0.3s ease',
-                  lineHeight: 1,
-                }}
-              >
-                {stage.icon}
-              </div>
-              <h3
-                className="font-display"
-                style={{
-                  fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-                  lineHeight: 1,
-                  letterSpacing: '-0.02em',
-                  color: 'var(--ink)',
-                  fontStyle: i % 2 === 0 ? 'normal' : 'italic',
-                  marginBottom: '1.5rem',
-                }}
-              >
-                {stage.label}
-              </h3>
-              <p
-                style={{
-                  fontSize: '0.85rem',
-                  lineHeight: 1.7,
-                  color: 'var(--ink-muted)',
-                }}
-              >
-                {stage.description}
-              </p>
+        <div className="process-body">
+          {/* The piece, changing state */}
+          <div className="process-frame" aria-hidden>
+            <div className="process-paper" />
+            <p className="process-note" style={{ opacity: note, transform: `translateY(${(1 - note) * -10}px)` }}>
+              rosa + alambre de púas<br />antebrazo · 8 cm<br />traditional, sombra negra ✶
+            </p>
+            <div className="process-art" style={{ clipPath: `inset(0 ${100 - draw * 100}% 0 0)` }}>
+              <Image src={DRAWING} alt="" fill sizes="(max-width: 860px) 80vw, 40vw" style={{ objectFit: 'contain', opacity: 1 - stencil }} />
+              <Image src={DRAWING} alt="" fill sizes="(max-width: 860px) 80vw, 40vw" className="process-stencil" style={{ objectFit: 'contain', opacity: stencil }} />
             </div>
-
-            {/* Active indicator */}
-            {active === i && (
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '2rem',
-                  right: '2rem',
-                  fontSize: '0.6rem',
-                  letterSpacing: '0.2em',
-                  color: 'var(--mark)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                ✦
-              </div>
-            )}
+            <div className="process-skin" style={{ clipPath: `circle(${skin * 75}% at 50% 50%)` }}>
+              <Image src={TATTOO} alt="Rosa con alambre tatuada en el brazo" fill sizes="(max-width: 860px) 80vw, 40vw" style={{ objectFit: 'cover', transform: `scale(${1.12 - skin * 0.12})` }} />
+            </div>
           </div>
-        ))}
 
-        {/* End spacer */}
-        <div style={{ flexShrink: 0, width: '2.5rem' }} />
-      </div>
-
-      {/* Drag hint */}
-      <div
-        style={{
-          padding: '0 2.5rem 5rem',
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <p
-          style={{
-            fontSize: '0.55rem',
-            letterSpacing: '0.25em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-            opacity: 0.4,
-          }}
-        >
-          ← arrastrar →
-        </p>
+          {/* Words for the current stage */}
+          <div className="process-copy">
+            <ol className="process-rail">
+              {STAGES.map((s, i) => (
+                <li key={s.n} className={i <= active ? 'on' : ''}><span>{s.n}</span><i style={{ transform: `scaleX(${still ? 1 : seg(i)})` }} /></li>
+              ))}
+            </ol>
+            {(still ? STAGES : [STAGES[active]]).map(s => (
+              <div key={s.n} className="process-stage">
+                <p className="process-num">{s.n}</p>
+                <h3 className="font-display">{s.t}</h3>
+                <p className="process-desc">{s.d}</p>
+              </div>
+            ))}
+            <a href="#turno" className="cta-book process-cta" data-cursor="book" style={{ opacity: still || active === 3 ? 1 : 0, pointerEvents: still || active === 3 ? 'auto' : 'none' }}>
+              Quiero el mío ✦
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   )

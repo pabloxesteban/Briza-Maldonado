@@ -10,6 +10,8 @@ import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import ScrollProgress from '@/components/ScrollProgress'
 import CustomCursor from '@/components/CustomCursor'
+import InkLine from '@/components/InkLine'
+import Intro from '@/components/Intro'
 
 export const metadata: Metadata = {
   title: 'Briza Maldonado — Tatuadora en Palermo, Buenos Aires',
@@ -25,15 +27,19 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <main>
+      <Intro />
       <CustomCursor />
       <ScrollProgress />
       <Navbar />
       <Hero />
       <Portfolio />
       <ImageStrip />
+      <InkLine />
       <Flash />
       <Process />
+      <InkLine flip />
       <About />
+      <InkLine />
       <Contact />
       <Footer />
     </main>
