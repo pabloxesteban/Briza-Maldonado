@@ -29,11 +29,11 @@ export default function Home() {
       <ScrollProgress />
       <Navbar />
       <Hero />
-      <About />
-      <ImageStrip />
       <Portfolio />
+      <ImageStrip />
       <Flash />
       <Process />
+      <About />
       <Contact />
       <Footer />
     </main>
