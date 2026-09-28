@@ -66,17 +66,6 @@ export default function Contact() {
     >
       {/* Left: heading */}
       <div style={{ paddingTop: '1rem' }}>
-        <p
-          style={{
-            fontSize: '0.6rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: 'var(--mark)',
-            marginBottom: '3rem',
-          }}
-        >
-          ✦ Agendá tu turno
-        </p>
         <h2
           className="font-display"
           style={{

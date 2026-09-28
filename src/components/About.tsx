@@ -99,18 +99,6 @@ export default function About() {
           borderLeft: '1px solid rgba(28,28,28,0.1)',
         }}
       >
-        <p
-          style={{
-            fontSize: '0.6rem',
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: 'var(--mark)',
-            marginBottom: '3.5rem',
-          }}
-        >
-          ✦ Sobre mí
-        </p>
-
         {/* Block 1 */}
         <div style={{ marginBottom: '2.5rem' }}>
           {lines.map((line, i) => (

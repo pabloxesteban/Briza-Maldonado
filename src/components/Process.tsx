@@ -103,17 +103,6 @@ export default function Process() {
           alignItems: 'flex-end',
         }}
       >
-        <h2
-          className="font-display"
-          style={{
-            fontSize: 'clamp(0.6rem, 1vw, 0.75rem)',
-            letterSpacing: '0.35em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-          }}
-        >
-          ✦ Proceso
-        </h2>
         <p
           className="font-display"
           style={{

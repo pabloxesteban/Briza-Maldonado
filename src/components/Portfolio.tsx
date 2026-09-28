@@ -111,15 +111,17 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
       if (e.key === 'ArrowRight') { setSlideDir('left'); setAnimKey(k => k + 1); onNext() }
     }
     document.addEventListener('keydown', h)
-    // Lock scroll on body AND prevent touchmove to stop background scroll on iOS
+    // Lock scroll: body overflow + Lenis pause + prevent touchmove on iOS
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
+    window.dispatchEvent(new Event('lenis:stop'))
     const preventScroll = (e: TouchEvent) => { e.preventDefault() }
     document.addEventListener('touchmove', preventScroll, { passive: false })
     return () => {
       document.removeEventListener('keydown', h)
       document.body.style.overflow = ''
       document.body.style.touchAction = ''
+      window.dispatchEvent(new Event('lenis:start'))
       document.removeEventListener('touchmove', preventScroll)
     }
   }, [onClose, onPrev, onNext])
@@ -200,15 +202,13 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
           >✕</button>
         </div>
 
-        {/* image — takes most of screen, slides on change */}
+        {/* image — takes most of screen, fades on change */}
         <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <div
             key={animKey}
             style={{
               position: 'absolute', inset: 0,
-              animation: slideDir
-                ? `slideIn${slideDir === 'left' ? 'Left' : 'Right'} 0.32s cubic-bezier(0.25,0.46,0.45,0.94) both`
-                : 'fadeIn 0.2s ease',
+              animation: 'revealImage 0.45s cubic-bezier(0.25,0.46,0.45,0.94) both',
             }}
           >
             <Image src={item.src} alt={item.title} fill
@@ -219,10 +219,6 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
 
         {/* bottom: title + nav */}
         <div style={{ flexShrink: 0, padding: '1rem 1.5rem 2rem' }}>
-          <p style={{
-            fontSize: '0.38rem', letterSpacing: '0.35em', textTransform: 'uppercase',
-            color: 'var(--mark)', marginBottom: '0.4rem',
-          }}>✦ {item.style}</p>
           <h3 className="font-display" style={{
             fontSize: 'clamp(1.6rem, 7vw, 2.4rem)',
             lineHeight: 0.9, letterSpacing: '-0.02em', fontStyle: 'italic',
@@ -321,10 +317,6 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
             style={{ objectFit: 'contain' }} sizes="42vw" priority />
         </div>
         <div style={{ maxWidth: '13rem' }}>
-          <p style={{
-            fontSize: '0.44rem', letterSpacing: '0.35em', textTransform: 'uppercase',
-            color: 'var(--mark)', marginBottom: '0.8rem',
-          }}>✦ {item.style}</p>
           <h3 className="font-display" style={{
             fontSize: 'clamp(2rem,4vw,3.4rem)',
             lineHeight: 0.92, letterSpacing: '-0.02em', fontStyle: 'italic',
@@ -404,10 +396,6 @@ function ExhibitionPiece({ piece, index, onOpen }: {
               transform: revealed ? 'translateY(0)' : 'translateY(-12px)',
               transition: `opacity 0.8s ease ${delay(index * 60 + 200)}, transform 0.8s ease ${delay(index * 60 + 200)}`,
             }}>
-              <p style={{
-                fontSize: '0.42rem', letterSpacing: '0.4em', textTransform: 'uppercase',
-                color: 'var(--mark)', marginBottom: '0.5rem',
-              }}>✦ {piece.style}</p>
               <p style={{
                 fontSize: '0.4rem', letterSpacing: '0.25em', textTransform: 'uppercase',
                 color: 'rgba(250,232,240,0.25)',
@@ -584,15 +572,6 @@ function GridItem({ item, index, onOpen }: {
         transition: 'opacity 0.4s ease',
       }} />
 
-      {/* style tag */}
-      <div style={{
-        position: 'absolute', top: '0.9rem', left: '0.9rem',
-        fontSize: '0.38rem', letterSpacing: '0.22em', textTransform: 'uppercase',
-        color: hovered ? 'var(--mark)' : 'rgba(250,232,240,0.3)',
-        transition: 'color 0.3s',
-      }}>
-        {item.style}
-      </div>
 
       {/* title */}
       <div style={{
@@ -661,14 +640,6 @@ export default function Portfolio() {
 
         <div className="portfolio-header-inner">
           <div>
-            <p style={{
-              fontSize: '0.44rem', letterSpacing: '0.4em', textTransform: 'uppercase',
-              color: 'rgba(250,232,240,0.2)', marginBottom: '2rem',
-              opacity: headerVis ? 1 : 0,
-              transition: 'opacity 0.8s ease',
-            }}>
-              ✦ Obra seleccionada
-            </p>
             <div style={{ overflow: 'hidden' }}>
               <h2 className="font-display" style={{
                 fontSize: 'clamp(3.5rem, 10vw, 12rem)',
@@ -690,10 +661,7 @@ export default function Portfolio() {
               opacity: headerVis ? 1 : 0,
               transition: 'opacity 0.8s ease 0.3s',
             }}>
-              {allWork.length} piezas<br />
-              <span className="portfolio-swipe-hint" style={{ color: 'var(--mark)' }}>deslizar →&nbsp;</span>
-              <span style={{ display: 'inline' }}>scroll para descubrir</span><br />
-              clic para ampliar
+              {allWork.length} piezas
             </p>
           </div>
         </div>
@@ -748,12 +716,6 @@ export default function Portfolio() {
               fontSize: 'clamp(3.5rem, 12vw, 6rem)', letterSpacing: '-0.06em',
               color: 'rgba(250,232,240,0.08)', lineHeight: 1,
             }}>{piece.num}</div>
-            {/* style tag top-right */}
-            <div style={{
-              position: 'absolute', top: '1.4rem', right: '1.2rem', zIndex: 2,
-              fontSize: '0.38rem', letterSpacing: '0.3em', textTransform: 'uppercase',
-              color: 'var(--mark)',
-            }}>✦ {piece.style}</div>
             {/* bottom text */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,

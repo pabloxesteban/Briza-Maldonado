@@ -75,6 +75,9 @@ export default function CustomCursor() {
       raf.current = requestAnimationFrame(lerp)
     }
 
+    // Only enable on non-touch/desktop
+    if (window.matchMedia('(pointer: coarse)').matches) return
+
     document.addEventListener('mousemove', onMove, { passive: true })
     raf.current = requestAnimationFrame(lerp)
     document.body.style.cursor = 'none'
@@ -87,7 +90,7 @@ export default function CustomCursor() {
   }, [])
 
   return (
-    <>
+    <div className="custom-cursor-root">
       <div ref={dotRef} style={{
         position: 'fixed', top: 0, left: 0,
         width: '5px', height: '5px',
@@ -122,6 +125,6 @@ export default function CustomCursor() {
           pointerEvents: 'none',
         }} />
       </div>
-    </>
+    </div>
   )
 }
