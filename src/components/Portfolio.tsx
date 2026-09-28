@@ -49,22 +49,18 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
         animation: 'fadeIn 0.2s ease',
       }}
     >
-      {/* Close */}
-      <button
-        onClick={onClose} data-hover
-        style={{
-          position: 'absolute', top: '2rem', right: '2.5rem',
-          background: 'none', border: 'none', color: 'rgba(250,232,240,0.3)',
-          fontSize: '0.55rem', letterSpacing: '0.25em', textTransform: 'uppercase',
-          cursor: 'none', zIndex: 10, transition: 'color 0.2s',
-        }}
+      <button onClick={onClose} data-hover style={{
+        position: 'absolute', top: '2rem', right: '2.5rem',
+        background: 'none', border: 'none', color: 'rgba(250,232,240,0.3)',
+        fontSize: '0.55rem', letterSpacing: '0.25em', textTransform: 'uppercase',
+        cursor: 'none', zIndex: 10, transition: 'color 0.2s',
+      }}
         onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
         onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.3)')}
       >
         cerrar ✦
       </button>
 
-      {/* Counter */}
       <div style={{
         position: 'absolute', top: '2.1rem', left: '2.5rem',
         fontSize: '0.5rem', letterSpacing: '0.25em', color: 'rgba(250,232,240,0.2)',
@@ -72,26 +68,22 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
         {String(index + 1).padStart(2, '0')} / {String(gallery.length).padStart(2, '0')}
       </div>
 
-      {/* Nav arrows */}
-      {[{ dir: 'prev', pos: 'left: 1.5rem', fn: onPrev, ch: '←' }, { dir: 'next', pos: 'right: 1.5rem', fn: onNext, ch: '→' }].map(a => (
-        <button key={a.dir} onClick={e => { e.stopPropagation(); a.fn() }} data-hover
-          style={{
-            position: 'absolute', [a.dir === 'prev' ? 'left' : 'right']: '1.5rem',
-            top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', color: 'rgba(250,232,240,0.18)',
-            fontSize: '1.6rem', cursor: 'none', padding: '1rem',
-            transition: 'color 0.2s', zIndex: 10,
-          }}
+      {[{ dir: 'prev', fn: onPrev, ch: '←' }, { dir: 'next', fn: onNext, ch: '→' }].map(a => (
+        <button key={a.dir} onClick={e => { e.stopPropagation(); a.fn() }} data-hover style={{
+          position: 'absolute', [a.dir === 'prev' ? 'left' : 'right']: '1.5rem',
+          top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', color: 'rgba(250,232,240,0.18)',
+          fontSize: '1.6rem', cursor: 'none', padding: '1rem',
+          transition: 'color 0.2s', zIndex: 10,
+        }}
           onMouseEnter={e => (e.currentTarget.style.color = '#FAE8F0')}
           onMouseLeave={e => (e.currentTarget.style.color = 'rgba(250,232,240,0.18)')}
         >{a.ch}</button>
       ))}
 
-      {/* Image + info */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', alignItems: 'center', gap: '3.5rem', maxWidth: '88vw', maxHeight: '90vh' }}
-      >
+      <div onClick={e => e.stopPropagation()} style={{
+        display: 'flex', alignItems: 'center', gap: '3.5rem', maxWidth: '88vw', maxHeight: '90vh',
+      }}>
         <div style={{ position: 'relative', height: 'min(82vh,700px)', width: 'min(48vw,460px)', flexShrink: 0 }}>
           <Image key={item.src} src={item.src} alt={item.title} fill
             style={{ objectFit: 'contain' }} sizes="48vw" priority />
@@ -109,9 +101,8 @@ function Lightbox({ index, onClose, onPrev, onNext }: {
           <p className="font-display" style={{
             fontSize: '0.9rem', fontStyle: 'italic', lineHeight: 1.75, color: 'rgba(250,232,240,0.4)',
           }}>
-            "{item.note}"
+            &ldquo;{item.note}&rdquo;
           </p>
-          {/* Dot nav */}
           <div style={{ display: 'flex', gap: '5px', marginTop: '2.5rem', flexWrap: 'wrap' }}>
             {gallery.map((_, i) => (
               <div key={i} style={{
@@ -132,12 +123,11 @@ function GalleryItem({ item, index, onClick }: { item: typeof gallery[0]; index:
   const ref = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [hovered, setHovered] = useState(false)
-  const tall = index === 0 || index === 3 || index === 7 || index === 12
 
   useEffect(() => {
     const el = ref.current; if (!el) return
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), (index % 4) * 75); obs.disconnect() } },
+      ([e]) => { if (e.isIntersecting) { setTimeout(() => setVisible(true), (index % 4) * 80); obs.disconnect() } },
       { threshold: 0.05 }
     )
     obs.observe(el)
@@ -153,58 +143,54 @@ function GalleryItem({ item, index, onClick }: { item: typeof gallery[0]; index:
       data-hover
       style={{
         position: 'relative',
-        gridRow: tall ? 'span 2' : 'span 1',
-        overflow: 'hidden',
+        backgroundColor: '#0a0808',
         cursor: 'none',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(28px)',
+        transform: visible ? 'translateY(0)' : 'translateY(24px)',
         transition: 'opacity 0.9s ease, transform 0.9s cubic-bezier(0.25,0.46,0.45,0.94)',
-        backgroundColor: '#0a0808',
+        overflow: 'hidden',
       }}
     >
-      <Image
-        src={item.src} alt={item.title} fill
-        style={{
-          objectFit: 'cover', objectPosition: 'center 25%',
-          transform: hovered ? 'scale(1.07)' : 'scale(1)',
-          transition: 'transform 1s cubic-bezier(0.25,0.46,0.45,0.94)',
-        }}
-        sizes="(max-width: 768px) 50vw, 33vw"
-      />
-      {/* Hover caption */}
+      {/* image shown full, no crop — natural aspect ratio */}
       <div style={{
-        position: 'absolute', inset: 0,
-        background: hovered
-          ? 'linear-gradient(to top, rgba(12,10,10,0.85) 0%, transparent 55%)'
-          : 'linear-gradient(to top, rgba(12,10,10,0.45) 0%, transparent 70%)',
-        transition: 'background 0.4s ease',
-      }} />
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '3 / 4',
+        backgroundColor: '#0a0808',
+      }}>
+        <Image
+          src={item.src} alt={item.title} fill
+          style={{
+            objectFit: 'contain',
+            transform: hovered ? 'scale(1.04)' : 'scale(1)',
+            transition: 'transform 1s cubic-bezier(0.25,0.46,0.45,0.94)',
+          }}
+          sizes="(max-width: 768px) 50vw, 33vw"
+        />
+      </div>
+
+      {/* caption below image */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, padding: '1.2rem 1rem',
-        transform: hovered ? 'translateY(0)' : 'translateY(5px)',
-        transition: 'transform 0.35s ease',
+        padding: '0.9rem 1rem 1.1rem',
+        borderTop: '1px solid rgba(250,232,240,0.05)',
+        background: hovered ? 'rgba(232,24,95,0.06)' : 'transparent',
+        transition: 'background 0.35s ease',
       }}>
         <p className="font-display" style={{
-          fontSize: '0.9rem', fontStyle: 'italic', color: 'white',
+          fontSize: '0.88rem', fontStyle: 'italic', color: hovered ? '#FAE8F0' : 'rgba(250,232,240,0.55)',
           lineHeight: 1.1, marginBottom: '0.2rem',
-          opacity: hovered ? 1 : 0.55, transition: 'opacity 0.3s',
+          transition: 'color 0.3s',
         }}>
           {item.title}
         </p>
         <p style={{
           fontSize: '0.4rem', letterSpacing: '0.2em', textTransform: 'uppercase',
-          color: hovered ? 'var(--mark)' : 'rgba(255,255,255,0.3)',
+          color: hovered ? 'var(--mark)' : 'rgba(255,255,255,0.2)',
           transition: 'color 0.3s',
         }}>
           {item.style}
         </p>
       </div>
-      {hovered && (
-        <div style={{
-          position: 'absolute', top: '0.8rem', right: '0.8rem',
-          fontSize: '0.6rem', color: 'var(--mark)', animation: 'fadeIn 0.2s ease',
-        }}>✦</div>
-      )}
     </div>
   )
 }
@@ -217,19 +203,18 @@ export default function Portfolio() {
 
   return (
     <section id="obra" style={{ backgroundColor: '#0C0A0A' }}>
-      {/* Section header — big editorial */}
+      {/* Section header */}
       <div style={{
         padding: '7rem 2.5rem 4rem',
         borderBottom: '1px solid rgba(250,232,240,0.05)',
         overflow: 'hidden',
       }}>
-        {/* Marquee label */}
         <div className="marquee" style={{ marginBottom: '2rem' }}>
           <div className="marquee-inner" style={{ gap: '3rem' }}>
             {Array(8).fill(null).map((_, i) => (
               <span key={i} style={{
                 fontSize: '0.5rem', letterSpacing: '0.4em', textTransform: 'uppercase',
-                color: 'rgba(250,232,240,0.2)', whiteSpace: 'nowrap', paddingRight: '3rem',
+                color: 'rgba(250,232,240,0.15)', whiteSpace: 'nowrap', paddingRight: '3rem',
               }}>
                 ✦ Portfolio · Obra · Trabajos · Blackwork · Fineline · Ornamental ·&nbsp;
               </span>
@@ -238,14 +223,11 @@ export default function Portfolio() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
-          <h2
-            className="font-display"
-            style={{
-              fontSize: 'clamp(4rem, 13vw, 14rem)',
-              lineHeight: 0.88, letterSpacing: '-0.04em', fontStyle: 'italic',
-              color: 'rgba(250,232,240,0.92)',
-            }}
-          >
+          <h2 className="font-display" style={{
+            fontSize: 'clamp(4rem, 13vw, 14rem)',
+            lineHeight: 0.88, letterSpacing: '-0.04em', fontStyle: 'italic',
+            color: 'rgba(250,232,240,0.92)',
+          }}>
             Trabajos
           </h2>
           <p style={{
@@ -257,19 +239,17 @@ export default function Portfolio() {
         </div>
       </div>
 
-      {/* Gallery grid */}
+      {/* Gallery grid — 3 columns, images with natural 3:4 ratio + caption */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: '460px',
-        gap: '3px',
+        gap: '2px',
       }}>
         {gallery.map((item, i) => (
           <GalleryItem key={i} item={item} index={i} onClick={() => setActive(i)} />
         ))}
       </div>
 
-      {/* Footer hint */}
       <div style={{ padding: '1.2rem 2.5rem', borderTop: '1px solid rgba(250,232,240,0.04)' }}>
         <p style={{
           fontSize: '0.45rem', letterSpacing: '0.3em', textTransform: 'uppercase',

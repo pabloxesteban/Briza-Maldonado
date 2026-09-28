@@ -5,53 +5,51 @@ import Image from 'next/image'
 
 const flashStickers = [
   { src: '/Briza-Maldonado/flash/mariposa-daga.png', name: 'Mariposa con Daga', style: 'Blackwork', price: '$50.000', available: true,
-    size: 90, top: '-30%', left: '-8%', rot: -14, anim: 'floatA 6.5s ease-in-out infinite', delay: '0s' },
+    size: 88, bottom: '44%', left: '1%', rot: -14, anim: 'floatA 6.5s ease-in-out infinite', delay: '0s' },
   { src: '/Briza-Maldonado/flash/frutilla.png', name: 'Frutilla', style: 'Blackwork', price: '$40.000', available: true,
-    size: 72, top: '-20%', right: '-4%', rot: 11, anim: 'floatB 7.2s ease-in-out infinite', delay: '1s' },
+    size: 68, bottom: '60%', left: '16%', rot: 11, anim: 'floatB 7.2s ease-in-out infinite', delay: '1s' },
   { src: '/Briza-Maldonado/flash/gorrion.png', name: 'Gorrión', style: 'Traditional', price: '$60.000', available: false,
-    size: 82, top: '30%', right: '-7%', rot: -8, anim: 'floatC 8.5s ease-in-out infinite', delay: '0.5s' },
+    size: 80, bottom: '72%', left: '4%', rot: -8, anim: 'floatC 8.5s ease-in-out infinite', delay: '0.5s' },
   { src: '/Briza-Maldonado/flash/flor-hojas.png', name: 'Flor con Hojas', style: 'Traditional', price: '$45.000', available: true,
-    size: 70, bottom: '-18%', left: '15%', rot: 7, anim: 'floatA 5.8s ease-in-out infinite', delay: '1.8s' },
+    size: 66, bottom: '24%', left: '26%', rot: 7, anim: 'floatA 5.8s ease-in-out infinite', delay: '1.8s' },
   { src: '/Briza-Maldonado/flash/corazon-vegan.png', name: 'Corazón Vegan', style: 'Traditional', price: '$55.000', available: true,
-    size: 64, bottom: '-25%', right: '12%', rot: -10, anim: 'floatB 9s ease-in-out infinite', delay: '0.8s' },
+    size: 60, bottom: '14%', left: '6%', rot: -10, anim: 'floatB 9s ease-in-out infinite', delay: '0.8s' },
   { src: '/Briza-Maldonado/flash/cerdo-cabra.png', name: 'Cerdo & Cabra', style: 'Traditional', price: '$65.000', available: true,
-    size: 80, top: '60%', left: '-6%', rot: 5, anim: 'driftRight 7s ease-in-out infinite', delay: '2s' },
+    size: 78, bottom: '50%', left: '36%', rot: 5, anim: 'driftRight 7s ease-in-out infinite', delay: '2s' },
   { src: '/Briza-Maldonado/flash/rosa-alambre-flash.png', name: 'Rosa con Alambre', style: 'Blackwork', price: '$50.000', available: true,
-    size: 88, top: '5%', left: '42%', rot: -4, anim: 'floatC 7.8s ease-in-out infinite', delay: '1.3s' },
+    size: 84, bottom: '32%', left: '46%', rot: -4, anim: 'floatC 7.8s ease-in-out infinite', delay: '1.3s' },
 ]
 
 type Sticker = typeof flashStickers[0]
 
-function StickerPin({ s, i }: { s: Sticker; i: number }) {
+function StickerPin({ s }: { s: Sticker }) {
   const [open, setOpen] = useState(false)
 
-  const pos: React.CSSProperties = {
-    position: 'absolute',
-    width: s.size,
-    height: s.size,
-    top: 'top' in s ? s.top : undefined,
-    bottom: 'bottom' in s ? (s as { bottom?: string }).bottom : undefined,
-    left: 'left' in s ? (s as { left?: string }).left : undefined,
-    right: 'right' in s ? (s as { right?: string }).right : undefined,
-    ['--rot' as string]: `${s.rot}deg`,
-    animation: s.anim,
-    animationDelay: s.delay,
-    cursor: 'pointer',
-    zIndex: open ? 50 : 10,
-  }
-
   return (
-    <div style={pos as React.CSSProperties} onClick={() => setOpen(v => !v)}>
+    <div
+      style={{
+        position: 'absolute',
+        width: s.size,
+        height: s.size,
+        bottom: s.bottom,
+        left: s.left,
+        ['--rot' as string]: `${s.rot}deg`,
+        animation: s.anim,
+        animationDelay: s.delay,
+        cursor: 'pointer',
+        zIndex: open ? 50 : 10,
+      }}
+      onClick={() => setOpen(v => !v)}
+    >
       <div
         style={{
           position: 'relative', width: '100%', height: '100%',
-          opacity: 0.75,
+          opacity: 0.8,
           filter: open
             ? 'drop-shadow(0 14px 30px rgba(20,14,14,0.3))'
             : 'drop-shadow(0 4px 12px rgba(20,14,14,0.12))',
           transform: open ? 'scale(1.18) rotate(0deg)' : 'scale(1)',
           transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.25s, opacity 0.2s',
-          animationPlayState: open ? 'paused' : 'running',
         }}
         onMouseEnter={e => {
           if (!open) {
@@ -64,44 +62,34 @@ function StickerPin({ s, i }: { s: Sticker; i: number }) {
         onMouseLeave={e => {
           if (!open) {
             const el = e.currentTarget as HTMLElement
-            el.style.opacity = '0.75'
+            el.style.opacity = '0.8'
             el.style.filter = 'drop-shadow(0 4px 12px rgba(20,14,14,0.12))'
             el.style.animationPlayState = 'running'
           }
         }}
       >
-        <Image
-          src={s.src} alt={s.name} fill
-          style={{ objectFit: 'contain' }}
-          sizes={`${s.size}px`}
-        />
+        <Image src={s.src} alt={s.name} fill style={{ objectFit: 'contain' }} sizes={`${s.size}px`} />
       </div>
 
       {open && (
         <>
-          <div
-            onClick={e => { e.stopPropagation(); setOpen(false) }}
-            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: '115%', left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--bg)',
-              border: '1px solid rgba(20,14,14,0.12)',
-              padding: '0.9rem 1.1rem',
-              whiteSpace: 'nowrap',
-              zIndex: 51,
-              boxShadow: '0 8px 28px rgba(20,14,14,0.14)',
-              pointerEvents: 'none',
-              animation: 'fadeIn 0.15s ease',
-            }}
-          >
-            <p style={{
-              fontFamily: "'Playfair Display', serif",
-              fontStyle: 'italic', fontSize: '0.85rem', color: 'var(--ink)', marginBottom: '0.25rem',
-            }}>{s.name}</p>
+          <div onClick={e => { e.stopPropagation(); setOpen(false) }} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div style={{
+            position: 'absolute',
+            top: '115%', left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--bg)',
+            border: '1px solid rgba(20,14,14,0.12)',
+            padding: '0.9rem 1.1rem',
+            whiteSpace: 'nowrap',
+            zIndex: 51,
+            boxShadow: '0 8px 28px rgba(20,14,14,0.14)',
+            pointerEvents: 'none',
+            animation: 'fadeIn 0.15s ease',
+          }}>
+            <p style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: '0.85rem', color: 'var(--ink)', marginBottom: '0.25rem' }}>
+              {s.name}
+            </p>
             <p style={{ fontSize: '0.47rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: '0.5rem' }}>
               {s.style}
             </p>
@@ -146,42 +134,68 @@ export default function Hero() {
       style={{
         minHeight: '100vh',
         position: 'relative',
-        overflow: 'hidden',
         backgroundColor: 'var(--bg)',
-        display: 'grid',
-        gridTemplateRows: '1fr auto',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        overflow: 'visible',
       }}
     >
-      {/* Portrait full-bleed */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      {/* Portrait — right side, contained so face always shows */}
+      <div style={{
+        position: 'absolute',
+        top: 0, right: 0,
+        width: '55%',
+        height: '100%',
+        zIndex: 0,
+        overflow: 'hidden',
+      }}>
         <Image
           src="/Briza-Maldonado/briza-portrait.jpg"
           alt="Briza Maldonado"
           fill priority
           style={{
             objectFit: 'cover',
-            objectPosition: 'center 18%',
+            objectPosition: 'center top',
             opacity: 0,
             animation: 'fadeIn 2s ease 0.6s forwards',
-            maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 28%, rgba(0,0,0,0.55) 55%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.12) 28%, rgba(0,0,0,0.55) 55%, black 100%)',
           }}
-          sizes="100vw"
+          sizes="55vw"
         />
+        {/* left-to-right fade into background */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to right, var(--bg) 0%, rgba(245,232,238,0.65) 32%, rgba(245,232,238,0.05) 68%, transparent 100%)',
+          background: 'linear-gradient(to right, var(--bg) 0%, rgba(245,232,238,0.3) 40%, transparent 100%)',
         }} />
+        {/* bottom fade */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, var(--bg) 0%, transparent 30%)',
+        }} />
+      </div>
+
+      {/* Floating stickers — positioned relative to section, clustered around name */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        zIndex: 5,
+        pointerEvents: 'none',
+        opacity: 0,
+        animation: 'fadeIn 0.8s ease 2s forwards',
+      }}>
+        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'all' }}>
+          {flashStickers.map((s, i) => <StickerPin key={i} s={s} />)}
+        </div>
       </div>
 
       {/* Main content */}
       <div
         style={{
-          position: 'relative', zIndex: 2,
-          display: 'flex', flexDirection: 'column',
-          justifyContent: 'flex-end',
+          position: 'relative', zIndex: 6,
           padding: '0 2.5rem 4.5rem',
           minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
         }}
       >
         {/* Vertical label */}
@@ -204,55 +218,38 @@ export default function Hero() {
             ✦ Tattoo Artist
           </p>
 
-          {/* Name block — stickers orbit around this */}
-          <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+          {/* BRIZA */}
+          <div style={{ overflow: 'hidden', lineHeight: 0.85 }}>
+            <h1
+              className="font-display"
+              data-line
+              style={{
+                fontSize: 'clamp(6rem, 18vw, 20rem)',
+                fontWeight: 900, letterSpacing: '-0.04em',
+                color: 'var(--ink)', lineHeight: 0.85, display: 'block',
+                clipPath: 'inset(0 100% 0 0)', opacity: 0,
+                transition: 'clip-path 1.2s cubic-bezier(0.77,0,0.175,1), opacity 0.01s',
+              }}
+            >
+              Briza
+            </h1>
+          </div>
 
-            {/* Floating flash stickers around the name */}
-            <div style={{
-              position: 'absolute', inset: '-40% -10%',
-              pointerEvents: 'none',
-              opacity: 0, animation: 'fadeIn 0.8s ease 2s forwards',
-            }}>
-              <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'all' }}>
-                {flashStickers.map((s, i) => (
-                  <StickerPin key={i} s={s} i={i} />
-                ))}
-              </div>
-            </div>
-
-            {/* BRIZA */}
-            <div style={{ overflow: 'hidden', lineHeight: 0.85 }}>
-              <h1
-                className="font-display"
-                data-line
-                style={{
-                  fontSize: 'clamp(6rem, 18vw, 20rem)',
-                  fontWeight: 900, letterSpacing: '-0.04em',
-                  color: 'var(--ink)', lineHeight: 0.85, display: 'block',
-                  clipPath: 'inset(0 100% 0 0)', opacity: 0,
-                  transition: 'clip-path 1.2s cubic-bezier(0.77,0,0.175,1), opacity 0.01s',
-                }}
-              >
-                Briza
-              </h1>
-            </div>
-
-            {/* MALDONADO */}
-            <div style={{ overflow: 'hidden', lineHeight: 0.88, paddingLeft: 'clamp(2rem, 8vw, 9rem)' }}>
-              <h1
-                className="font-display"
-                data-line
-                style={{
-                  fontSize: 'clamp(4.5rem, 14vw, 16rem)',
-                  fontWeight: 700, fontStyle: 'italic', letterSpacing: '-0.03em',
-                  color: 'var(--ink)', lineHeight: 0.88, display: 'block',
-                  clipPath: 'inset(0 100% 0 0)', opacity: 0,
-                  transition: 'clip-path 1.2s cubic-bezier(0.77,0,0.175,1) 0.18s, opacity 0.01s 0.18s',
-                }}
-              >
-                Maldonado
-              </h1>
-            </div>
+          {/* MALDONADO */}
+          <div style={{ overflow: 'hidden', lineHeight: 0.88, paddingLeft: 'clamp(2rem, 8vw, 9rem)' }}>
+            <h1
+              className="font-display"
+              data-line
+              style={{
+                fontSize: 'clamp(4.5rem, 14vw, 16rem)',
+                fontWeight: 700, fontStyle: 'italic', letterSpacing: '-0.03em',
+                color: 'var(--ink)', lineHeight: 0.88, display: 'block',
+                clipPath: 'inset(0 100% 0 0)', opacity: 0,
+                transition: 'clip-path 1.2s cubic-bezier(0.77,0,0.175,1) 0.18s, opacity 0.01s 0.18s',
+              }}
+            >
+              Maldonado
+            </h1>
           </div>
 
           {/* Bottom bar */}
