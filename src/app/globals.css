@@ -369,3 +369,13 @@ body { cursor: none; }
 .intro svg { display: block; width: min(70vw, 360px); height: 24px; margin-top: .4rem; overflow: visible; }
 .intro path { stroke: var(--mark); stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: inkDraw .7s var(--ease) .3s forwards; }
 @keyframes inkDraw { to { stroke-dashoffset: 0; } }
+
+/* ─── ABOUT ─── */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; }
+@media (max-width: 767px) {
+  .about-grid { grid-template-columns: 1fr; }
+  .about-grid > div:first-child { min-height: 78vh !important; }
+  .about-grid > div:last-child { border-left: 0 !important; padding-bottom: 7rem !important; }
+}
+/* Keep pinned copy clear of the mobile booking dock */
+@media (max-width: 767px) { .process-pin { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); } }

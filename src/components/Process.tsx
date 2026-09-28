@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 const STAGES = [
   { n: '01', t: 'La idea', d: 'Me contás qué querés: referencias, zona y tamaño. Lo anoto todo en el cuaderno.' },
-  { n: '02', t: 'El dibujo', d: 'Lo dibujo a mano, con línea firme y sombra de traditional.' },
+  { n: '02', t: 'El dibujo', d: 'Lo diseño en el iPad, con línea firme y sombra de traditional.' },
   { n: '03', t: 'El stencil', d: 'El diseño pasa a stencil violeta y lo probamos sobre tu piel hasta que quede perfecto.' },
   { n: '04', t: 'La piel', d: 'Aguja, tinta y pulso. Del papel a la piel, una sola vez.' },
 ]

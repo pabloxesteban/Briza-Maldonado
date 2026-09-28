@@ -49,7 +49,7 @@ export default function Footer() {
             opacity: 0.35,
           }}
         >
-          Buenos Aires — 2024
+          Buenos Aires — {new Date().getFullYear()}
         </span>
       </div>
     </footer>

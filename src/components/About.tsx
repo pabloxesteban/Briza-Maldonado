@@ -46,10 +46,9 @@ export default function About() {
     <section
       id="sobre-mi"
       ref={ref}
+      className="about-grid"
       style={{
         borderTop: '1px solid rgba(28,28,28,0.1)',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
         minHeight: '90vh',
       }}
     >
@@ -92,7 +91,7 @@ export default function About() {
       <div
         style={{
           backgroundColor: 'var(--bg)',
-          padding: 'clamp(3rem, 6vw, 7rem) clamp(2.5rem, 5vw, 5rem)',
+          padding: 'clamp(3rem, 6vw, 7rem) clamp(1.25rem, 5vw, 5rem)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
