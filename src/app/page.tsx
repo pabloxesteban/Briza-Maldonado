@@ -35,9 +35,9 @@ export default function Home() {
       <Archive />
       <ImageStrip />
       <Flash />
-      <div className="band" style={{ ['--band' as string]: 'var(--c-blue)' }}><Process /></div>
+      <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><Process /></div>
       <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><About /></div>
-      <div className="band band--check" style={{ ['--band' as string]: 'var(--c-orange)' }}><Contact /></div>
+      <div className="band band--check" style={{ ['--band' as string]: 'var(--c-pink)' }}><Contact /></div>
       <Footer />
       <Reveal />
     </main>

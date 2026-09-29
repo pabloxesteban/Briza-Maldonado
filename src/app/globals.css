@@ -10,17 +10,18 @@
   color-scheme: light;
   /* Palette: cream cards over bold flat colours (Brolga-style), black ink for the tattoo work */
   --cream: #F7F1E2;
-  --c-pink: #ECA0B2;
-  --c-pink-2: #F5BFCC;
+  --c-pink: #F4B6C8;
+  --c-pink-2: #F9CFDB;
+  --c-rose: #D9537A;
   --c-blue: #3A70BE;
   --c-green: #54AA5C;
   --c-orange: #E8743E;
   --c-yellow: #F6CA48;
-  --bg: var(--cream);
+  --bg: var(--c-pink-2);
   --bg-dark: #161414;
   --ink: #161414;
   --ink-muted: #5E5650;
-  --mark: #E8743E;
+  --mark: var(--c-rose);
   --mark-soft: var(--c-pink);
   --on-mark: #161414;
   --skin: #ece4cf;
@@ -725,3 +726,20 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 .zz-node.now .zz-dot, .zz-node.done .zz-dot { background: var(--c-orange) !important; border-color: var(--c-orange) !important; }
 .zz-node.now .zz-dot { box-shadow: 0 0 0 .5rem rgba(232,116,62,.18) !important; }
 .duo { background: var(--c-pink) !important; }
+
+/* Pastel pink leads: page, bands and accents in pink; other colours only as small candy details */
+body, html { background: var(--c-pink-2); }
+.swash, .arch-t2, .process-title em { color: var(--c-rose) !important; }
+.arch-num, .zz-num, .process-num { color: var(--c-rose) !important; }
+.zz-ink { stroke: var(--c-rose) !important; }
+.zz-needle { box-shadow: 0 0 0 .3rem rgba(217,83,122,.3) !important; }
+.zz-node.now .zz-dot, .zz-node.done .zz-dot { background: var(--c-rose) !important; border-color: var(--c-rose) !important; }
+.zz-node.now .zz-dot { box-shadow: 0 0 0 .5rem rgba(217,83,122,.18) !important; }
+.cta-book:hover { box-shadow: 4px 4px 0 var(--c-rose); }
+.book-chips .book-chip[aria-pressed="true"] { box-shadow: 4px 4px 0 var(--c-rose); }
+.booking-steps i { background: var(--c-rose) !important; }
+.arch-bar { background: rgba(249,207,219,.94) !important; }
+.arch-stage::after { background: radial-gradient(55% 40% at 50% 50%, rgba(249,207,219,.92), rgba(249,207,219,.5) 70%, rgba(249,207,219,0)) !important; }
+.menu-mask a:hover, .menu-mask a.active { color: var(--c-rose) !important; }
+.nav-toggle i { background: var(--c-pink); }
+.band--check { background-color: var(--c-pink); background-image: conic-gradient(var(--c-pink-2) 25%, transparent 0 50%, var(--c-pink-2) 0 75%, transparent 0); background-size: 120px 120px; }
