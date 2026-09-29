@@ -10,7 +10,7 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 PUBLIC = os.path.join(ROOT, 'public')
 OUT = os.path.join(PUBLIC, '_img')
 WIDTHS = [320, 480, 640, 828, 1080, 1284]
-SOURCES = ['portfolio', 'flash', 'brand', 'briza-portrait.jpg']
+SOURCES = ['portfolio', 'flash', 'brand', 'briza-portrait.jpg', 'briza-tatuando.jpg']
 
 manifest = {}
 for src in SOURCES:

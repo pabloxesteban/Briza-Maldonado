@@ -754,29 +754,23 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 .menu-photo.duo { background: #FAD7E1 !important; }
 .menu-photo.duo img { filter: grayscale(1) contrast(1.05) brightness(1.08) !important; }
 
-/* ─── HERO v3: name edge to edge, subtle inline portrait ─── */
-.hero-card { justify-content: space-between !important; gap: clamp(1.5rem, 4vh, 3rem); }
-.hero-top { display: flex; justify-content: space-between; gap: 1rem; font-weight: 700; font-size: clamp(.9rem, 1.2vw, 1.1rem); }
-.hero-name { display: flex; flex-direction: column; color: var(--ink); }
-.hero-name-row { display: flex; align-items: center; gap: clamp(.8rem, 2vw, 2rem); }
-.hero-word { display: block; font-family: var(--font-grotesk); font-weight: 800; letter-spacing: -.06em; line-height: .8; font-size: clamp(6rem, 25vw, 26rem);
-  opacity: 0; transform: translateY(50px); transition: opacity .6s var(--ease), transform 1s cubic-bezier(.34,1.3,.64,1); transition-delay: calc(var(--hero-delay, 0s) + var(--i) * .12s); }
-.hero-surname { font-size: clamp(3rem, 10.5vw, 11rem); line-height: 1; margin-top: -.05em; align-self: flex-end; letter-spacing: -.01em; }
-.hero.in .hero-word { opacity: 1; transform: none; }
-.hero-portrait { position: relative; flex: 0 0 auto; width: clamp(90px, 14vw, 240px); aspect-ratio: 3 / 4; border-radius: 999px; overflow: hidden; background: var(--c-pink);
-  opacity: 0; transform: scale(.85) rotate(-4deg); transition: opacity .8s var(--ease), transform 1s var(--ease); transition-delay: calc(var(--hero-delay, 0s) + var(--i) * .12s); }
-.hero-portrait img { filter: grayscale(.25) contrast(1.02); }
-.hero.in .hero-portrait { opacity: 1; transform: rotate(-4deg); }
-.hero-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem 3rem; flex-wrap: wrap; }
-.hero-foot .hero-sub { margin: 0; }
-.hero-foot .hero-cta { margin: 0; }
-.hero-sticker--heart { width: min(16vw, 230px) !important; right: 3% !important; top: -4% !important; bottom: auto !important; --r: 10deg !important; }
+
+/* ─── HERO: card + photo panel ─── */
+.hero--split { grid-template-columns: 1fr minmax(0, .5fr); gap: clamp(12px, 2vw, 24px); }
+.hero-line--name { font-size: clamp(6rem, 17vw, 17rem); line-height: .82; letter-spacing: -.06em !important; }
+.hero--split .hero-line.swash { font-size: clamp(3rem, 7.5vw, 7.5rem); }
+.hero-photo-panel { position: relative; border-radius: clamp(28px, 4vw, 56px); overflow: hidden; background: var(--c-pink-2); min-height: 100%;
+  opacity: 0; transform: translateY(24px); transition: opacity 1s var(--ease), transform 1.1s var(--ease); transition-delay: calc(var(--hero-delay, 0s) + .35s); }
+.hero.in .hero-photo-panel { opacity: 1; transform: none; }
+.hero--split .hero-sticker--heart { width: min(26vw, 380px); right: -3%; bottom: -5%; }
+.hero--split .hero-sticker--berry { width: min(11vw, 160px); right: 26%; bottom: -7%; }
+.hero--split .hero-sticker--bird { width: min(12vw, 170px); right: 3%; top: -5%; }
 @media (max-width: 767px) {
-  .hero-card { padding-bottom: clamp(2rem, 8vw, 3rem) !important; }
-  .hero-top { flex-direction: column; gap: .2rem; font-size: .85rem; }
-  .hero-word { font-size: 30vw; }
-  .hero-surname { font-size: 15.5vw; align-self: flex-start; }
-  .hero-portrait { width: 22vw; }
-  .hero-sticker--heart { width: 30vw !important; right: 2% !important; top: -3% !important; }
+  .hero--split { grid-template-columns: 1fr; }
+  .hero-photo-panel { aspect-ratio: 4 / 5; min-height: 0; }
+  .hero-line--name { font-size: 30vw; }
+  .hero--split .hero-line.swash { font-size: 15vw; }
+  .hero--split .hero-card { min-height: auto; padding-bottom: 46vw; }
+  .hero--split .hero-sticker--heart { width: 52vw; right: -2%; }
+  .hero--split .hero-sticker--berry { width: 26vw; left: 4%; right: auto; }
 }
-@media (min-width: 768px) { .hero-sticker--heart { top: 22% !important; right: 4% !important; } }
