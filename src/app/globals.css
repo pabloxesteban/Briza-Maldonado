@@ -1815,3 +1815,20 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
   .g-head { margin-bottom: .6rem !important; }
   .g-lede { font-size: .85rem !important; }
 }
+/* Try-on: the empty box must not trap the page scroll on phones */
+.try-area:not(.has) { touch-action: auto; }
+/* Notebook: real size, one sheet at a time */
+.nb { max-width: 460px; width: 100%; justify-self: center; }
+.nb-page { aspect-ratio: 1100 / 1500; display: flex; flex-direction: column; transform-origin: 0 50%; }
+.nb-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 1rem .9rem !important; flex: 1; align-content: start; }
+.nb-title { font-size: clamp(1.8rem, 3vw, 2.6rem) !important; }
+.nb-turn { display: flex; justify-content: space-between; align-items: center; margin-top: .8rem; font-size: .8rem; font-weight: 700; color: var(--ink-muted); }
+.nb-turn button { border: 0; background: none; font-weight: 800; font-size: .9rem; color: var(--ink); padding: .5rem 0; }
+.nb-turn button:disabled { opacity: .25; }
+.nb-page.turn-next .nb-grid { animation: nbNext .38s var(--ease) both; }
+.nb-page.turn-prev .nb-grid { animation: nbPrev .38s var(--ease) both; }
+@keyframes nbNext { to { opacity: 0; transform: translateX(-30px) rotate(-1.5deg); } }
+@keyframes nbPrev { to { opacity: 0; transform: translateX(30px) rotate(1.5deg); } }
+.nb-grid { animation: nbIn .45s var(--ease); }
+@keyframes nbIn { from { opacity: 0; transform: translateY(8px); } }
+.fl { align-items: start; }

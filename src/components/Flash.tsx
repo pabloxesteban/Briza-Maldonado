@@ -31,6 +31,18 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const cover = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  // One sheet at a time, 4 flashes per sheet (real notebook size); tap/swipe turns the page
+  const PER = 4
+  const pages = Math.ceil(FLASHES.length / PER)
+  const [page, setPage] = useState(0)
+  const [turn, setTurn] = useState<'' | 'next' | 'prev'>('')
+  const go = (d: number) => {
+    const n = page + d
+    if (n < 0 || n >= pages || turn) return
+    setTurn(d > 0 ? 'next' : 'prev')
+    setTimeout(() => { setPage(n); setTurn('') }, 380)
+  }
+  const touch = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -57,7 +69,14 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
 
   return (
     <div ref={ref} className={`nb ${open ? 'open' : ''}`}>
-      <div className="nb-page">
+      <div className={`nb-page ${turn ? `turn-${turn}` : ''}`}
+        onTouchStart={e => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
+        onTouchEnd={e => {
+          const t = touch.current; touch.current = null
+          if (!t) return
+          const dx = e.changedTouches[0].clientX - t.x, dy = e.changedTouches[0].clientY - t.y
+          if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(dx < 0 ? 1 : -1)
+        }}>
         <span className="nb-spiral" aria-hidden />
         <header className="nb-head">
           <p className="nb-kicker">Cuaderno · 2026</p>
@@ -65,7 +84,7 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
           <p className="nb-sub">Diseños listos para tatuar. Cada uno se hace una sola vez.</p>
         </header>
         <ul className="nb-grid">
-          {FLASHES.map((f, i) => (
+          {FLASHES.map((f, i) => ({ f, i })).slice(page * PER, page * PER + PER).map(({ f, i }) => (
             <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
               <div className="nb-art" draggable={f.available}
                 onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
@@ -84,6 +103,11 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
             </li>
           ))}
         </ul>
+        <nav className="nb-turn" aria-label="Páginas del cuaderno">
+          <button type="button" onClick={() => go(-1)} disabled={page === 0} aria-label="Hoja anterior" data-hover>←</button>
+          <span>Hoja {page + 1} de {pages}</span>
+          <button type="button" onClick={() => go(1)} disabled={page >= pages - 1} aria-label="Hoja siguiente" data-hover>Pasar hoja →</button>
+        </nav>
       </div>
 
       {/* The cover: front art outside, plain board inside */}

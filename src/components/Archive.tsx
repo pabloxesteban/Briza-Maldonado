@@ -400,6 +400,13 @@ export default function Archive() {
   }, [])
 
   const viewList = open && list.includes(open.i) ? list : WORKS.map((_, i) => i)
+  // Stories start with the piece you tapped, then continue through the rest
+  const [storyStart, setStoryStart] = useState<number | null>(null)
+  useEffect(() => { setStoryStart(s => (open ? s ?? open.i : null)) }, [open])
+  const storyList = useMemo(() => {
+    const k = viewList.indexOf(storyStart ?? open?.i ?? 0)
+    return k < 0 ? viewList : [...viewList.slice(k), ...viewList.slice(0, k)]
+  }, [viewList, storyStart, open?.i])
 
   return (
     <section id="obra" className="archive g">
@@ -418,7 +425,7 @@ export default function Archive() {
       </div>
 
       {open && (mobile
-        ? <Stories index={open.i} list={viewList} onIndex={onIndex} onClose={onClose} onBook={onBook} />
+        ? <Stories index={open.i} list={storyList} onIndex={onIndex} onClose={onClose} onBook={onBook} />
         : <Detail key="detail" index={open.i} list={viewList} from={open.from} onIndex={onIndex} onClose={onClose} onBook={onBook} />)}
     </section>
   )
