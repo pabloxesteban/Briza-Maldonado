@@ -13,12 +13,17 @@ const STAGES = [
 const DRAWING = '/Briza-Maldonado/flash/rosa-alambre-flash-paper.png'
 const TATTOO = '/Briza-Maldonado/portfolio/rosa-alambre.jpg'
 const ZZ = [{ x: 34, y: 8 }, { x: 64, y: 36 }, { x: 34, y: 64 }, { x: 64, y: 92 }]
+// Hand-drawn S-stroke through the steps, like a line pulled with the machine
+const INK_PATH = 'M34,8 C33,21 63,19 64,36 C65,53 35,47 34,64 C33,81 63,75 64,92'
+const STAR = 'M12 1.5l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7L2 8.7l7.1-.6z'
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 
 export default function Process() {
   const ref = useRef<HTMLElement>(null)
   const [p, setP] = useState(0) // 0..1 through the pinned sequence
   const [still, setStill] = useState(false)
+  const inkRef = useRef<SVGPathElement>(null)
+  const [tip, setTip] = useState({ x: ZZ[0].x, y: ZZ[0].y })
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setStill(true); return }
@@ -46,6 +51,14 @@ export default function Process() {
   const skin = still ? 0 : seg(3)       // tattoo spreads from the centre
   const note = still ? 0 : 1 - clamp(seg(1) * 2)
 
+  const ink = still ? 1 : Math.min(1, p * 1.12)
+  useEffect(() => {
+    const el = inkRef.current
+    if (!el) return
+    const pt = el.getPointAtLength(el.getTotalLength() * ink)
+    setTip(t => (Math.abs(t.x - pt.x) + Math.abs(t.y - pt.y) < 0.05 ? t : { x: pt.x, y: pt.y }))
+  }, [ink])
+
   return (
     <section ref={ref} id="proceso" className="process" style={{ height: still ? 'auto' : '420vh' }}>
       <div className="process-pin">
@@ -72,21 +85,21 @@ export default function Process() {
 
           {/* Words for the current stage */}
           <div className="process-copy">
-            {/* Zigzag path: nodes alternate sides, the line draws itself as you scroll down */}
+            {/* The steps hang off one hand-drawn ink stroke; a needle tip leads the ink as you scroll */}
             <div className="zz" role="list">
               <svg className="zz-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-                <polyline points={ZZ.map(n => `${n.x},${n.y}`).join(' ')} className="zz-base" />
-                <polyline points={ZZ.map(n => `${n.x},${n.y}`).join(' ')} className="zz-ink" pathLength={1}
-                  style={{ strokeDashoffset: 1 - (still ? 1 : Math.min(1, p * 1.12)) }} />
+                <path d={INK_PATH} className="zz-base" />
+                <path ref={inkRef} d={INK_PATH} className="zz-ink" pathLength={1} style={{ strokeDashoffset: 1 - ink }} />
               </svg>
+              <span className="zz-needle" aria-hidden style={{ left: `${tip.x}%`, top: `${tip.y}%`, opacity: ink > 0.005 && ink < 0.995 ? 1 : 0 }} />
               {STAGES.map((st, i) => {
                 const n = ZZ[i]
                 const state = still || i === active ? 'now' : i < active ? 'done' : ''
                 return (
                   <div key={st.n} role="listitem" className={`zz-node ${state} ${n.x < 50 ? 'l' : 'r'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}>
-                    <span className="zz-dot" aria-hidden />
+                    <svg className="zz-star" viewBox="0 0 24 24" aria-hidden><path d={STAR} /></svg>
                     <div className="zz-label">
-                      <p className="zz-title">{st.t}</p>
+                      <p className="zz-title"><span className="zz-num swash">{st.n}</span>{st.t}</p>
                       <p className="zz-desc">{st.d}</p>
                     </div>
                   </div>

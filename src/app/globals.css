@@ -609,3 +609,19 @@ p, li, label, input { letter-spacing: .02em; }
   .zz-caption { display: block; margin-top: 1rem; font-size: .8rem; line-height: 1.6; color: var(--ink-muted); text-align: center; animation: riseIn var(--t-mid) var(--ease) both; }
   .zz { height: 30vh; }
 }
+
+/* Process path, own language: stencil-dotted guide, ink stroke, needle tip, flash stars */
+.zz-svg path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.zz-base { stroke: rgba(255,255,255,.28); stroke-width: 1.4; stroke-dasharray: 1 6; }
+.zz-ink { stroke: var(--mark); stroke-width: 3; stroke-dasharray: 1; }
+.zz-needle { position: absolute; width: .5rem; height: .5rem; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); box-shadow: 0 0 0 .3rem rgba(247,190,212,.35), 0 0 18px 4px rgba(247,190,212,.55); transition: opacity .2s; pointer-events: none; z-index: 2; }
+.zz-dot { display: none; }
+.zz-star { display: block; width: 1.6rem; height: 1.6rem; transform: rotate(-8deg); transition: transform var(--t-mid) var(--ease); }
+.zz-star path { fill: #000; stroke: rgba(255,255,255,.45); stroke-width: 1.4; stroke-linejoin: round; transition: fill var(--t-fast), stroke var(--t-fast); }
+.zz-node.done .zz-star path { fill: #000; stroke: var(--mark); }
+.zz-node.now .zz-star { transform: rotate(10deg) scale(1.45); }
+.zz-node.now .zz-star path { fill: var(--mark); stroke: var(--mark); }
+.zz-num { display: block; font-size: .95em; color: var(--mark); margin-bottom: .1em; opacity: .9; }
+.zz-node.l .zz-label { right: calc(100% + 1rem); }
+.zz-node.r .zz-label { left: calc(100% + 1rem); }
+.zz-label { transform: translateY(-1.6rem); }
