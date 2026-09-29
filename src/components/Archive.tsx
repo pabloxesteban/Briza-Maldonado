@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { WORKS, num, type Work } from '@/data/works'
+import { WORKS, type Work } from '@/data/works'
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
 
@@ -162,7 +162,6 @@ function Wall({ still, mobile, onOpen }: { still: boolean; mobile: boolean; onOp
                     <Image src={w.src} alt={w.title} fill sizes={mobile ? '48vw' : '31vw'} style={{ objectFit: 'cover' }} />
                   </span>
                   <span className="arch-cap">
-                    <span className="arch-num">Nº {num(i)}</span>
                     <span className="arch-name font-display">{w.title}</span>
                     <span className="arch-style">{w.style}</span>
                   </span>
@@ -193,7 +192,6 @@ function Index({ onOpen }: { onOpen: (i: number, el: HTMLElement) => void }) {
         <button key={w.slug} type="button" className="arch-row" data-cursor="view" data-work={w.slug}
           onMouseEnter={() => setHover(i)}
           onClick={e => onOpen(i, e.currentTarget.querySelector('.arch-row-thumb') as HTMLElement)}>
-          <span className="arch-num">Nº {num(i)}</span>
           <span className="arch-row-name font-display">{w.title}</span>
           <span className="arch-row-meta">{w.style} · {w.zone}</span>
           <span className="arch-row-thumb"><Image src={w.src} alt="" fill sizes="96px" style={{ objectFit: 'cover' }} /></span>
@@ -301,7 +299,6 @@ function Detail({ index, from, mobile, onIndex, onClose }: {
 
       {ready && (
         <div key={w.slug} className="arch-meta">
-          <p className="arch-num">Nº {num(index)} <span>/ {num(WORKS.length - 1)}</span></p>
           <h3 className="font-display">{w.title}</h3>
           <p className="arch-meta-line">{w.style} · {w.zone}</p>
           {w.note && <p className="arch-meta-note">{w.note}</p>}
