@@ -121,7 +121,17 @@ function demoReply(t: string, st: Demo, hasPics: boolean): { reply: string; acti
 const textOf = (m: Msg) => (typeof m.content === 'string' ? m.content
   : m.content.filter(b => b.type === 'text' && b.text).map(b => b.text).join('\n')).trim()
 
+// What Lila says depends on what you're looking at
+const CONTEXT: Record<string, { say: string[]; chips: string[] }> = {
+  top: { say: ['Hola, soy Lila ✦ ¿te ayudo?', '¿Buscás turno? Te lo armo en 1 minuto', '¿Flash o idea propia?'], chips: ['Quiero un flash', 'Tengo una idea propia'] },
+  flash: { say: ['¿Te gustó alguno? Te paso el precio', 'Decime el número y te lo reservo ✦', '¿Lo querés probar en tu cuerpo?'], chips: ['¿Qué flashes hay?', 'Quiero reservar uno'] },
+  obra: { say: ['¿Querés algo así? Contame tu idea', '¿Viste alguno que te guste? 🖤', 'Te paso un estimativo al toque'], chips: ['Quiero algo parecido', '¿Cuánto sale?'] },
+  proceso: { say: ['¿Dudas del proceso? Preguntame', 'Primero charlamos tu idea ✦', '¿Cuánto dura una sesión? Te cuento'], chips: ['¿Cómo es el proceso?', '¿Qué cuidados lleva?'] },
+  turno: { say: ['¿Querés que te lo arme yo?', 'Te busco un turno libre ✦', 'Más rápido por acá 😉'], chips: ['¿Qué turnos hay?', 'Quiero un flash'] },
+}
+
 export default function Assistant() {
+  const [demo, setDemo] = useState(false)
   const [open, setOpen] = useState(false)
   // A friendly nudge a few seconds after the visitor starts exploring (once per visit, dismissible)
   const [teaser, setTeaser] = useState(false)
@@ -129,7 +139,7 @@ export default function Assistant() {
     let seen = false
     try { seen = sessionStorage.getItem('lila-teaser') === '1' } catch { /* noop */ }
     if (seen) return
-    const t = setTimeout(() => setTeaser(true), 9000)
+    const t = setTimeout(() => setTeaser(true), 2500)
     return () => clearTimeout(t)
   }, [])
   // Lila waits until the hero is behind, so she doesn't sit on top of its buttons
@@ -140,6 +150,46 @@ export default function Assistant() {
     return () => window.removeEventListener('scroll', on)
   }, [])
   const hideTeaser = () => { setTeaser(false); try { sessionStorage.setItem('lila-teaser', '1') } catch { /* noop */ } }
+
+  // Section in view → contextual lines, typed out one letter at a time
+  const [ctx, setCtx] = useState('top')
+  useEffect(() => {
+    const ids = ['flash', 'obra', 'proceso', 'turno']
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setCtx(e.target.id) }), { rootMargin: '-45% 0px -45% 0px' })
+    ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el) })
+    return () => io.disconnect()
+  }, [])
+  const [typed, setTyped] = useState('')
+  useEffect(() => {
+    const lines = CONTEXT[ctx]?.say ?? CONTEXT.top.say
+    let li = 0, ch = 0, alive = true, t: ReturnType<typeof setTimeout>
+    const step = () => {
+      if (!alive) return
+      const line = lines[li % lines.length]
+      if (ch <= line.length) { setTyped(line.slice(0, ch++)); t = setTimeout(step, 38) }
+      else { t = setTimeout(() => { ch = 0; li++; step() }, 3600) }
+    }
+    step()
+    return () => { alive = false; clearTimeout(t) }
+  }, [ctx])
+
+  // The orb leans towards the cursor (magnetic) and looks alive
+  const orb = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    const el = orb.current
+    if (!el || window.matchMedia('(hover: none)').matches) return
+    const move = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect()
+      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2)
+      const d = Math.hypot(dx, dy)
+      const k = d < 220 ? (1 - d / 220) * 0.35 : 0
+      el.style.setProperty('--mx', `${dx * k}px`); el.style.setProperty('--my', `${dy * k}px`)
+    }
+    window.addEventListener('pointermove', move, { passive: true })
+    return () => window.removeEventListener('pointermove', move)
+  }, [demo, past])
+  const quick = (t: string) => { hideTeaser(); setOpen(true); setTimeout(() => sendRef.current?.(t), 250) }
+  const sendRef = useRef<((t: string) => void) | null>(null)
   const [history, setHistory] = useState<Msg[]>([])
   const [action, setAction] = useState<Action | null>(null)
   const [input, setInput] = useState('')
@@ -148,7 +198,6 @@ export default function Assistant() {
   const [pics, setPics] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const list = useRef<HTMLDivElement>(null)
-  const [demo, setDemo] = useState(false)
   const demoState = useRef<Demo>({})
   useEffect(() => { if (!URL_ && new URLSearchParams(location.search).has('demo')) setDemo(true) }, [])
 
@@ -184,7 +233,8 @@ export default function Assistant() {
     } catch { setError('No pude subir la foto. Probá con otra.') } finally { setUploading(false) }
   }
 
-  const send = async (text: string) => {
+  sendRef.current = (t: string) => { void send(t) }
+  async function send(text: string) {
     const t = text.trim() || (pics.length ? 'Te mando mis referencias.' : '')
     if (!t || busy || uploading) return
     const turn: Msg = pics.length
@@ -225,19 +275,24 @@ export default function Assistant() {
     <>
       <div className={`lila-dock ${open || !past ? 'hide' : ''}`}>
         {teaser && !open && (
-          <div className="lila-teaser" role="status">
-            <button type="button" className="lila-teaser-x" aria-label="Cerrar" onClick={hideTeaser}>✕</button>
-            <button type="button" className="lila-teaser-body" onClick={() => { hideTeaser(); setOpen(true) }}>
-              <b>Hola, soy Lila ✦</b>
-              <span>¿Te ayudo a elegir un flash o a pedir turno?</span>
+          <div className="lila-bubble" role="status">
+            <button type="button" className="lila-bubble-x" aria-label="Ocultar" onClick={hideTeaser}>✕</button>
+            <button type="button" className="lila-bubble-text" onClick={() => { hideTeaser(); setOpen(true) }}>
+              {typed}<i className="lila-caret" aria-hidden />
             </button>
+            <div className="lila-chips">
+              {(CONTEXT[ctx] ?? CONTEXT.top).chips.map(c => <button key={c} type="button" onClick={() => quick(c)}>{c}</button>)}
+            </div>
           </div>
         )}
-        <button type="button" className="lila-fab" onClick={() => { hideTeaser(); setOpen(true) }} aria-label="Hablar con Lila" data-hover>
-          <span className="lila-ring" aria-hidden />
-          <span className="lila-face"><LilaAvatar size={52} /></span>
+        <button ref={orb} type="button" className="lila-orb" onClick={() => { hideTeaser(); setOpen(true) }} aria-label="Hablar con Lila" data-hover>
+          <svg className="lila-spin" viewBox="0 0 100 100" aria-hidden>
+            <defs><path id="lilaCircle" d="M50,50 m-39,0 a39,39 0 1,1 78,0 a39,39 0 1,1 -78,0" /></defs>
+            <text><textPath href="#lilaCircle">HABLÁ CON LILA ✦ HABLÁ CON LILA ✦ </textPath></text>
+          </svg>
+          <span className="lila-blob" aria-hidden />
+          <span className="lila-face"><LilaAvatar size={56} /></span>
           <span className="lila-online" aria-hidden />
-          <span className="lila-label"><b>Lila</b><em>Te respondo al toque</em></span>
         </button>
       </div>
 

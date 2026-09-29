@@ -441,7 +441,13 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
           )
         })}
 
-        {framing && <p className="try-hint">Arrastrá · pellizcá para acercar · girá con 2 dedos</p>}
+        {framing && (
+          <div className="try-frame-bar" onPointerDown={e => e.stopPropagation()}>
+            <button type="button" onClick={() => setView(v => ({ ...v, rot: ((v.rot ?? 0) + 90) % 360 }))}>Girar 90° ↻</button>
+            <label>Otra foto<input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} /></label>
+            <button type="button" className="apply" onClick={() => setFraming(false)}>Aplicar ✓</button>
+          </div>
+        )}
         {ready && !items.length && <p className="try-hint">Sacá un flash del cuaderno y soltalo acá<span className="try-hint-m"> o elegí uno de abajo</span></p>}
         {nudge && <p className="try-hint warn">Primero subí y aplicá tu foto</p>}
         {dupe && <p className="try-hint warn">{dupe} ya está en tu foto</p>}
@@ -463,13 +469,6 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
             <label className="try-range try-desk">Rotación
               <input type="range" min={-180} max={180} step={1} value={Math.round(view.rot ?? 0)} onChange={e => setView(v => ({ ...v, rot: Number(e.target.value) }))} />
             </label>
-            <div className="try-btns">
-              <button type="button" className="try-remove" onClick={() => setView(v => ({ ...v, rot: ((v.rot ?? 0) + 90) % 360 }))}>Girar 90° ↻</button>
-              <label className="try-remove try-change">Otra foto
-                <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
-              </label>
-              <button type="button" className="cta-book try-book" onClick={() => setFraming(false)}>Aplicar ✓</button>
-            </div>
           </>
         )}
 
@@ -497,7 +496,9 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
 
             <div className="try-btns">
               
-              <button type="button" className="try-remove" onClick={() => setFraming(true)}>Ajustar foto</button>
+              <label className="try-remove try-change">Otra foto
+                <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
+              </label>
               {unique.length > 0 && (
                 <button type="button" className="cta-book try-book" data-cursor="book" onClick={async () => { const pic = await snapshot().catch(() => undefined); setFull(false); book(unique.map(i => FLASHES[i].name), pic) }}>
                   {full ? (unique.length > 1 ? `Quiero estos ${unique.length} ●` : 'Lo quiero ●') : unique.length > 1 ? `Quiero estos ${unique.length} flashes ●` : `Quiero ${FLASHES[unique[0]].name} ●`}

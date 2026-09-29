@@ -102,7 +102,9 @@ export default function Navbar() {
       cur += (target - cur) * 0.09
       if (Math.abs(target - cur) < 0.001) cur = target
       navRef.current?.style.setProperty('--np', cur.toFixed(3))
-      navRef.current?.classList.toggle('on', cur > 0.4)
+      navRef.current?.classList.toggle('on', true)
+      // Over the dark hero, before the background fills in, the bar keeps its light-on-dark look
+      navRef.current?.classList.toggle('dark', !isSubPage && !menuOpenRef.current && cur < 0.5)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
