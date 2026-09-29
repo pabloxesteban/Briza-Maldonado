@@ -32,6 +32,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Google Calendar with Briza's open slots (see src/lib/calendar.ts)
+          NEXT_PUBLIC_GCAL_ID: ${{ vars.GCAL_ID }}
+          NEXT_PUBLIC_GCAL_KEY: ${{ secrets.GCAL_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

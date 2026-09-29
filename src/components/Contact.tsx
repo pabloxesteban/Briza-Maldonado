@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import BookingCalendar from './BookingCalendar'
 
 const WHATSAPP = '5491156233929'
 const INSTAGRAM = 'bri.t4tts'
@@ -19,7 +20,7 @@ const ZONES = ['Brazo', 'Antebrazo', 'Pierna', 'Costilla', 'Espalda', 'Otra zona
 const SIZES = ['Chico · 5–9 cm', 'Mediano · 10–15 cm', 'Grande · +15 cm']
 const WHEN = ['Lo antes posible', 'Este mes', 'Próximos meses', 'Sin apuro']
 
-const STEPS = ['La idea', 'Zona y tamaño', 'Cuándo', 'Vos'] as const
+const STEPS = ['La idea', 'Zona y tamaño', 'Turno', 'Vos'] as const
 
 function buildMessage(a: Answers) {
   return [
@@ -28,7 +29,7 @@ function buildMessage(a: Answers) {
     `• Idea: ${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}`,
     `• Zona: ${a.zone}`,
     `• Tamaño: ${a.size}`,
-    `• Cuándo: ${a.when}`,
+    /a las/.test(a.when) ? `• Turno: ${a.when} (¿me lo confirmás?)` : `• Cuándo: ${a.when}`,
     '',
     'Te mando referencias por acá.',
   ].join('\n')
@@ -227,7 +228,9 @@ export default function Contact() {
               )}
               {step === 2 && (
                 <>
-                  <Question n="03">¿Para cuándo lo querés?</Question>
+                  <Question n="03">Elegí tu turno</Question>
+                  <BookingCalendar value={a.when} onPick={set('when')} />
+                  <p style={{ ...label, marginTop: '1.8rem' }}>¿Ninguno te sirve? Decime cuándo</p>
                   <div className="book-chips">
                     {WHEN.map(o => <Chip key={o} label={o} on={a.when === o} onClick={() => set('when')(o)} />)}
                   </div>
