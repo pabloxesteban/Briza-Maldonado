@@ -5,8 +5,6 @@ import Image from 'next/image'
 import { WORKS } from '@/data/works'
 
 const INSTAGRAM = 'bri.t4tts'
-const FILTERS = ['Todos', 'Traditional', 'Black & white', 'Color'] as const
-type Filter = typeof FILTERS[number]
 type Rect = { left: number; top: number; width: number; height: number }
 
 function useMobile() {
@@ -41,14 +39,17 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let raf = 0, last = -1
+    // Eased toward the scroll position so a fast flick glides instead of whipping the columns
+    let raf = 0, last = -1, p = -1
     const tick = () => {
       const el = sec.current
       if (el) {
         const r = el.getBoundingClientRect()
         const vh = window.innerHeight
-        if (r.bottom > 0 && r.top < vh) {
-          const p = reduce ? 0.5 : Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)))
+        if (r.bottom > -vh && r.top < vh * 2) {
+          const target = reduce ? 0.5 : Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)))
+          p = p < 0 ? target : p + (target - p) * 0.06
+          if (Math.abs(target - p) < 0.0001) p = target
           if (p !== last) {
             last = p
             colRefs.current.forEach((col, c) => {
@@ -69,7 +70,7 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
   const h = hover !== null ? WORKS[hover] : null
 
   return (
-    <div ref={sec} className="co" style={{ height: mobile ? '320vh' : '300vh' }}>
+    <div ref={sec} className="co" style={{ height: mobile ? '480vh' : '440vh' }}>
       <div className={`co-stage ${hover !== null ? 'hovering' : ''}`} style={{ gridTemplateColumns: `repeat(${C}, 1fr)` }}>
         {columns.map((col, c) => (
           <div key={c} ref={el => { colRefs.current[c] = el }} className="co-col">
@@ -283,11 +284,10 @@ function Stories({ index, list, onIndex, onClose, onBook }: {
 // ─── The gallery ─────────────────────────────────────────────────────────
 export default function Archive() {
   const mobile = useMobile()
-  const [filter, setFilter] = useState<Filter>('Todos')
   const [open, setOpen] = useState<{ i: number; from: Rect | null } | null>(null)
   const pushed = useRef(false)
 
-  const list = useMemo(() => WORKS.map((_, i) => i).filter(i => filter === 'Todos' || WORKS[i].style === filter), [filter])
+  const list = useMemo(() => WORKS.map((_, i) => i), [])
 
   // Deep links (#obra-lobo) and the browser back button
   useEffect(() => {
@@ -342,13 +342,8 @@ export default function Archive() {
       </header>
 
 
-      <div className="g-filters" role="tablist" aria-label="Filtrar por estilo">
-        {FILTERS.map(f => (
-          <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
-        ))}
-      </div>
 
-      <Columns key={filter} list={list} mobile={mobile} onOpen={onOpen} />
+      <Columns list={list} mobile={mobile} onOpen={onOpen} />
 
       <div className="g-more">
         <p>Hay más en mi Instagram: trabajos recién hechos, flashes y fechas libres.</p>

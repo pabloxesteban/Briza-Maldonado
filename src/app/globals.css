@@ -1301,3 +1301,7 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
   .co-tile .g-img { border-radius: 4px !important; }
   .co-cap { font-size: .66rem; bottom: .35rem; }
 }
+/* Columns start filled: no empty band at the top */
+.co-col { padding: 0 0 6vh !important; }
+.co-stage { -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent) !important; mask-image: linear-gradient(to bottom, #000 90%, transparent) !important; }
+.g-head { margin-bottom: clamp(1.4rem, 3vw, 2.4rem); }
