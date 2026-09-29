@@ -1832,3 +1832,19 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .nb-grid { animation: nbIn .45s var(--ease); }
 @keyframes nbIn { from { opacity: 0; transform: translateY(8px); } }
 .fl { align-items: start; }
+/* Notebook page turn (3D) */
+.nb-grid { animation: none !important; }
+.nb-sheet { display: flex; flex-direction: column; flex: 1; }
+.nb-flip { position: absolute; inset: 0; z-index: 4; transform-origin: 0 50%; transform-style: preserve-3d; pointer-events: none; }
+.nb-flip.fwd { animation: nbFwd .85s cubic-bezier(.45,.05,.25,1) forwards; }
+.nb-flip.back { animation: nbBack .85s cubic-bezier(.45,.05,.25,1) forwards; }
+@keyframes nbFwd { from { transform: rotateY(0); } to { transform: rotateY(-180deg); } }
+@keyframes nbBack { from { transform: rotateY(-180deg); } to { transform: rotateY(0); } }
+.nb-flip-front, .nb-flip-back { position: absolute; inset: 0; border-radius: 6px 16px 16px 6px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden;
+  background: #fbf7ec repeating-linear-gradient(to bottom, transparent 0 31px, rgba(38,49,140,.1) 31px 32px); padding: inherit; display: flex; flex-direction: column; }
+.nb-flip-front { padding: clamp(1.4rem, 2.6vw, 2.4rem) clamp(1.2rem, 2.4vw, 2.2rem) 3.4rem clamp(2.6rem, 4vw, 3.6rem); }
+.nb-flip-front::after, .nb-flip-back::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(22,20,20,.18), rgba(22,20,20,0) 35%); animation: nbShade .85s ease forwards; }
+.nb-flip-back { transform: rotateY(180deg); background-color: #f3eee0; }
+@keyframes nbShade { 50% { opacity: 1; } from, to { opacity: .2; } }
+.nb-flip .nb-item { opacity: 1 !important; transform: none !important; }
+.nb-page { perspective: 2200px; }

@@ -35,14 +35,47 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
   const PER = 4
   const pages = Math.ceil(FLASHES.length / PER)
   const [page, setPage] = useState(0)
-  const [turn, setTurn] = useState<'' | 'next' | 'prev'>('')
+  // A real page turn: the sheet lifts from the spiral and folds over in 3D, showing its back
+  const [flip, setFlip] = useState<{ from: number; dir: 1 | -1 } | null>(null)
+  const turn = ''
   const go = (d: number) => {
     const n = page + d
-    if (n < 0 || n >= pages || turn) return
-    setTurn(d > 0 ? 'next' : 'prev')
-    setTimeout(() => { setPage(n); setTurn('') }, 380)
+    if (n < 0 || n >= pages || flip) return
+    setFlip({ from: page, dir: d > 0 ? 1 : -1 })
+    setPage(n)
+    setTimeout(() => setFlip(null), 900)
   }
   const touch = useRef<{ x: number; y: number } | null>(null)
+  const sheet = (pg: number) => (
+    <div className="nb-sheet">
+        <header className="nb-head">
+          <p className="nb-kicker">Cuaderno · 2026</p>
+          <h3 className="nb-title">Flashes <span className="swash">disponibles</span></h3>
+          <p className="nb-sub">Diseños listos para tatuar. Cada uno se hace una sola vez.</p>
+        </header>
+        <ul className="nb-grid">
+          {FLASHES.map((f, i) => ({ f, i })).slice(pg * PER, pg * PER + PER).map(({ f, i }) => (
+            <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
+              <div className="nb-art" draggable={f.available}
+                onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
+                title={f.available ? 'Arrastralo a tu foto' : undefined}>
+                <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
+                {!f.available && <span className="nb-stamp">Tatuado</span>}
+              </div>
+              <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
+              <p className="nb-facts"><span>{f.cm} cm</span><span>{f.price}</span></p>
+              {f.available && (
+                <div className="nb-actions">
+                  <button type="button" className="nb-try" data-hover onClick={() => onTry(i)}>Probar</button>
+                  <button type="button" className="nb-want" data-cursor="book" onClick={() => book(f.name)}>Lo quiero</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+    </div>
+  )
+
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -78,31 +111,13 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
           if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(dx < 0 ? 1 : -1)
         }}>
         <span className="nb-spiral" aria-hidden />
-        <header className="nb-head">
-          <p className="nb-kicker">Cuaderno · 2026</p>
-          <h3 className="nb-title">Flashes <span className="swash">disponibles</span></h3>
-          <p className="nb-sub">Diseños listos para tatuar. Cada uno se hace una sola vez.</p>
-        </header>
-        <ul className="nb-grid">
-          {FLASHES.map((f, i) => ({ f, i })).slice(page * PER, page * PER + PER).map(({ f, i }) => (
-            <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
-              <div className="nb-art" draggable={f.available}
-                onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
-                title={f.available ? 'Arrastralo a tu foto' : undefined}>
-                <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
-                {!f.available && <span className="nb-stamp">Tatuado</span>}
-              </div>
-              <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
-              <p className="nb-facts"><span>{f.cm} cm</span><span>{f.price}</span></p>
-              {f.available && (
-                <div className="nb-actions">
-                  <button type="button" className="nb-try" data-hover onClick={() => onTry(i)}>Probar</button>
-                  <button type="button" className="nb-want" data-cursor="book" onClick={() => book(f.name)}>Lo quiero</button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        {sheet(page)}
+        {flip && (
+          <div className={`nb-flip ${flip.dir > 0 ? 'fwd' : 'back'}`} aria-hidden>
+            <div className="nb-flip-front">{sheet(flip.dir > 0 ? flip.from : page)}</div>
+            <div className="nb-flip-back" />
+          </div>
+        )}
         <nav className="nb-turn" aria-label="Páginas del cuaderno">
           <button type="button" onClick={() => go(-1)} disabled={page === 0} aria-label="Hoja anterior" data-hover>←</button>
           <span>Hoja {page + 1} de {pages}</span>
