@@ -27,7 +27,7 @@ export default function Intro() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`${BASE}logo-ink-640.webp`} alt="" className="intro-ink" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`${BASE}logo-640.webp`} alt="" className={`intro-color ${phase !== 'line' ? 'on' : ''}`} />
+        <img src={`${BASE}sirena-640.webp`} alt="" className={`intro-color ${phase !== 'line' ? 'on' : ''}`} />
       </div>
     </div>
   )
