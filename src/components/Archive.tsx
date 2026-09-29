@@ -102,62 +102,66 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
   )
 }
 
-// ─── Desktop: the piece, grown from its tile, with a filmstrip to move around ─
-function frameRect(): Rect {
-  const w = window.innerWidth, h = window.innerHeight
-  const height = h - 190
-  const width = Math.min(height * 0.8, w * 0.44)
-  return { left: w * 0.08, top: 88, width, height }
-}
-const px = (r: Rect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
+// ─── Desktop: a stories-style theatre ─────────────────────────────────────
+// The current piece sits centre stage with its neighbours peeking in at the sides; the whole room
+// takes on the photo's colour through a soft duotone. Plays itself like stories (pause on hover),
+// with big labelled arrows, a close pill and a thumbnail rail that always shows where you are.
+const VIEW_MS = 6000
 
 function Detail({ index, list, from, onIndex, onClose, onBook }: {
   index: number; list: number[]; from: Rect | null
   onIndex: (i: number) => void; onClose: () => void; onBook: (i: number) => void
 }) {
-  const frame = useRef<HTMLDivElement>(null)
-  const strip = useRef<HTMLDivElement>(null)
-  const [ready, setReady] = useState(!from)
-  const closing = useRef(false)
-  const w = WORKS[index]
+  const root = useRef<HTMLDivElement>(null)
+  const rail = useRef<HTMLDivElement>(null)
+  const bar = useRef<HTMLSpanElement>(null)
+  const cards = useRef<Map<number, HTMLButtonElement>>(new Map())
+  const [playing, setPlaying] = useState(true)
+  const [hold, setHold] = useState(false)
+  const [leaving, setLeaving] = useState(false)
   const pos = Math.max(0, list.indexOf(index))
+  const n = list.length
+  const w = WORKS[index]
 
+  const step = useCallback((d: number) => onIndex(list[(pos + d + n) % n]), [pos, n, list, onIndex])
+  const close = useCallback(() => {
+    if (leaving) return
+    setLeaving(true)
+    setTimeout(onClose, 420)
+  }, [leaving, onClose])
+
+  // Open: the clicked tile flies into centre stage
   useLayoutEffect(() => {
-    const el = frame.current
-    if (!el || !from) { setReady(true); return }
-    const a = el.animate([{ ...px(from) }, { ...px(frameRect()) }], { duration: 850, easing: 'cubic-bezier(.22,1,.36,1)' })
-    const t = setTimeout(() => setReady(true), 260)
-    return () => { a.cancel(); clearTimeout(t) }
+    const el = cards.current.get(index)
+    if (!el || !from) return
+    const r = el.getBoundingClientRect()
+    const a = el.animate([
+      { transform: `translate(${from.left - r.left}px, ${from.top - r.top}px) scale(${from.width / r.width}, ${from.height / r.height})`, transformOrigin: '0 0' },
+      { transform: 'none', transformOrigin: '0 0' },
+    ], { duration: 900, easing: 'cubic-bezier(.22,1,.36,1)' })
+    return () => a.cancel()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Keep the current thumbnail in view
+  // Auto-advance, drawn by the progress bar
   useEffect(() => {
-    strip.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+    const el = bar.current
+    if (!el || !playing || hold) return
+    const a = el.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: VIEW_MS, easing: 'linear', fill: 'forwards' })
+    a.onfinish = () => step(1)
+    return () => a.cancel()
+  }, [index, playing, hold, step])
+
+  useEffect(() => {
+    rail.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
   }, [index])
-
-  const close = useCallback(() => {
-    if (closing.current) return
-    closing.current = true
-    setReady(false)
-    const el = frame.current
-    const r = (document.querySelector(`[data-work="${WORKS[index].slug}"] .g-img`) as HTMLElement | null)?.getBoundingClientRect()
-    if (el && r && r.bottom > 0 && r.top < window.innerHeight) {
-      const a = el.animate([{ ...px(frameRect()) }, { ...px(r) }], { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' })
-      a.onfinish = onClose
-    } else if (el) {
-      const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' })
-      a.onfinish = onClose
-    } else onClose()
-  }, [index, onClose])
-
-  const step = useCallback((d: number) => onIndex(list[(pos + d + list.length) % list.length]), [pos, list, onIndex])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
       if (e.key === 'ArrowRight') step(1)
       if (e.key === 'ArrowLeft') step(-1)
+      if (e.key === ' ') { e.preventDefault(); setPlaying(p => !p) }
     }
     const back = () => close()
     window.addEventListener('keydown', key)
@@ -165,35 +169,81 @@ function Detail({ index, list, from, onIndex, onClose, onBook }: {
     return () => { window.removeEventListener('keydown', key); window.removeEventListener('archive:close', back) }
   }, [close, step])
 
+  // Wheel / trackpad swipe moves one piece at a time
+  const wheelLock = useRef(0)
+  const onWheel = (e: React.WheelEvent) => {
+    const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+    if (Math.abs(d) < 25 || Date.now() - wheelLock.current < 700) return
+    wheelLock.current = Date.now()
+    step(d > 0 ? 1 : -1)
+  }
+
   return (
-    <div className="arch-detail" role="dialog" aria-modal="true" aria-label={w.title}>
-      <div className={`arch-detail-bg ${ready ? 'on' : ''}`} onClick={close} />
-      <div ref={frame} className="arch-frame" style={px(frameRect())}>
-        <Image key={w.slug} src={w.src} alt={w.title} fill priority sizes="44vw" className="arch-frame-img" style={{ objectFit: 'cover' }} />
+    <div ref={root} className={`vw ${leaving ? 'out' : ''}`} role="dialog" aria-modal="true" aria-label={w.title} onWheel={onWheel}>
+      {/* The room takes the colour of the piece */}
+      <div className="vw-bg" aria-hidden>
+        <Image key={w.slug} src={w.src} alt="" fill sizes="30vw" className="vw-bg-img" style={{ objectFit: 'cover' }} />
       </div>
 
-      {ready && (
-        <div key={w.slug} className="arch-meta">
-          <p className="arch-meta-line">{w.style} · {w.zone}</p>
-          <h3>{w.title}</h3>
-          {w.note && <p className="arch-meta-note">{w.note}</p>}
-          <button type="button" className="cta-book" data-cursor="book" onClick={() => { close(); onBook(index) }}>Quiero algo así ●</button>
+      <header className="vw-top">
+        <div className="vw-bars" aria-hidden>
+          {list.map((i, k) => (
+            <span key={i} className="vw-bar">
+              {k < pos && <span className="vw-fill" style={{ transform: 'scaleX(1)' }} />}
+              {k === pos && <span ref={bar} key={index} className="vw-fill" />}
+            </span>
+          ))}
         </div>
-      )}
+        <div className="vw-topline">
+          <span className="vw-who"><Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} /> Diseños tatuados <em>{pos + 1} de {n}</em></span>
+          <div className="vw-tools">
+            <button type="button" className="vw-play" data-hover onClick={() => setPlaying(p => !p)} aria-label={playing ? 'Pausar' : 'Reproducir'}>
+              {playing ? '❚❚ Pausa' : '▶ Reproducir'}
+            </button>
+            <button type="button" className="vw-close" data-hover onClick={close}>Cerrar <span aria-hidden>✕</span></button>
+          </div>
+        </div>
+      </header>
 
-      <div className={`arch-controls ${ready ? 'on' : ''}`}>
-        <button type="button" className="arch-close" data-hover onClick={close}>← Volver a la galería</button>
-        <div className="arch-arrows">
-          <button type="button" data-hover aria-label="Anterior" onClick={() => step(-1)}>←</button>
-          <button type="button" data-hover aria-label="Siguiente" onClick={() => step(1)}>→</button>
-        </div>
+      {/* Centre stage with the neighbours peeking in */}
+      <div className="vw-stage" onMouseEnter={() => setHold(true)} onMouseLeave={() => setHold(false)}>
+        {list.map((i, k) => {
+          let d = k - pos
+          if (d > n / 2) d -= n
+          if (d < -n / 2) d += n
+          const far = Math.abs(d) > 1
+          return (
+            <button key={WORKS[i].slug} ref={el => { if (el) cards.current.set(i, el); else cards.current.delete(i) }}
+              type="button" className={`vw-card ${d === 0 ? 'on' : ''}`} tabIndex={d === 0 || Math.abs(d) === 1 ? 0 : -1}
+              aria-label={d === 0 ? WORKS[i].title : d < 0 ? 'Anterior' : 'Siguiente'}
+              style={{ ['--d' as string]: d, visibility: far ? 'hidden' : undefined }}
+              data-cursor={d === 0 ? undefined : 'view'}
+              onClick={() => d !== 0 && onIndex(i)}>
+              <Image src={WORKS[i].src} alt={WORKS[i].title} fill priority={Math.abs(d) <= 1} sizes="40vw" style={{ objectFit: 'cover' }} />
+            </button>
+          )
+        })}
       </div>
 
-      <div ref={strip} className={`d-strip ${ready ? 'on' : ''}`}>
+      <button type="button" className="vw-nav prev" data-hover onClick={() => step(-1)}>
+        <span className="vw-nav-btn" aria-hidden>←</span><span className="vw-nav-lbl">Anterior</span>
+      </button>
+      <button type="button" className="vw-nav next" data-hover onClick={() => step(1)}>
+        <span className="vw-nav-btn" aria-hidden>→</span><span className="vw-nav-lbl">Siguiente</span>
+      </button>
+
+      <div key={w.slug} className="vw-info">
+        <p className="vw-meta">{w.style} · {w.zone}</p>
+        <div className="vw-title-mask"><h3 className="vw-title">{w.title}</h3></div>
+        {w.note && <p className="vw-note">{w.note}</p>}
+        <button type="button" className="cta-book vw-book" data-cursor="book" onClick={() => { close(); onBook(index) }}>Quiero algo así ●</button>
+      </div>
+
+      <div ref={rail} className="vw-rail">
         {list.map(i => (
           <button key={WORKS[i].slug} type="button" aria-label={WORKS[i].title} data-hover
             className={i === index ? 'on' : ''} onClick={() => onIndex(i)}>
-            <Image src={WORKS[i].src} alt="" fill sizes="64px" style={{ objectFit: 'cover' }} />
+            <Image src={WORKS[i].src} alt="" fill sizes="80px" style={{ objectFit: 'cover' }} />
           </button>
         ))}
       </div>
