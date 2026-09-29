@@ -4,21 +4,32 @@ compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-# Only the site may call the agent
+# Only the site may call the chat/form endpoints
 ALLOWED_ORIGIN = "https://pabloxesteban.github.io"
-PUBLIC_URL = "https://briza-agent.CAMBIAR.workers.dev" # URL of this worker after the first deploy
+# URL of this worker after the first deploy (used in Aceptar/Rechazar, Mercado Pago and photo links)
+PUBLIC_URL = "https://briza-agent.CAMBIAR.workers.dev"
 
-# Secrets (set with `npx wrangler secret put NAME`):
-#   ANTHROPIC_API_KEY  - Claude API key
-#   GCAL_ID            - Briza's public "Turnos" calendar id
-#   GCAL_KEY           - Google API key restricted to the Calendar API
-#   GCAL_PENDING_ID    - Briza's PRIVATE "Solicitudes" calendar (booking requests land here as Pendiente)
-#   GOOGLE_SA_JSON     - service-account key JSON with "Make changes to events" on that calendar
-#   BRIZA_PHONE        - Briza's WhatsApp with country code, e.g. 54911... (never in the repo or the site)
-#   CALLMEBOT_KEY      - CallMeBot API key for WhatsApp notices to Briza
-#   DECIDE_SECRET      - any long random string; signs the Aceptar / Rechazar links
+# Daily at 10:00 Buenos Aires (13:00 UTC): reminders, aftercare, waitlist
+[triggers]
+crons = ["0 13 * * *"]
 
-# Per-visitor limits (create with `npx wrangler kv namespace create RATE` and paste the id)
+# Limits, Instagram conversations and the waitlist (`npx wrangler kv namespace create RATE`)
 [[kv_namespaces]]
 binding = "RATE"
 id = "CAMBIAR"
+
+# Reference photos (`npx wrangler r2 bucket create briza-refs`)
+[[r2_buckets]]
+binding = "REFS"
+bucket_name = "briza-refs"
+
+# Secrets (`npx wrangler secret put NAME`) — never commit them:
+#   ANTHROPIC_API_KEY              Claude API key
+#   DECIDE_SECRET                  long random string; signs the Aceptar / Rechazar links
+#   GCAL_ID, GCAL_KEY              public "Turnos" calendar + Google API key (read)
+#   GCAL_PENDING_ID, GOOGLE_SA_JSON  private "Solicitudes" calendar + service-account key JSON
+#                                  (share BOTH calendars with the service account: "Make changes to events")
+#   BRIZA_PHONE, CALLMEBOT_KEY     Briza's WhatsApp + CallMeBot key for her notices
+#   MP_ACCESS_TOKEN                Mercado Pago access token (production)
+#   FLASH_SHEET_URL                published CSV of the flashes sheet
+#   IG_TOKEN, IG_USER_ID, IG_APP_SECRET, IG_VERIFY_TOKEN   Instagram API

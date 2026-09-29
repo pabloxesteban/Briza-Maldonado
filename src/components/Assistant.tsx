@@ -7,11 +7,23 @@ import Image from 'next/image'
 // and prepares the WhatsApp request; Briza confirms every booking herself.
 const URL_ = process.env.NEXT_PUBLIC_AGENT_URL
 
-type Block = { type: string; text?: string }
+type Block = { type: string; text?: string; source?: { type: string; url: string } }
 type Msg = { role: 'user' | 'assistant'; content: string | Block[] }
 type Action = { summary: string }
 
 const SUGGEST = ['¿Qué turnos tenés libres?', '¿Qué flashes hay disponibles?', 'Quiero un diseño propio']
+
+// Reference photos: resized in the browser, stored by the worker, then shown to the assistant
+async function shrink(file: File): Promise<Blob> {
+  const bmp = await createImageBitmap(file)
+  const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height))
+  const c = document.createElement('canvas')
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k)
+  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+  return await new Promise(res => c.toBlob(b => res(b!), 'image/jpeg', 0.82))
+}
+
+const imagesOf = (m: Msg) => (typeof m.content === 'string' ? [] : m.content.filter(b => b.type === 'image' && b.source).map(b => b.source!.url))
 
 const textOf = (m: Msg) => (typeof m.content === 'string' ? m.content
   : m.content.filter(b => b.type === 'text' && b.text).map(b => b.text).join('\n')).trim()
@@ -23,6 +35,8 @@ export default function Assistant() {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [pics, setPics] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
   const list = useRef<HTMLDivElement>(null)
 
   useEffect(() => { list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' }) }, [history, busy, action])
@@ -42,11 +56,28 @@ export default function Assistant() {
 
   if (!URL_) return null
 
+  const attach = async (files: FileList | null) => {
+    if (!files?.length) return
+    setUploading(true); setError('')
+    try {
+      for (const f of Array.from(files).slice(0, 3 - pics.length)) {
+        const blob = await shrink(f)
+        const res = await fetch(`${URL_}/upload`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob })
+        const data = await res.json() as { url?: string }
+        if (!res.ok || !data.url) throw new Error()
+        setPics(p => [...p, data.url!])
+      }
+    } catch { setError('No pude subir la foto. Probá con otra.') } finally { setUploading(false) }
+  }
+
   const send = async (text: string) => {
-    const t = text.trim()
-    if (!t || busy) return
-    const next: Msg[] = [...history, { role: 'user', content: t }]
-    setHistory(next); setInput(''); setBusy(true); setError('')
+    const t = text.trim() || (pics.length ? 'Te mando mis referencias.' : '')
+    if (!t || busy || uploading) return
+    const turn: Msg = pics.length
+      ? { role: 'user', content: [...pics.map(url => ({ type: 'image', source: { type: 'url', url } })), { type: 'text', text: t }] }
+      : { role: 'user', content: t }
+    const next: Msg[] = [...history, turn]
+    setHistory(next); setInput(''); setPics([]); setBusy(true); setError('')
     try {
       const res = await fetch(URL_, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: next }) })
       const data = await res.json() as { messages?: Msg[]; reply: string; action?: Action; error?: string }
@@ -56,7 +87,7 @@ export default function Assistant() {
       if (data.action) setAction(data.action)
     } catch {
       setHistory(history) // drop the unsent turn so it can be retried
-      setInput(t)
+      setInput(t); setPics(imagesOf(turn))
       setError('No pude responder ahora. Probá de nuevo en un rato o escribí por Instagram @bri.t4tts.')
     } finally { setBusy(false) }
   }
@@ -64,8 +95,8 @@ export default function Assistant() {
   // Only show the visitor's words and the assistant's text (tool traffic stays hidden)
   const bubbles = history
     .filter(m => !(m.role === 'user' && typeof m.content !== 'string'))
-    .map(m => ({ role: m.role, text: textOf(m) }))
-    .filter(b => b.text)
+    .map(m => ({ role: m.role, text: textOf(m), imgs: m.role === 'user' ? imagesOf(m) : [] }))
+    .filter(b => b.text || b.imgs.length)
 
   return (
     <>
@@ -85,14 +116,19 @@ export default function Assistant() {
         </header>
 
         <div ref={list} className="ai-list" aria-live="polite">
-          <p className="ai-msg bot">¡Hola! Soy la asistente de Briza. Puedo contarte qué flashes hay, mostrarte turnos libres y reservarte uno (Briza lo confirma). ¿En qué te ayudo?</p>
-          {bubbles.map((b, i) => <p key={i} className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>{b.text}</p>)}
+          <p className="ai-msg bot">¡Hola! Soy la asistente de Briza. Puedo contarte qué flashes hay, mostrarte turnos libres, darte un precio orientativo, ver tus fotos de referencia (📎) y reservarte un turno (Briza lo confirma). ¿En qué te ayudo?</p>
+          {bubbles.map((b, i) => (
+            <div key={i} className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>
+              {b.imgs.length > 0 && <span className="ai-imgs">{b.imgs.map(u => <img key={u} src={u} alt="Referencia" />)}</span>}
+              {b.text}
+            </div>
+          ))}
           {busy && <p className="ai-msg bot ai-typing" aria-label="Escribiendo"><i /><i /><i /></p>}
           {action && (
             <div className="ai-action">
               <p className="ai-action-lbl">✓ Solicitud enviada</p>
               <pre>{action.summary}</pre>
-              <p className="ai-note">Queda pendiente hasta que Briza la confirme. Te escribe a tu WhatsApp en 24–48 h. Para reservar se pide una seña del 40%.</p>
+              <p className="ai-note">Queda pendiente hasta que Briza la confirme (24–48 h). Cuando la acepta te llega el link de Mercado Pago para la seña del 40%.</p>
             </div>
           )}
           {error && <p className="ai-err">{error}</p>}
@@ -104,9 +140,20 @@ export default function Assistant() {
           </div>
         )}
 
+        {pics.length > 0 && (
+          <div className="ai-pics">
+            {pics.map(u => (
+              <span key={u}><img src={u} alt="" /><button type="button" aria-label="Quitar foto" onClick={() => setPics(p => p.filter(x => x !== u))}>✕</button></span>
+            ))}
+          </div>
+        )}
         <form className="ai-form" onSubmit={e => { e.preventDefault(); send(input) }}>
+          <label className={`ai-clip ${uploading ? 'busy' : ''}`} aria-label="Adjuntar fotos de referencia" title="Adjuntar referencias">
+            <input type="file" accept="image/*" multiple onChange={e => { attach(e.target.files); e.target.value = '' }} disabled={pics.length >= 3 || uploading} />
+            {uploading ? '…' : '📎'}
+          </label>
           <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribí tu consulta…" maxLength={1500} aria-label="Tu mensaje" />
-          <button type="submit" disabled={busy || !input.trim()} aria-label="Enviar">↑</button>
+          <button type="submit" disabled={busy || uploading || (!input.trim() && !pics.length)} aria-label="Enviar">↑</button>
         </form>
       </div>
     </>

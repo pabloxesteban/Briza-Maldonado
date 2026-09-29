@@ -46,7 +46,11 @@ async function call(saJson: string, path: string, init: RequestInit = {}) {
   return res.status === 204 ? null : res.json()
 }
 
-export type PendingData = { name: string; phone: string; idea: string; slot: string; start: string }
+// Stored on the event (extendedProperties.private: string values only)
+export type PendingData = {
+  name: string; channel: 'wa' | 'ig'; contact: string // phone digits or Instagram user id
+  idea: string; slot: string; start: string; refs: string
+}
 
 export async function createPending(saJson: string, cal: string, ev: { title: string; description: string; data: PendingData }) {
   let when: Record<string, unknown>
@@ -69,9 +73,16 @@ export async function createPending(saJson: string, cal: string, ev: { title: st
   return out.id
 }
 
+export type CalEvent = { id: string; summary: string; start?: { dateTime?: string; date?: string }; extendedProperties?: { private?: PendingData } }
+
 export async function getEvent(saJson: string, cal: string, id: string) {
-  return await call(saJson, `${encodeURIComponent(cal)}/events/${encodeURIComponent(id)}`) as
-    { id: string; summary: string; extendedProperties?: { private?: PendingData } }
+  return await call(saJson, `${encodeURIComponent(cal)}/events/${encodeURIComponent(id)}`) as CalEvent
+}
+
+export async function listEvents(saJson: string, cal: string, from: Date, to: Date) {
+  const q = new URLSearchParams({ timeMin: from.toISOString(), timeMax: to.toISOString(), singleEvents: 'true', orderBy: 'startTime', maxResults: '250' })
+  const out = await call(saJson, `${encodeURIComponent(cal)}/events?${q}`) as { items?: CalEvent[] }
+  return out.items ?? []
 }
 
 export async function retitle(saJson: string, cal: string, id: string, summary: string, colorId: string) {

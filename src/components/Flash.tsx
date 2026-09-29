@@ -304,7 +304,30 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   )
 }
 
+// 7 · Live availability/prices from Briza's Google Sheet (published as CSV): nombre, cm, precio, disponible.
+// Rows are matched by name; images stay in the repo. Without the sheet, the list above is used.
+const SHEET = process.env.NEXT_PUBLIC_FLASH_SHEET
+function useLiveFlashes() {
+  const [, bump] = useState(0)
+  useEffect(() => {
+    if (!SHEET) return
+    fetch(SHEET).then(r => (r.ok ? r.text() : '')).then(csv => {
+      const norm = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+      for (const row of csv.trim().split(/\r?\n/).slice(1)) {
+        const [name, cm, price, avail] = row.split(',').map(c => c.replace(/^"|"$/g, '').trim())
+        const f = FLASHES.find(x => norm(x.name) === norm(name ?? ''))
+        if (!f) continue
+        if (Number(cm)) f.cm = Number(cm)
+        if (price) f.price = price
+        f.available = /^(si|sí|yes|true|1|x)$/i.test(avail ?? '')
+      }
+      bump(n => n + 1)
+    }).catch(() => {})
+  }, [])
+}
+
 export default function Flash() {
+  useLiveFlashes()
   const [pending, setPending] = useState<number | null>(null)
   const clear = useCallback(() => setPending(null), [])
   return (

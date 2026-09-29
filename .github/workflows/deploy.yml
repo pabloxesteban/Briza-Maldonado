@@ -38,6 +38,8 @@ jobs:
           NEXT_PUBLIC_GCAL_KEY: ${{ secrets.GCAL_KEY }}
           # URL of the booking assistant worker (agent/)
           NEXT_PUBLIC_AGENT_URL: ${{ vars.AGENT_URL }}
+          # Published CSV of Briza's flashes sheet (live availability and prices)
+          NEXT_PUBLIC_FLASH_SHEET: ${{ vars.FLASH_SHEET }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

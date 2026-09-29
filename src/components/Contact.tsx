@@ -91,7 +91,7 @@ export default function Contact() {
     !!a.idea,
     !!a.zone && !!a.size,
     !!a.when,
-    a.name.trim().length > 1 && a.phone.replace(/\D/g, '').length >= 8 && a.deposit,
+    a.name.trim().length > 1 && (a.phone.replace(/\D/g, '').length >= 8 || /^@?[a-z0-9._]{2,30}$/i.test(a.phone.trim())) && a.deposit,
   ][step]
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function Contact() {
         {/* Left: title, progress and a live ticket of what will be sent */}
         <div className="bk-left">
           <h2 className="bk-title">Hagamos <span className="swash">algo tuyo.</span></h2>
-          <p className="bk-lede">Cuatro preguntas rápidas y tu solicitud me llega al instante. Te respondo por WhatsApp en 24–48 h.</p>
+          <p className="bk-lede">Cuatro preguntas rápidas y tu solicitud me llega al instante. Te respondo en 24–48 h.</p>
 
           {!done && (
             <div className="bk-progress" aria-label={`Paso ${step + 1} de 4`}>
@@ -196,7 +196,7 @@ export default function Contact() {
               <Question n="✦">{done === 'sent' ? 'Listo, Briza recibió tu solicitud.' : 'Listo, se abrió Instagram.'}</Question>
               <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '30rem', marginBottom: '2rem' }}>
                 {done === 'sent'
-                  ? 'Queda pendiente hasta que Briza la confirme: te escribe a tu WhatsApp en 24–48 h. Para reservar se pide una seña del 40% del total.'
+                  ? 'Queda pendiente hasta que Briza la confirme: te responde en 24–48 h. Cuando la acepta te llega el link de Mercado Pago para la seña del 40%.'
                   : copied
                     ? 'Copié tu mensaje: pegalo en el chat y sumá tus referencias.'
                     : 'Escribime en el chat con tu idea, zona, tamaño y cuándo te gustaría.'}
@@ -265,8 +265,8 @@ export default function Contact() {
                 <>
                   <Question n="04">¿Cómo te llamás?</Question>
                   <input ref={nameRef} className="book-input" value={a.name} onChange={e => set('name')(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" />
-                  <p style={{ ...label, marginTop: '2rem' }}>Tu WhatsApp (para confirmarte el turno)</p>
-                  <input className="book-input" type="tel" inputMode="tel" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="11 1234 5678" autoComplete="tel" />
+                  <p style={{ ...label, marginTop: '2rem' }}>Tu WhatsApp o tu usuario de Instagram (para confirmarte el turno)</p>
+                  <input className="book-input" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="11 1234 5678 o @tuusuario" />
                   <label className="book-deposit">
                     <input type="checkbox" checked={a.deposit} onChange={e => setA(p => ({ ...p, deposit: e.target.checked }))} />
                     <span>Entiendo que el turno se reserva con una <b>seña de al menos el 40%</b> del costo total.</span>
