@@ -725,3 +725,7 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 .zz-node.now .zz-dot, .zz-node.done .zz-dot { background: var(--c-orange) !important; border-color: var(--c-orange) !important; }
 .zz-node.now .zz-dot { box-shadow: 0 0 0 .5rem rgba(232,116,62,.18) !important; }
 .duo { background: var(--c-pink) !important; }
+
+/* Accent lettering in pastel pink (was orange); backgrounds and other accents unchanged */
+.swash, .arch-t2, .process-title em, .arch-num, .zz-num, .process-num { color: #EE8FB2 !important; }
+.process-kicker, #turno p > span:first-child, .booking-steps span { color: #EE8FB2 !important; }
