@@ -743,3 +743,8 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 .booking-steps i { background: #EE8FB2 !important; }
 .nav-toggle i { background: var(--c-pink); }
 .duo { background: var(--c-pink) !important; }
+
+/* View toggle floats instead of a full-width bar, so entrance and wall read as one */
+.arch-bar.arch-float { position: sticky; top: auto; bottom: 20px; z-index: 40; height: 0; padding: 0 !important; border: 0 !important; background: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; display: flex; justify-content: flex-end; overflow: visible; }
+.arch-float .arch-toggle { position: absolute; right: clamp(16px, 3vw, 40px); top: 16px; background: var(--cream); box-shadow: 0 6px 20px rgba(22,20,20,.12); }
+@media (max-width: 767px) { .arch-float .arch-toggle { right: 12px; top: 10px; } }

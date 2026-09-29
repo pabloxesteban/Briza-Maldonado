@@ -349,8 +349,7 @@ export default function Archive() {
   return (
     <section id="obra" className="archive">
       {!still && <Entrance mobile={mobile} />}
-      <div className="arch-bar">
-        <p className="arch-bar-title"><span className="font-display">Trabajos</span> <span className="arch-count">{WORKS.length}</span></p>
+      <div className="arch-bar arch-float">
         <div className="arch-toggle" role="tablist" aria-label="Vista">
           <button type="button" role="tab" aria-selected={view === 'wall'} data-hover onClick={() => setView('wall')}>Pared</button>
           <button type="button" role="tab" aria-selected={view === 'index'} data-hover onClick={() => setView('index')}>Índice</button>
