@@ -1897,3 +1897,18 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .book-ref button { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--ink); color: var(--cream); font-size: .65rem; }
 .book-ref-add { position: relative; display: grid; place-items: center; height: 72px; padding: 0 1rem; border-radius: 12px; border: 1.5px dashed rgba(22,20,20,.3); font-weight: 700; font-size: .85rem; cursor: pointer; }
 .book-ref-add input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+/* A flash that's on your photo leaves only its dots and a faint outline behind */
+.nb-art.gone .nb-cut { opacity: 1 !important; filter: none !important; }
+.nb-art.gone .nb-cut img { opacity: 0; }
+.nb-art.gone .nb-dot { opacity: .9; }
+.nb-art.gone { background: radial-gradient(closest-side, rgba(22,20,20,.04), transparent) !important; }
+.nb-gone { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: rgba(22,20,20,.35); white-space: nowrap; }
+/* Shorter notebook page on desktop */
+@media (min-width: 900px) {
+  .nb { max-width: 500px; }
+  .nb-page { aspect-ratio: auto !important; }
+  .nb-art { aspect-ratio: 1 / .82 !important; }
+  .nb-grid { gap: .6rem 1.2rem !important; }
+  .nb-head { margin-bottom: .6rem; }
+  .fl { align-items: center; }
+}

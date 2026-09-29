@@ -53,6 +53,13 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
   useEffect(() => { setCanDrag(window.matchMedia('(hover: hover) and (pointer: fine)').matches) }, [])
   // Desktop: press a flash and pull it off the page; drop it on your photo in "Probalo en tu cuerpo"
   const [lifted, setLifted] = useState<number | null>(null)
+  // Flashes that are stuck on your photo leave their spot in the notebook empty
+  const [placed, setPlaced] = useState<number[]>([])
+  useEffect(() => {
+    const on = (e: Event) => setPlaced((e as CustomEvent<number[]>).detail)
+    window.addEventListener('flash:placed', on)
+    return () => window.removeEventListener('flash:placed', on)
+  }, [])
   const drag = useRef<{ i: number; x: number; y: number; ghost?: HTMLElement; moved: boolean } | null>(null)
   const startLift = (e: React.PointerEvent, i: number) => {
     if (!canDrag || !FLASHES[i].available || e.button !== 0) return
@@ -99,13 +106,14 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
         <ul className="nb-grid">
           {FLASHES.map((f, i) => ({ f, i })).slice(pg * PER, pg * PER + PER).map(({ f, i }) => (
             <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
-              <div className={`nb-art ${lifted === i ? 'lifted' : ''} ${canDrag && f.available ? 'grab' : ''}`}
-                onPointerDown={e => startLift(e, i)}
+              <div className={`nb-art ${lifted === i || placed.includes(i) ? 'lifted' : ''} ${placed.includes(i) ? 'gone' : ''} ${canDrag && f.available && !placed.includes(i) ? 'grab' : ''}`}
+                onPointerDown={e => { if (!placed.includes(i)) startLift(e, i) }}
                 title={canDrag && f.available ? 'Arrastralo a tu foto' : undefined}>
                 <span className="nb-cut" style={{ aspectRatio: `1 / ${f.aspect ?? 1}`, ...((f.aspect ?? 1) >= 1 ? { height: '92%' } : { width: '92%' }), transform: `rotate(${[-4, 3, -2, 5, -5, 2, 4][i % 7]}deg)` }}>
                   <Image src={`${BASE}${f.slug}-paper.png`} alt={f.name} fill sizes="200px" style={{ objectFit: 'contain' }} draggable={false} />
                   {(f.dots ?? []).map(([x, y], k) => <i key={k} className="nb-dot" style={{ left: `${(0.5 + (x - 0.5) * 0.84) * 100}%`, top: `${(0.5 + (y - 0.5) * 0.84) * 100}%` }} />)}
                 </span>
+                {placed.includes(i) && <span className="nb-gone">En tu foto</span>}
                 {!f.available && <span className={`nb-stamp ${f.status === 'reservado' ? 'res' : ''}`}>{f.status === 'reservado' ? 'Reservado' : 'Tatuado'}</span>}
               </div>
               <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
@@ -222,6 +230,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const future = useRef<Placed[][]>([])
   const itemsRef = useRef<Placed[]>([])
   itemsRef.current = items
+  useEffect(() => { window.dispatchEvent(new CustomEvent('flash:placed', { detail: items.map(i => i.f) })) }, [items])
   const [, bumpHist] = useState(0)
   const commit = useCallback((next: Placed[]) => {
     past.current.push(itemsRef.current); future.current = []
