@@ -1380,3 +1380,27 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 .vw-rail button { width: 58px; height: 72px; }
 .vw-rail button.on { width: 84px; }
 .vw-info { bottom: 118px; }
+
+/* ─── PROCESS: make "scroll to advance" obvious ─── */
+.pr-bars { position: absolute; z-index: 4; left: 12px; right: 12px; top: 12px; display: flex; gap: 5px; }
+.pr-bar { position: relative; flex: 1; height: 4px; border-radius: 3px; background: rgba(247,241,226,.45); overflow: hidden; box-shadow: 0 1px 4px rgba(22,20,20,.15); }
+.pr-bar span { position: absolute; inset: 0; background: var(--ink); transform-origin: 0 50%; transition: transform .25s linear; }
+.pr-stage-label { position: absolute; z-index: 4; left: 16px; bottom: 14px; display: flex; align-items: baseline; gap: .5rem; padding: .55rem 1rem .6rem; border-radius: 999px; background: rgba(247,241,226,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-family: var(--font-grotesk); font-weight: 800; font-size: clamp(1.05rem, 1.6vw, 1.5rem); letter-spacing: -.03em; color: var(--ink); box-shadow: 0 10px 30px -14px rgba(22,20,20,.4); animation: prLabel .7s cubic-bezier(.22,1,.36,1) both; }
+.pr-stage-label .swash { color: #EE8FB2; font-size: 1.15em; letter-spacing: 0; }
+@keyframes prLabel { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+.zz-node { cursor: pointer; }
+.zz-node:hover .zz-title { color: var(--ink); }
+.pr-cue { display: flex; align-items: center; gap: .8rem; margin-top: 1.2rem; padding: .7rem 1.1rem; border-radius: 999px; background: var(--ink); color: var(--cream); align-self: flex-start; transition: opacity .5s var(--ease); box-shadow: 0 12px 30px -14px rgba(22,20,20,.6); width: max-content; max-width: 100%; }
+.pr-cue-txt { font-size: .88rem; }
+.pr-cue-txt b { color: var(--c-pink); }
+.pr-mouse { position: relative; width: 20px; height: 30px; border: 2px solid var(--cream); border-radius: 12px; flex-shrink: 0; }
+.pr-mouse i { position: absolute; left: 50%; top: 5px; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: var(--c-pink); animation: prWheel 1.6s var(--ease) infinite; }
+@keyframes prWheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(10px); opacity: 0; } 100% { transform: translateY(0); opacity: 0; } }
+@media (max-width: 860px) {
+  .pr-cue { margin: .6rem auto 0; padding: .55rem .9rem; }
+  .pr-cue-txt { font-size: .78rem; }
+  .pr-mouse { width: 16px; height: 24px; }
+  .pr-stage-label { left: 10px; bottom: 10px; }
+}
+.pr-bar { background: rgba(22,20,20,.16); box-shadow: none; }
+@media (min-width: 861px) { .pr-cue { padding: .9rem 1.4rem; } .pr-cue-txt { font-size: 1rem; } }

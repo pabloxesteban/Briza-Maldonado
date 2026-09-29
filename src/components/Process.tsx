@@ -41,6 +41,14 @@ export default function Process() {
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(raf) }
   }, [])
 
+  // Tap a step on the path to go straight to it
+  const jump = (i: number) => {
+    const el = ref.current
+    if (!el || still) return
+    const top = el.getBoundingClientRect().top + window.scrollY
+    window.scrollTo({ top: top + (el.offsetHeight - window.innerHeight) * ((i + 0.3) / 4), behavior: 'smooth' })
+  }
+
   // Each stage owns a quarter of the scroll; local progress drives its transition
   const seg = (i: number) => clamp((p - i / 4) * 4)
   const active = Math.min(3, Math.floor(p * 4 + 0.0001))
@@ -67,6 +75,13 @@ export default function Process() {
         <div className="process-body">
           {/* The piece, changing state */}
           <div className="process-frame" aria-hidden>
+            {/* Story-style bars: they fill as you scroll, so it is obvious that scrolling moves you forward */}
+            <div className="pr-bars">
+              {STAGES.map((st, i) => (
+                <span key={st.n} className="pr-bar"><span style={{ transform: `scaleX(${still ? 1 : clamp(p * 4 - i)})` }} /></span>
+              ))}
+            </div>
+            <p key={active} className="pr-stage-label"><span className="swash">{STAGES[active].n}</span> {STAGES[active].t}</p>
             <div className="process-paper" />
             <p className="process-note" style={{ opacity: note, transform: `translateY(${(1 - note) * -10}px)` }}>
               chica hawaiana ✶<br />pierna · 12 cm<br />traditional, línea negra
@@ -90,7 +105,8 @@ export default function Process() {
                 const n = ZZ[i]
                 const state = still || i === active ? 'now' : i < active ? 'done' : ''
                 return (
-                  <div key={st.n} role="listitem" className={`zz-node ${state} ${n.x < 50 ? 'l' : 'r'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}>
+                  <div key={st.n} role="listitem" className={`zz-node ${state} ${n.x < 50 ? 'l' : 'r'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}
+                    onClick={() => jump(i)} data-hover>
                     <span className="zz-dot" aria-hidden />
                     <div className="zz-label">
                       <p className="zz-title"><span className="zz-num swash">{st.n}</span>{st.t}</p>
@@ -101,6 +117,12 @@ export default function Process() {
               })}
             </div>
             <p key={active} className="zz-caption">{STAGES[active].d}</p>
+            {!still && (
+              <div className="pr-cue" style={{ opacity: active < 3 ? 1 : 0 }} aria-hidden>
+                <span className="pr-mouse"><i /></span>
+                <span className="pr-cue-txt"><b>Seguí bajando</b> para pasar al paso {Math.min(4, active + 2)} de 4</span>
+              </div>
+            )}
             <a href="#turno" className="cta-book process-cta" data-cursor="book" style={{ opacity: still || active === 3 ? 1 : 0, pointerEvents: still || active === 3 ? 'auto' : 'none' }}>
               Quiero el mío ●
             </a>
