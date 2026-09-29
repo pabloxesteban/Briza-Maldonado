@@ -68,7 +68,7 @@ export default function Hero() {
       </div>
 
       <div ref={fig} className="v-figure">
-        <Image src={P + 'briza-recorte.png'} alt="Briza Maldonado tatuando" fill priority sizes="(max-width: 767px) 100vw, 44vw" style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
+        <Image src={P + 'briza-hero.png'} alt="Briza Maldonado en su estudio" fill priority sizes="(max-width: 767px) 60vw, 30vw" style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
       </div>
 
       <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>

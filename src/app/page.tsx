@@ -6,7 +6,6 @@ import Archive from '@/components/Archive'
 import ImageStrip from '@/components/ImageStrip'
 import Process from '@/components/Process'
 import Flash from '@/components/Flash'
-import About from '@/components/About'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import ScrollProgress from '@/components/ScrollProgress'
@@ -38,7 +37,6 @@ export default function Home() {
       <ImageStrip />
       <Flash />
       <div className="band" style={{ ['--band' as string]: 'var(--c-blue)' }}><Process /></div>
-      <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><About /></div>
       <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><Contact /></div>
       <Footer />
       <Reveal />

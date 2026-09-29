@@ -927,3 +927,24 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 .arch-wall.m .arch-wall-col { gap: 1.6rem; }
 .arch-wall.m .arch-cap { margin-top: .5rem; }
 .arch-wall.m .arch-style { display: none; }
+
+/* Hero figure: the studio portrait, full figure in front of the name */
+.v-figure { aspect-ratio: 528 / 1035 !important; height: min(86vh, 86svh); width: auto !important; left: 56% !important; }
+@media (max-width: 767px) { .v-figure { height: 68svh; left: 58% !important; bottom: 76px !important; } }
+
+/* Nav: the mermaid as a die-cut sticker */
+.nav-sticker { width: auto; height: 50px; display: block; transform: rotate(-8deg); transition: transform .5s var(--ease); filter: drop-shadow(0 2px 3px rgba(22,20,20,.12)); }
+a:hover > .nav-sticker { transform: rotate(4deg) scale(1.06); }
+.nav-wordmark { white-space: nowrap; }
+@media (max-width: 767px) { .nav-sticker { height: 42px; } .nav-wordmark { font-size: 1.2rem !important; } }
+
+/* Word marquee */
+.word-strip { overflow: hidden; background: var(--cream); border-block: 1px solid rgba(22,20,20,.1); padding: clamp(1.2rem, 3vw, 2.4rem) 0; user-select: none; }
+.word-strip-track { display: flex; width: max-content; animation: wordStrip 38s linear infinite; }
+.word-strip-set { display: flex; flex-shrink: 0; }
+.word-strip-item { display: inline-flex; align-items: center; gap: clamp(1.2rem, 3vw, 2.6rem); padding-right: clamp(1.2rem, 3vw, 2.6rem); font-family: var(--font-grotesk); font-weight: 800; text-transform: uppercase; letter-spacing: -.04em; font-size: clamp(3rem, 9vw, 9rem); line-height: 1; color: var(--ink); white-space: nowrap; }
+.word-strip-accent { font-family: var(--font-swash); text-transform: none; letter-spacing: 0; font-weight: 800; color: #EE8FB2; font-size: 1.05em; }
+.word-strip-item i { font-style: normal; font-size: .35em; color: #EE8FB2; }
+@keyframes wordStrip { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .word-strip-track { animation: none; } }
+@media (max-width: 767px) { .v-figure { -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent); mask-image: linear-gradient(to bottom, #000 88%, transparent); } }

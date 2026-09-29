@@ -95,9 +95,9 @@ export default function Navbar() {
             zIndex: 1,
           }}
         >
-          <Image src="/Briza-Maldonado/brand/sirena-badge.png" alt="" width={512} height={512} priority
-            sizes="48px" style={{ width: 46, height: 46, display: 'block', borderRadius: '50%' }} />
-          <span className="nav-wordmark">Briza</span>
+          <Image src="/Briza-Maldonado/brand/sirena-sticker.png" alt="" width={360} height={474} priority
+            sizes="48px" className="nav-sticker" />
+          <span className="nav-wordmark">Briza Maldonado</span>
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.6rem', zIndex: 1 }}>
