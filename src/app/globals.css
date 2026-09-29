@@ -577,3 +577,35 @@ p, li, label, input { letter-spacing: .02em; }
 /* Flash notebook */
 @font-face { font-family: 'Nothing You Could Do'; src: url('/Briza-Maldonado/flash/nothing-you-could-do.ttf') format('truetype'); font-display: swap; }
 @keyframes nbPeek { 0%, 70%, 100% { transform: rotateY(0deg) } 80% { transform: rotateY(-16deg) } 88% { transform: rotateY(-4deg) } }
+
+/* ─── PROCESS: zigzag path ─── */
+.zz { position: relative; width: 100%; height: clamp(18rem, 58vh, 34rem); }
+.zz-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.zz-svg polyline { fill: none; stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.zz-base { stroke: rgba(255,255,255,.14); }
+.zz-ink { stroke: var(--mark); stroke-dasharray: 1; }
+.zz-node { position: absolute; transform: translate(-50%, -50%); }
+.zz-dot { display: block; width: 1.05rem; height: 1.05rem; border-radius: 50%; background: #000; border: 1.6px solid rgba(255,255,255,.35); box-shadow: 0 0 0 .55rem rgba(255,255,255,.04); transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-mid) var(--ease), box-shadow var(--t-mid) var(--ease); }
+.zz-node.done .zz-dot { border-color: var(--mark); }
+.zz-node.now .zz-dot { background: var(--mark); border-color: var(--mark); transform: scale(1.35); box-shadow: 0 0 0 .5rem rgba(247,190,212,.12); }
+.zz-label { position: absolute; top: 50%; transform: translateY(-.85rem); width: max-content; max-width: min(20rem, 30vw); }
+.zz-node.l .zz-label { right: calc(100% + 1.2rem); text-align: right; }
+.zz-node.r .zz-label { left: calc(100% + 1.2rem); }
+.zz-title { font-family: var(--font-grotesk); font-weight: 500; text-transform: uppercase; letter-spacing: -.02em; font-size: clamp(1.3rem, 2.2vw, 2.2rem); line-height: 1; color: rgba(255,255,255,.4); transition: color var(--t-mid) var(--ease); }
+.zz-node.done .zz-title { color: rgba(255,255,255,.65); }
+.zz-node.now .zz-title { color: var(--ink); }
+.zz-desc { margin-top: .5rem; font-size: .78rem; line-height: 1.6; letter-spacing: .06em; color: var(--ink-muted); max-height: 0; opacity: 0; overflow: hidden; transition: max-height var(--t-mid) var(--ease), opacity var(--t-mid) var(--ease); }
+.zz-node.now .zz-desc { max-height: 7rem; opacity: 1; }
+@media (max-width: 860px) {
+  .zz { height: 34vh; }
+  .zz-title { font-size: 1.1rem; }
+  .zz-label { max-width: 42vw; }
+  .zz-desc { font-size: .68rem; line-height: 1.45; }
+}
+
+.zz-caption { display: none; }
+@media (max-width: 860px) {
+  .zz-desc { display: none; }
+  .zz-caption { display: block; margin-top: 1rem; font-size: .8rem; line-height: 1.6; color: var(--ink-muted); text-align: center; animation: riseIn var(--t-mid) var(--ease) both; }
+  .zz { height: 30vh; }
+}

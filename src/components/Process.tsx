@@ -12,6 +12,7 @@ const STAGES = [
 
 const DRAWING = '/Briza-Maldonado/flash/rosa-alambre-flash-paper.png'
 const TATTOO = '/Briza-Maldonado/portfolio/rosa-alambre.jpg'
+const ZZ = [{ x: 34, y: 8 }, { x: 64, y: 36 }, { x: 34, y: 64 }, { x: 64, y: 92 }]
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 
 export default function Process() {
@@ -71,18 +72,28 @@ export default function Process() {
 
           {/* Words for the current stage */}
           <div className="process-copy">
-            {/* Vertical timeline: scroll down = move down the steps */}
-            <ol className="process-steps">
-              <i className="process-track" aria-hidden><b style={{ transform: `scaleY(${still ? 1 : p})` }} /></i>
-              {STAGES.map((st, i) => (
-                <li key={st.n} className={still || i === active ? 'now' : i < active ? 'done' : ''}>
-                  <span className="process-dot" aria-hidden />
-                  <p className="process-num">{st.n}</p>
-                  <h3 className="font-display">{st.t}</h3>
-                  <p className="process-desc">{st.d}</p>
-                </li>
-              ))}
-            </ol>
+            {/* Zigzag path: nodes alternate sides, the line draws itself as you scroll down */}
+            <div className="zz" role="list">
+              <svg className="zz-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+                <polyline points={ZZ.map(n => `${n.x},${n.y}`).join(' ')} className="zz-base" />
+                <polyline points={ZZ.map(n => `${n.x},${n.y}`).join(' ')} className="zz-ink" pathLength={1}
+                  style={{ strokeDashoffset: 1 - (still ? 1 : Math.min(1, p * 1.12)) }} />
+              </svg>
+              {STAGES.map((st, i) => {
+                const n = ZZ[i]
+                const state = still || i === active ? 'now' : i < active ? 'done' : ''
+                return (
+                  <div key={st.n} role="listitem" className={`zz-node ${state} ${n.x < 50 ? 'l' : 'r'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}>
+                    <span className="zz-dot" aria-hidden />
+                    <div className="zz-label">
+                      <p className="zz-title">{st.t}</p>
+                      <p className="zz-desc">{st.d}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p key={active} className="zz-caption">{STAGES[active].d}</p>
             <a href="#turno" className="cta-book process-cta" data-cursor="book" style={{ opacity: still || active === 3 ? 1 : 0, pointerEvents: still || active === 3 ? 'auto' : 'none' }}>
               Quiero el mío ●
             </a>
