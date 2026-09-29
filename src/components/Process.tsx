@@ -65,7 +65,7 @@ export default function Process() {
   }, [ink])
 
   return (
-    <section ref={ref} id="proceso" className="process" style={{ height: still ? 'auto' : '420vh' }}>
+    <section ref={ref} id="proceso" data-hide-dock className="process" style={{ height: still ? 'auto' : '420vh' }}>
       <div className="process-pin">
         <header className="process-head">
           <p className="process-kicker">Proceso</p>
@@ -116,11 +116,19 @@ export default function Process() {
                 )
               })}
             </div>
+            {/* Phones: the footage fills the screen; a compact stepper + caption sit on top of it */}
+            <ol className="pr-steps-m" aria-hidden>
+              {STAGES.map((st, i) => (
+                <li key={st.n} className={still || i === active ? 'now' : i < active ? 'done' : ''} onClick={() => jump(i)}>
+                  <span className="swash">{st.n}</span>{st.t}
+                </li>
+              ))}
+            </ol>
             <p key={active} className="zz-caption">{STAGES[active].d}</p>
             {!still && (
               <div className="pr-cue" style={{ opacity: active < 3 ? 1 : 0 }} aria-hidden>
                 <span className="pr-mouse"><i /></span>
-                <span className="pr-cue-txt"><b>Seguí bajando</b> para pasar al paso {Math.min(4, active + 2)} de 4</span>
+                <span className="pr-cue-txt"><b>Seguí bajando</b> · paso {Math.min(4, active + 2)} de 4</span>
               </div>
             )}
             <a href="#turno" className="cta-book process-cta" data-cursor="book" style={{ opacity: still || active === 3 ? 1 : 0, pointerEvents: still || active === 3 ? 'auto' : 'none' }}>
