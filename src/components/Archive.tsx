@@ -95,7 +95,7 @@ function Entrance({ mobile }: { mobile: boolean }) {
           ))}
         </div>
         <div ref={title} className="arch-entrance-title" style={{ opacity: 0 }}>
-          <h2 className="font-display">Trabajos</h2>
+          <h2><span className="arch-t1">Trabajos</span><span className="arch-t2 swash">tatuados</span></h2>
           <p>{WORKS.length} piezas · Traditional · Black &amp; white · Color</p>
         </div>
       </div>
@@ -282,7 +282,7 @@ function Detail({ index, from, mobile, onIndex, onClose }: {
           <h3 className="font-display">{w.title}</h3>
           <p className="arch-meta-line">{w.style} · {w.zone}</p>
           {w.note && <p className="arch-meta-note">{w.note}</p>}
-          <button type="button" className="cta-book" data-cursor="book" onClick={book}>Quiero algo así ✦</button>
+          <button type="button" className="cta-book" data-cursor="book" onClick={book}>Quiero algo así ●</button>
         </div>
       )}
 
