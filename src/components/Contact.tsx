@@ -12,12 +12,14 @@ type Answers = {
   zone: string; size: string
   when: string
   name: string
-  phone: string
+  phone: string // Instagram user
+  email: string
+  news: boolean
   slotStart: string
   deposit: boolean
 }
 
-const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '', phone: '', slotStart: '', deposit: false }
+const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '', phone: '', email: '', news: false, slotStart: '', deposit: false }
 
 const IDEAS = ['Un flash del cuaderno', 'Un diseño propio', 'Todavía no sé']
 const ZONES = ['Brazo', 'Antebrazo', 'Pierna', 'Costilla', 'Espalda', 'Otra zona']
@@ -85,13 +87,13 @@ export default function Contact() {
   const [copied, setCopied] = useState(false)
   const [flashes, setFlashes] = useState<string[]>([])
   const nameRef = useRef<HTMLInputElement>(null)
-  const set = (k: 'idea' | 'detail' | 'zone' | 'size' | 'when' | 'name' | 'phone') => (v: string) => setA(p => ({ ...p, [k]: v, ...(k === 'when' ? { slotStart: '' } : {}) }))
+  const set = (k: 'idea' | 'detail' | 'zone' | 'size' | 'when' | 'name' | 'phone' | 'email') => (v: string) => setA(p => ({ ...p, [k]: v, ...(k === 'when' ? { slotStart: '' } : {}) }))
 
   const ready = [
     !!a.idea,
     !!a.zone && !!a.size,
     !!a.when,
-    a.name.trim().length > 1 && (a.phone.replace(/\D/g, '').length >= 8 || /^@?[a-z0-9._]{2,30}$/i.test(a.phone.trim())) && a.deposit,
+    a.name.trim().length > 1 && /^@?[a-z0-9._]{2,30}$/i.test(a.phone.trim()) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email.trim()) && a.deposit,
   ][step]
 
   useEffect(() => {
@@ -126,6 +128,7 @@ export default function Contact() {
           body: JSON.stringify({ booking: {
             name: a.name.trim(), contact: a.phone, idea: `${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}`,
             zone: a.zone, size: a.size, slot: a.when, slot_start: a.slotStart, notes: '', deposit_ok: a.deposit,
+            email: a.email.trim(), newsletter: a.news,
           } }),
         })
         const out = await res.json() as { ok: boolean; error?: string }
@@ -196,7 +199,7 @@ export default function Contact() {
               <Question n="✦">{done === 'sent' ? 'Listo, Briza recibió tu solicitud.' : 'Listo, se abrió Instagram.'}</Question>
               <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '30rem', marginBottom: '2rem' }}>
                 {done === 'sent'
-                  ? 'Queda pendiente hasta que Briza la confirme: te responde en 24–48 h. Cuando la acepta te llega el link de Mercado Pago para la seña del 40%.'
+                  ? 'Queda pendiente hasta que Briza la confirme: te responde por Instagram en 24–48 h y te llega la confirmación por mail, con el link de Mercado Pago para la seña del 40%.'
                   : copied
                     ? 'Copié tu mensaje: pegalo en el chat y sumá tus referencias.'
                     : 'Escribime en el chat con tu idea, zona, tamaño y cuándo te gustaría.'}
@@ -265,8 +268,14 @@ export default function Contact() {
                 <>
                   <Question n="04">¿Cómo te llamás?</Question>
                   <input ref={nameRef} className="book-input" value={a.name} onChange={e => set('name')(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" />
-                  <p style={{ ...label, marginTop: '2rem' }}>Tu WhatsApp o tu usuario de Instagram (para confirmarte el turno)</p>
-                  <input className="book-input" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="11 1234 5678 o @tuusuario" />
+                  <p style={{ ...label, marginTop: '2rem' }}>Tu Instagram (Briza te escribe por ahí)</p>
+                  <input className="book-input" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="@tuusuario" autoCapitalize="none" />
+                  <p style={{ ...label, marginTop: '2rem' }}>Tu mail (para la confirmación del turno)</p>
+                  <input className="book-input" type="email" value={a.email} onChange={e => set('email')(e.target.value)} placeholder="vos@mail.com" autoComplete="email" />
+                  <label className="book-deposit">
+                    <input type="checkbox" checked={a.news} onChange={e => setA(p => ({ ...p, news: e.target.checked }))} />
+                    <span>Quiero enterarme de <b>descuentos y próximos eventos</b> de Briza (opcional).</span>
+                  </label>
                   <label className="book-deposit">
                     <input type="checkbox" checked={a.deposit} onChange={e => setA(p => ({ ...p, deposit: e.target.checked }))} />
                     <span>Entiendo que el turno se reserva con una <b>seña de al menos el 40%</b> del costo total.</span>

@@ -31,5 +31,6 @@ bucket_name = "briza-refs"
 #                                  (share BOTH calendars with the service account: "Make changes to events")
 #   BRIZA_PHONE, CALLMEBOT_KEY     Briza's WhatsApp + CallMeBot key for her notices
 #   MP_ACCESS_TOKEN                Mercado Pago access token (production)
+#   RESEND_API_KEY, MAIL_FROM    Resend (resend.com) to e-mail clients; MAIL_FROM like "Briza Maldonado <turnos@tudominio.com>"
 #   FLASH_SHEET_URL                published CSV of the flashes sheet
 #   IG_TOKEN, IG_USER_ID, IG_APP_SECRET, IG_VERIFY_TOKEN   Instagram API

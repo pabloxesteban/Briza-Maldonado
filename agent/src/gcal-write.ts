@@ -48,7 +48,8 @@ async function call(saJson: string, path: string, init: RequestInit = {}) {
 
 // Stored on the event (extendedProperties.private: string values only)
 export type PendingData = {
-  name: string; channel: 'wa' | 'ig'; contact: string // phone digits or Instagram user id
+  name: string; channel: 'wa' | 'ig'; contact: string // '@user' (web) or Instagram user id (DM)
+  email: string
   idea: string; slot: string; start: string; refs: string
 }
 

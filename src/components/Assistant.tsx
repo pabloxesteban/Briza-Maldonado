@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
+import LilaAvatar from './LilaAvatar'
 
 // Chat bubble for Briza's booking assistant (agent/ worker). It answers questions, offers open slots
 // and prepares the WhatsApp request; Briza confirms every booking herself.
@@ -33,55 +33,84 @@ const nextDay = (wd: number, h: number) => {
   return d
 }
 const label = (d: Date) => `${d.toLocaleDateString('es-AR', { weekday: 'long' })} ${d.getDate()}/${d.getMonth() + 1} a las ${String(d.getHours()).padStart(2, '0')}:00`
-type Demo = { idea?: string; slot?: string; name?: string; contact?: string; askedDeposit?: boolean }
+type Demo = { idea?: string; slot?: string; name?: string; ig?: string; email?: string; news?: boolean; step?: 'news' | 'deposit' }
 
-// Same numbers as the notebook on the site (Nº 01…); only available ones are offered
-const FLASH_NAMES = ['Mariposa con daga', 'Frutilla', 'Corazón vegan', 'Gorrión', 'Flor con hojas', 'Cerdo & cabra', 'Rosa con alambre']
-const FLASH_TAKEN = new Set(['Gorrión'])
-const flashMenu = FLASH_NAMES.map((n, i) => (FLASH_TAKEN.has(n) ? '' : `${i + 1}. ${n}`)).filter(Boolean).join('\n')
+// Same numbers and prices as the notebook on the site (Nº 01…); only available ones are offered
+const FLASHES_DEMO = [
+  { name: 'Mariposa con daga', cm: 8, price: 50000, ok: true },
+  { name: 'Frutilla', cm: 5, price: 40000, ok: true },
+  { name: 'Corazón vegan', cm: 7, price: 55000, ok: true },
+  { name: 'Gorrión', cm: 9, price: 60000, ok: false },
+  { name: 'Flor con hojas', cm: 6, price: 45000, ok: true },
+  { name: 'Cerdo & cabra', cm: 9, price: 65000, ok: true },
+  { name: 'Rosa con alambre', cm: 8, price: 50000, ok: true },
+]
+const ars = (n: number) => `$${n.toLocaleString('es-AR')}`
+const flashMenu = FLASHES_DEMO.map((f, i) => (f.ok ? `${i + 1}. ${f.name}` : '')).filter(Boolean).join('\n')
+const plain = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
 function demoReply(t: string, st: Demo, hasPics: boolean): { reply: string; action?: Action } {
-  const q = t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const q = plain(t)
   const slots = [nextDay(4, 15), nextDay(6, 12), nextDay(2, 11)].map(label)
   const offerSlots = `Tengo estos turnos:\n• ${slots[0]}\n• ${slots[1]}\n• ${slots[2]}\n¿Cuál te queda mejor?`
+  const yes = /\b(si|dale|acepto|ok|de una|obvio|perfecto|listo|bueno|claro)\b/.test(q)
 
   if (hasPics) { st.idea = st.idea ?? 'Diseño propio (con referencias)'; return { reply: 'Uff, qué lindas referencias 🖤 Veo algo traditional con línea bien firme, re va en antebrazo o pierna. ¿De qué tamaño lo imaginás más o menos?' } }
 
-  // Booking flow
-  if (st.askedDeposit && /\b(si|dale|acepto|ok|de una|obvio|perfecto|listo)\b/.test(q)) {
+  // Booking flow: name → Instagram → email → newsletter → deposit
+  if (st.step === 'deposit') {
+    if (!yes) return { reply: 'Sin la seña no puedo dejar el turno reservado 🙏 ¿Te va el 40% por Mercado Pago cuando Briza acepte?' }
     return {
-      reply: '¡Listo, ya le llegó a Briza! 🙌 Queda pendiente hasta que la confirme (24–48 h). Cuando la acepta te llega el link de Mercado Pago para la seña. ¡Nos vemos en Palermo!',
-      action: { summary: `Solicitud enviada a Briza ✦\n\nNombre: ${st.name ?? 'Vos'}\nIdea: ${st.idea ?? 'A charlar con Briza'}\nTurno pedido: ${st.slot ?? slots[0]}\nSeña 40%: aceptada` },
+      reply: `¡Listo, ya le llegó a Briza! 🙌 Queda pendiente hasta que la confirme (24–48 h). Te va a llegar la confirmación a ${st.email} con el link de Mercado Pago para la seña. ¡Nos vemos en Palermo!`,
+      action: { summary: `Solicitud enviada a Briza ✦\n\nNombre: ${st.name}\nInstagram: ${st.ig}\nMail: ${st.email}\nIdea: ${st.idea ?? 'A charlar con Briza'}\nTurno pedido: ${st.slot}\nNovedades y descuentos: ${st.news ? 'sí' : 'no'}\nSeña 40%: aceptada` },
     }
   }
-  if (st.slot && !st.name) { st.name = t.trim().split(/[ ,]/)[0]; return { reply: `¡Buenísimo, ${st.name}! ¿Me pasás tu WhatsApp o tu usuario de Instagram así Briza te confirma?` } }
-  if (st.slot && st.name && !st.contact) {
-    st.contact = t; st.askedDeposit = true
-    return { reply: 'Última cosita: todas las reservas se confirman con una seña de al menos el 40% del total, que se paga por Mercado Pago cuando Briza acepta. ¿Te va?' }
+  if (st.step === 'news') {
+    st.news = yes && !/\bno\b/.test(q); st.step = 'deposit'
+    return { reply: `${st.news ? '¡Genial, quedás anotada/o! ✨' : 'Dale, sin problema.'} Última cosita: todas las reservas se confirman con una seña de al menos el 40% del total, que se paga por Mercado Pago cuando Briza acepta. ¿Te va?` }
   }
+  if (st.slot && st.name && st.ig && !st.email) {
+    const m = t.match(/[^\s@]+@[^\s@]+\.[^\s@]+/)
+    if (!m) return { reply: 'Mmm, ese mail no me cierra 🤔 ¿Me lo pasás de nuevo?' }
+    st.email = m[0]; st.step = 'news'
+    return { reply: '¡Gracias! ¿Querés que te avisemos de descuentos y próximos eventos de Briza (flash days, guest spots)? Es un mail de vez en cuando, nada de spam 💌 ¿Sí o no?' }
+  }
+  if (st.slot && st.name && !st.ig) {
+    const h = t.trim().match(/@?([a-z0-9._]{2,30})/i)
+    if (!h) return { reply: '¿Me pasás tu usuario de Instagram? (tipo @tuusuario)' }
+    st.ig = `@${h[1]}`
+    return { reply: `¡Buenísimo! Briza te escribe por Instagram (${st.ig}). ¿Y un mail para mandarte la confirmación del turno?` }
+  }
+  if (st.slot && !st.name) { st.name = t.trim().split(/[ ,]/)[0]; return { reply: `¡Un gusto, ${st.name}! Todo el contacto es por Instagram 📲 ¿Cuál es tu usuario?` } }
 
-  // Picking a flash by number or name
-  const num = q.match(/\b([1-7])\b/)?.[1]
-  const byName = FLASH_NAMES.find(n => q.includes(n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ')[0]))
-  const chosen = st.idea ? undefined : (num && !/\d{1,2}[:.]\d{2}/.test(q) ? FLASH_NAMES[Number(num) - 1] : byName)
-  if (chosen) {
-    if (FLASH_TAKEN.has(chosen)) return { reply: `Uh, el ${chosen} ya se tatuó 💔 ¿Querés otro?\n${flashMenu}` }
-    st.idea = `Flash Nº ${String(FLASH_NAMES.indexOf(chosen) + 1).padStart(2, '0')} · ${chosen}`
-    return { reply: `¡Qué lindo el ${chosen}! 🖤 El precio y el tamaño están en el cuaderno de la web. ${offerSlots}` }
+  // Picking one or more flashes by number (or name) → names, sizes and prices
+  const timeLike = /\d{1,2}[:.]\d{2}/.test(q)
+  const nums = timeLike ? [] : Array.from(q.matchAll(/\b([1-7])\b/g)).map(m => Number(m[1]) - 1)
+  const names = FLASHES_DEMO.map((f, i) => (q.includes(plain(f.name).split(' ')[0]) ? i : -1)).filter(i => i >= 0)
+  const picked = Array.from(new Set([...nums, ...names]))
+  if (picked.length && !st.slot) {
+    const taken = picked.filter(i => !FLASHES_DEMO[i].ok)
+    const ok = picked.filter(i => FLASHES_DEMO[i].ok)
+    if (!ok.length) return { reply: `Uh, ${FLASHES_DEMO[taken[0]].name} ya se tatuó 💔 ¿Querés otro?\n${flashMenu}` }
+    const lines = ok.map(i => `• Nº ${String(i + 1).padStart(2, '0')} ${FLASHES_DEMO[i].name} · ${FLASHES_DEMO[i].cm} cm · ${ars(FLASHES_DEMO[i].price)}`)
+    const total = ok.reduce((n, i) => n + FLASHES_DEMO[i].price, 0)
+    st.idea = ok.map(i => `Nº ${String(i + 1).padStart(2, '0')} ${FLASHES_DEMO[i].name}`).join(' + ')
+    return { reply: `¡Qué buena elección! 🖤\n${lines.join('\n')}${ok.length > 1 ? `\nTotal: ${ars(total)}` : ''}${taken.length ? `\n(${FLASHES_DEMO[taken[0]].name} ya se tatuó)` : ''}\n\n${offerSlots}` }
   }
 
   // Picking a slot
-  const pick = slots.find(s => q.includes(s.split(' ')[0].normalize('NFD').replace(/[̀-ͯ]/g, ''))) || (/(\d{1,2}[:.]\d{2}|primero|segundo|tercero|ese|el de)/.test(q) ? slots[/segundo/.test(q) ? 1 : /tercero/.test(q) ? 2 : 0] : '')
+  const pick = slots.find(s => q.includes(plain(s.split(' ')[0]))) || (/(\d{1,2}[:.]\d{2}|primero|segundo|tercero|ese|el de)/.test(q) ? slots[/segundo/.test(q) ? 1 : /tercero/.test(q) ? 2 : 0] : '')
   if (pick && !st.slot) { st.slot = pick; return { reply: `Dale, te anoto el ${pick} (queda pendiente hasta que Briza lo confirme). ¿Cómo te llamás?` } }
 
   // Topics (flashes first: "¿qué flashes hay disponibles?" is about flashes, not slots)
-  if (/flash/.test(q)) return { reply: `¡Sí! ¿Querés algún flash del cuaderno? Estos están disponibles:\n${flashMenu}\n\nDecime el número 😉 (precios y tamaños los tenés en el cuaderno de la web).` }
+  if (/flash/.test(q)) return { reply: `¡Sí! Estos flashes del cuaderno están disponibles:\n${flashMenu}\n\nDecime el número (podés elegir más de uno) y te paso el precio 😉` }
   if (/propio|personalizado|mi idea|presupuesto|cotiz/.test(q)) { st.idea = st.idea ?? 'Diseño propio'; return { reply: 'Me encanta 🙌 Los diseños propios los charlás con Briza, pero te tiro un estimativo: uno chico en black & white arranca más o menos desde $40.000 y sube según tamaño, zona y color. Si tenés referencias mandalas con el 📎. ¿Qué tenés en mente y de qué tamaño?' } }
-  if (/precio|cuanto|sale|cuesta/.test(q)) return { reply: 'Si es un flash, el precio ya está en el cuaderno de la web 💸 Si es un diseño propio te paso un estimativo y el final lo define Briza. ¿Flash o diseño propio?' }
+  if (/precio|cuanto|sale|cuesta/.test(q)) return { reply: `¿Es un flash o un diseño propio? Si es flash decime el número y te paso el precio:\n${flashMenu}` }
   if (/turno|libre|fecha|cuando|disponib|agenda/.test(q)) return { reply: offerSlots }
   if (/cuidad|cura|pica|crema/.test(q)) return { reply: 'Los primeros días: lavalo con agua tibia y jabón neutro, secá con toquecitos y una capa finita de crema. Nada de sol, pile ni mar por 2–3 semanas, y no te rasques 🙏 Si tenés fiebre, pus o se pone muy rojo, consultá a un médico y avisale a Briza.' }
   if (/sena|adelanto/.test(q)) return { reply: 'Todas las reservas se confirman con una seña de al menos el 40% del total. Cuando Briza acepta te llega el link de Mercado Pago, re fácil 💳' }
-  if (/donde|direccion|palermo|zona del estudio/.test(q)) return { reply: 'El estudio está en Palermo, CABA 🌿 La dirección exacta te la pasa Briza cuando confirma el turno.' }
+  if (/whats|telefono|numero|celular/.test(q)) return { reply: 'Briza atiende todo por Instagram 📲 (@bri.t4tts). Si querés, te reservo turno desde acá y te escribe ella por ahí.' }
+  if (/donde|direccion|palermo|zona del estudio/.test(q)) return { reply: 'El estudio está en Palermo, CABA 🌿 La dirección exacta te llega con la confirmación del turno.' }
   if (/hola|buenas|hey/.test(q)) return { reply: '¡Holaa! 🖤 ¿Buscás un flash del cuaderno o tenés una idea propia?' }
   return { reply: 'Te ayudo con flashes, diseños propios, turnos, cuidados o la seña. ¿Por dónde arrancamos? ✨' }
 }
@@ -175,13 +204,13 @@ export default function Assistant() {
   return (
     <>
       <button type="button" className={`ai-fab ${open ? 'hide' : ''}`} onClick={() => setOpen(true)} aria-label="Hablar con Lila" data-hover>
-        <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} />
+        <LilaAvatar size={34} />
         <span>¿Dudas? <b>Hablá con Lila</b></span>
       </button>
 
       <div className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
         <header className="ai-head">
-          <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} />
+          <LilaAvatar size={40} />
           <div>
             <p className="ai-name">Lila <span>· asistente de Briza</span></p>
             <p className="ai-sub">{demo ? 'Modo demo · no se envía nada' : 'Reservo tu turno · Briza lo confirma'}</p>
@@ -190,19 +219,22 @@ export default function Assistant() {
         </header>
 
         <div ref={list} className="ai-list" aria-live="polite">
-          <p className="ai-msg bot">¡Holaa! Soy Lila, la asistente de Briza 🖤 Te ayudo a elegir un flash o a armar tu idea, te paso precios estimativos, miro tus referencias (📎) y te reservo turno (Briza lo confirma). ¿Qué tenés ganas de tatuarte?</p>
+          <div className="ai-row"><LilaAvatar size={28} /><p className="ai-msg bot">¡Holaa! Soy Lila, la asistente de Briza 🖤 Te ayudo a elegir flashes (con precio) o a armar tu idea, te paso estimativos, miro tus referencias (📎) y te reservo turno (Briza lo confirma). ¿Qué tenés ganas de tatuarte?</p></div>
           {bubbles.map((b, i) => (
-            <div key={i} className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>
-              {b.imgs.length > 0 && <span className="ai-imgs">{b.imgs.map(u => <img key={u} src={u} alt="Referencia" />)}</span>}
-              {b.text}
+            <div key={i} className={`ai-row ${b.role === 'user' ? 'me' : ''}`}>
+              {b.role !== 'user' && <LilaAvatar size={28} />}
+              <div className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>
+                {b.imgs.length > 0 && <span className="ai-imgs">{b.imgs.map(u => <img key={u} src={u} alt="Referencia" />)}</span>}
+                {b.text}
+              </div>
             </div>
           ))}
-          {busy && <p className="ai-msg bot ai-typing" aria-label="Escribiendo"><i /><i /><i /></p>}
+          {busy && <div className="ai-row"><LilaAvatar size={28} /><p className="ai-msg bot ai-typing" aria-label="Lila está escribiendo"><i /><i /><i /></p></div>}
           {action && (
             <div className="ai-action">
               <p className="ai-action-lbl">✓ Solicitud enviada</p>
               <pre>{action.summary}</pre>
-              <p className="ai-note">Queda pendiente hasta que Briza la confirme (24–48 h). Cuando la acepta te llega el link de Mercado Pago para la seña del 40%.</p>
+              <p className="ai-note">Queda pendiente hasta que Briza la confirme (24–48 h). Te llega la confirmación por mail e Instagram, con el link de Mercado Pago para la seña del 40%.</p>
             </div>
           )}
           {error && <p className="ai-err">{error}</p>}

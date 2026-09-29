@@ -13,6 +13,7 @@ import { whatsappToBriza } from './notify'
 import { LIMITS, hit, hourKey, dayKey } from './limits'
 import { verifySignature, sendDM, username } from './instagram'
 import { createDepositLink, getPayment } from './mp'
+import { sendMail } from './mail'
 
 interface Env {
   ANTHROPIC_API_KEY: string
@@ -31,7 +32,9 @@ interface Env {
   IG_USER_ID?: string
   IG_APP_SECRET?: string
   IG_VERIFY_TOKEN?: string
-  RATE?: KVNamespace          // limits, Instagram conversations, waitlist
+  RESEND_API_KEY?: string     // client emails (confirmation, reminders, aftercare)
+  MAIL_FROM?: string          // e.g. "Briza Maldonado <turnos@tu-dominio.com>"
+  RATE?: KVNamespace          // limits, Instagram conversations, waitlist, newsletter
   REFS?: R2Bucket             // reference photos
 }
 
@@ -50,15 +53,16 @@ Personalidad: re buena onda, cool y friendly, como alguien del estudio que te re
 
 Qué hacés:
 - Preguntás si quiere un flash del cuaderno o un diseño propio.
-- Flashes: NO describas ni recites precios ni tamaños (ya están en la web). Si quiere un flash, usá list_flashes y pasale solo la lista numerada de los disponibles ("Nº 02 · Frutilla"), para que elija por número. Si pregunta el precio de uno puntual, decíselo.
+- Flashes: si quiere un flash, usá list_flashes y pasale solo la lista numerada de los disponibles ("2. Frutilla"), sin precios, para que elija por número (puede elegir más de uno). Cuando elige, decile de cada uno el nombre, el tamaño y el precio, y el total si son varios, así no tiene que buscarlo en el cuaderno.
 - Diseño propio: se charla con Briza. Podés dar un estimativo con quote_estimate, aclarando que el precio final lo define ella. Pedí referencias (se adjuntan con el 📎 o por foto en Instagram) y describilas en una frase.
 - Turnos: usá get_open_slots y ofrecé 2-4 opciones concretas. Nunca inventes horarios. Si no le sirve ninguno, ofrecé la lista de espera (join_waitlist).
-- Reserva: cuando tengas idea (flash o diseño propio), zona, tamaño aproximado (si es diseño propio), turno (o "lo antes posible"), nombre${'${contactRule}'} y la aceptación de la seña, llamá a request_booking una sola vez. Pedí de a un dato por vez.
+- Reserva: cuando tengas idea (flash o diseño propio), zona, tamaño aproximado (si es diseño propio), turno (o "lo antes posible"), nombre${'${contactRule}'}, mail para la confirmación, la respuesta a si quiere recibir novedades y la aceptación de la seña, llamá a request_booking una sola vez. Pedí de a un dato por vez.
+- Novedades: preguntá si quiere enterarse de descuentos y próximos eventos de Briza (flash days, guest spots) por mail. Solo si dice que sí explícitamente, newsletter = true.
 
 Reglas:
 - La reserva queda PENDIENTE: Briza la acepta o la rechaza. Nunca digas que un turno está confirmado.
 - Antes de reservar, avisá que todas las reservas se confirman con una seña de al menos el 40% del total (se paga por Mercado Pago cuando Briza acepta) y pedí que lo acepte.
-- Nunca des el número de teléfono de Briza.
+- El contacto es SOLO por Instagram (@bri.t4tts): nunca ofrezcas WhatsApp ni teléfono.
 - Cuidados: usá la guía de abajo. Si describe fiebre, pus, enrojecimiento que se expande, calor intenso o dolor que empeora, decile que consulte a un médico ya y que le avise a Briza.
 - Si no sabés algo, decí que lo confirma Briza. No hables de temas ajenos al estudio.`
 
@@ -67,8 +71,8 @@ const RULES_TEXT = RULES.map(r => `- ${r}`).join('\n')
 
 const systemFor = (ch: Channel) => {
   const contactRule = ch.kind === 'ig'
-    ? ' (por Instagram no hace falta pedir teléfono: Briza responde por acá)'
-    : ', su WhatsApp o su usuario de Instagram (para que Briza le responda)'
+    ? ' (por Instagram no hace falta pedir el usuario: Briza responde por acá)'
+    : ', su usuario de Instagram (Briza le escribe por ahí)'
   return `${SYSTEM.replace('${contactRule}', contactRule)}
 
 Reglas del estudio (respetalas y explicalas si hace falta):
@@ -118,7 +122,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
       type: 'object',
       properties: {
         name: { type: 'string' }, idea: { type: 'string' },
-        contact: { type: 'string', description: 'WhatsApp o usuario de Instagram; vacío si escribe por Instagram.' },
+        contact: { type: 'string', description: 'Usuario de Instagram; vacío si escribe por Instagram.' },
       },
       required: ['name', 'idea', 'contact'], additionalProperties: false,
     },
@@ -136,11 +140,13 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         size: { type: 'string' },
         slot: { type: 'string', description: 'label del turno de get_open_slots, o "lo antes posible".' },
         slot_start: { type: 'string', description: 'start (ISO) del turno elegido; vacío si no eligió uno.' },
-        contact: { type: 'string', description: 'WhatsApp o usuario de Instagram; vacío si escribe por Instagram.' },
+        contact: { type: 'string', description: 'Usuario de Instagram; vacío si escribe por Instagram.' },
+        email: { type: 'string', description: 'Mail para la confirmación del turno.' },
+        newsletter: { type: 'boolean', description: 'true solo si pidió recibir descuentos y novedades.' },
         notes: { type: 'string', description: 'Otros detalles; vacío si no hay.' },
         deposit_ok: { type: 'boolean', description: 'true si aceptó la seña del 40%.' },
       },
-      required: ['name', 'idea', 'zone', 'size', 'slot', 'slot_start', 'contact', 'notes', 'deposit_ok'],
+      required: ['name', 'idea', 'zone', 'size', 'slot', 'slot_start', 'contact', 'email', 'newsletter', 'notes', 'deposit_ok'],
       additionalProperties: false,
     },
   },
@@ -164,7 +170,7 @@ async function notifyBriza(env: Env, text: string) {
 // How Briza (or the worker) reaches a client
 function clientLink(d: Pick<PendingData, 'channel' | 'contact'>, text: string) {
   if (d.channel === 'ig') return ''
-  if (/^\d{8,}$/.test(d.contact)) return `https://wa.me/${d.contact}?text=${encodeURIComponent(text)}`
+  void text // Instagram links can't carry a pre-filled message
   return `https://ig.me/m/${d.contact.replace(/^@/, '')}`
 }
 async function messageClient(env: Env, d: Pick<PendingData, 'channel' | 'contact'>, text: string) {
@@ -174,10 +180,15 @@ async function messageClient(env: Env, d: Pick<PendingData, 'channel' | 'contact
 
 function parseContact(raw: string, ch: Channel): { channel: 'wa' | 'ig'; contact: string } | null {
   if (ch.kind === 'ig') return { channel: 'ig', contact: ch.sid }
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length >= 8 && !/[a-z]/i.test(raw.replace(/^@/, ''))) return { channel: 'wa', contact: digits }
-  const handle = raw.trim().replace(/^@/, '').replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '').replace(/\/.*$/, '')
+  // Web: Instagram user only (stored as "@user"; Briza answers from her account)
+  const handle = raw.trim().replace(/^@/, '').replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '').replace(/[/?].*$/, '')
   return /^[a-z0-9._]{2,30}$/i.test(handle) ? { channel: 'wa', contact: `@${handle}` } : null
+}
+
+const validEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
+async function mail(env: Env, to: string, subject: string, text: string) {
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM || !validEmail(to)) return false
+  try { await sendMail(env.RESEND_API_KEY, env.MAIL_FROM, to.trim(), subject, text); return true } catch { return false }
 }
 
 // ─── Tools ────────────────────────────────────────────────────────────────
@@ -207,7 +218,7 @@ type WaitEntry = { name: string; idea: string; channel: 'wa' | 'ig'; contact: st
 async function joinWaitlist(env: Env, input: { name: string; idea: string; contact: string }, ch: Channel) {
   if (!env.RATE) return { ok: false, error: 'La lista de espera no está disponible ahora.' }
   const c = parseContact(input.contact, ch)
-  if (!c) return { ok: false, error: 'Falta un WhatsApp o usuario de Instagram válido.' }
+  if (!c) return { ok: false, error: 'Falta un usuario de Instagram válido.' }
   const list = JSON.parse(await env.RATE.get('waitlist') ?? '[]') as WaitEntry[]
   if (list.some(w => w.contact === c.contact)) return { ok: true, note: 'Ya estaba anotada.' }
   list.push({ name: input.name.slice(0, 80), idea: input.idea.slice(0, 200), ...c, at: new Date().toISOString() })
@@ -215,24 +226,24 @@ async function joinWaitlist(env: Env, input: { name: string; idea: string; conta
   return { ok: true, note: 'Anotada. Se le avisa cuando Briza publique turnos nuevos.' }
 }
 
-export type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; notes: string; deposit_ok: boolean }
+export type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; email: string; newsletter: boolean; notes: string; deposit_ok: boolean }
 
 // Shared by the assistant (web + Instagram) and the site's form: pending event + WhatsApp notice to Briza
 async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] = []) {
   if (!b.deposit_ok) return { ok: false, error: 'Falta que la persona acepte la seña del 40%.' }
   const c = parseContact(b.contact, ch)
-  if (!c) return { ok: false, error: 'Falta un WhatsApp o usuario de Instagram válido para que Briza pueda responder.' }
+  if (!c) return { ok: false, error: 'Falta un usuario de Instagram válido para que Briza pueda responder.' }
+  if (!validEmail(b.email)) return { ok: false, error: 'Falta un mail válido para mandarte la confirmación.' }
   const who = ch.kind === 'ig' ? ch.sid : ch.ip
   if (!(await hit(env.RATE, dayKey(who, 'req'), LIMITS.requestsPerDay, 86400))) {
     return { ok: false, error: `Ya se enviaron varias solicitudes hoy. Si necesitás algo más, escribí por Instagram ${IG_HANDLE}.` }
   }
   const igName = c.channel === 'ig' && env.IG_TOKEN ? await username(env.IG_TOKEN, c.contact) : ''
   const contactLine = c.channel === 'ig' ? `Instagram: ${igName ? '@' + igName : '(por DM)'}`
-    : c.contact.startsWith('@') ? `Instagram: ${c.contact} → https://ig.me/m/${c.contact.slice(1)}`
-      : `WhatsApp: +${c.contact} → https://wa.me/${c.contact}`
+    : `Instagram: ${c.contact} → https://ig.me/m/${c.contact.slice(1)}`
   const lines = [
     `Nombre: ${b.name}`, contactLine, `Idea: ${b.idea}`, `Zona: ${b.zone}`, `Tamaño: ${b.size}`,
-    `Turno pedido: ${b.slot}`, 'Seña 40%: aceptada',
+    `Turno pedido: ${b.slot}`, `Mail: ${b.email}`, `Novedades: ${b.newsletter ? 'sí' : 'no'}`, 'Seña 40%: aceptada',
     ...(b.notes ? [`Notas: ${b.notes}`] : []),
     ...refs.map((r, i) => `Referencia ${i + 1}: ${r}`),
   ]
@@ -242,7 +253,7 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
       eventId = await createPending(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, {
         title: `⏳ Pendiente · ${b.name} · ${b.idea}`.slice(0, 120),
         description: ['Solicitud desde la web/Instagram. Aceptala o rechazala desde el WhatsApp que te llegó.', '', ...lines].join('\n'),
-        data: { name: b.name, channel: c.channel, contact: c.contact, idea: b.idea, slot: b.slot, start: b.slot_start, refs: refs.join(' ').slice(0, 1000) },
+        data: { name: b.name, channel: c.channel, contact: c.contact, email: b.email.trim(), idea: b.idea, slot: b.slot, start: b.slot_start, refs: refs.join(' ').slice(0, 1000) },
       })
     } catch { /* the WhatsApp notice below still carries everything */ }
   }
@@ -252,7 +263,13 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
     : ['Respondele directo para aceptar o rechazar.']
   const notified = await notifyBriza(env, ['⏳ Nueva solicitud de turno', '', ...lines, '', '¿La aceptás o la rechazás?', ...links, '',
     '📅 Acordate de chequear Google Calendar (calendario Solicitudes) antes de decidir.'].join('\n'))
-  return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !/^(WhatsApp|Instagram|Referencia)/.test(l))].join('\n') }
+  // Newsletter: only with an explicit yes
+  if (b.newsletter && env.RATE) await env.RATE.put(`news:${b.email.trim().toLowerCase()}`, JSON.stringify({ name: b.name, instagram: c.channel === 'ig' ? igName : c.contact, at: new Date().toISOString() }))
+  await mail(env, b.email, 'Recibimos tu solicitud de turno ✦ Briza Maldonado',
+    [`Hola ${b.name}!`, '', 'Recibimos tu solicitud de turno:', `• Idea: ${b.idea}`, `• Turno pedido: ${b.slot}`, '',
+      'Queda pendiente hasta que Briza la confirme (24–48 h). Cuando la acepte te llega otro mail con el link de Mercado Pago para la seña del 40%.',
+      '', 'Cualquier cosa escribinos por Instagram: @bri.t4tts', '', '— Lila, asistente de Briza'].join('\n'))
+  return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !/^(Instagram|Referencia)/.test(l))].join('\n') }
 }
 
 async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number; refs: string[] }, ch: Channel): Promise<{ result: unknown; action?: { summary: string } }> {
@@ -362,6 +379,7 @@ async function decide(env: Env, req: Request, url: URL) {
     await retitle(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, id, `❌ Rechazado · ${base}`, '8')
     const msg = `Hola ${d.name}! Soy Briza ✦ Gracias por escribirme. Ese turno no lo puedo tomar; si querés te propongo otra fecha.`
     const sent = await messageClient(env, d, msg)
+    await mail(env, d.email, 'Sobre tu solicitud de turno ✦ Briza Maldonado', `${msg}\n\nEscribime por Instagram: @bri.t4tts`)
     return page('Rechazada', `<h2>❌ Solicitud rechazada</h2><p>${esc(d.name)} · ${esc(d.idea)}</p><p>La marqué como rechazada en tu calendario.</p>${
       sent ? '<p>Le avisé por Instagram.</p>' : clientLink(d, msg) ? btn(clientLink(d, msg), 'Avisarle ↗') : '<p>Respondele por Instagram.</p>'}`)
   }
@@ -385,8 +403,10 @@ async function decide(env: Env, req: Request, url: URL) {
   if (d.start && env.GCAL_ID) { try { await removeFreeSlot(env.GOOGLE_SA_JSON, env.GCAL_ID, d.start) } catch { /* can be removed by hand */ } }
   const msg = `Hola ${d.name}! Soy Briza ✦ Acepto tu turno para ${d.idea} (${d.slot}). ${total ? `El total es $${total.toLocaleString('es-AR')} y para reservarlo necesito la seña de $${deposit.toLocaleString('es-AR')}` : 'Para reservarlo necesito una seña del 40% del total'}${payLink ? `: ${payLink}` : '; te paso los datos para transferir'}. ¡Gracias!`
   const sent = await messageClient(env, d, msg)
+  const mailed = await mail(env, d.email, '¡Tu turno está aceptado! ✦ Briza Maldonado', `${msg}\n\nTurno: ${d.slot}\nEstudio: Palermo, CABA (la dirección exacta te la paso por Instagram).\n\n— Briza`)
   return page('Aceptado', `<h2>✅ Turno aceptado</h2><p>${esc(d.name)} · ${esc(d.idea)} · ${esc(d.slot)}</p><p>Marcado como confirmado${d.start ? ' y saqué el turno libre de la web' : ''}.${payLink ? ' Cuando pague la seña te aviso y el evento pasa a 💰 Señado.' : ''}</p>${
-    sent ? '<p>Le mandé el mensaje por Instagram.</p>' : clientLink(d, msg) ? btn(clientLink(d, msg), 'Enviarle el mensaje ↗') : `<p>Mensaje para enviarle:</p><p style="background:#f3ecdc;padding:12px;border-radius:12px">${esc(msg)}</p>`}`)
+    mailed ? '<p>📧 Le llegó la confirmación por mail.</p>' : ''}${
+    sent ? '<p>Le mandé el mensaje por Instagram.</p>' : `<p>Mensaje para mandarle por Instagram:</p><p style="background:#f3ecdc;padding:12px;border-radius:12px">${esc(msg)}</p>${clientLink(d, msg) ? btn(clientLink(d, msg), 'Abrir su chat de Instagram ↗') : ''}`}`)
 }
 
 // Mercado Pago tells us about a payment: check it with MP itself, then mark the booking
@@ -402,7 +422,11 @@ async function mpWebhook(env: Env, url: URL, req: Request) {
   await retitle(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, ev.id, `💰 Señado · ${strip(ev.summary)}`, '2')
   const d = ev.extendedProperties?.private
   await notifyBriza(env, `💰 Entró la seña de ${d?.name ?? 'un cliente'} ($${(p.transaction_amount ?? 0).toLocaleString('es-AR')}) · ${d?.idea ?? ''} · ${d?.slot ?? ''}`)
-  if (d) await messageClient(env, d, `¡Listo ${d.name}! Recibí tu seña ✦ Tu turno quedó reservado: ${d.slot}. Te escribo un día antes con la dirección.`)
+  if (d) {
+    const m = `¡Listo ${d.name}! Recibí tu seña ✦ Tu turno quedó reservado: ${d.slot}. Te escribo un día antes con la dirección.`
+    await messageClient(env, d, m)
+    await mail(env, d.email, 'Seña recibida: tu turno quedó reservado ✦', m)
+  }
   return new Response('ok')
 }
 
@@ -478,13 +502,15 @@ async function daily(env: Env) {
   for (const e of tomorrow) {
     const d = e.extendedProperties!.private!
     const msg = `Hola ${d.name}! Te recuerdo tu turno de mañana (${d.slot}) para ${d.idea} ✦ Vení comida, hidratada y con ropa cómoda que deje la zona a mano. Cualquier cosa avisame. ¡Nos vemos! — Briza`
-    if (!(await messageClient(env, d, msg))) lines.push(`🔔 Recordatorio · ${d.name}: ${clientLink(d, msg) || '(respondé por Instagram)'}`)
+    const mailed = await mail(env, d.email, 'Mañana es tu turno ✦ Briza Maldonado', msg)
+    if (!(await messageClient(env, d, msg)) && !mailed) lines.push(`🔔 Recordatorio · ${d.name}: ${clientLink(d, msg) || '(respondé por Instagram)'}`)
   }
   // 2 · Aftercare the day after
   for (const e of yesterday) {
     const d = e.extendedProperties!.private!
     const msg = `Hola ${d.name}! ¿Cómo va el tatuaje? ✦ Te dejo los cuidados:\n\n${AFTERCARE}\n\nCualquier duda escribime. — Briza`
-    if (!(await messageClient(env, d, msg))) lines.push(`🩹 Cuidados · ${d.name}: ${clientLink(d, msg) || '(respondé por Instagram)'}`)
+    const mailed = await mail(env, d.email, 'Cuidados de tu tatuaje ✦ Briza Maldonado', msg)
+    if (!(await messageClient(env, d, msg)) && !mailed) lines.push(`🩹 Cuidados · ${d.name}: ${clientLink(d, msg) || '(respondé por Instagram)'}`)
   }
   // 6 · Waitlist: new slots since yesterday
   if (env.RATE && env.GCAL_ID && env.GCAL_KEY) {
@@ -516,6 +542,20 @@ export default {
     if (url.pathname === '/decide') return decide(env, req, url)
     if (url.pathname === '/mp') return mpWebhook(env, url, req).catch(() => new Response('ok'))
     if (url.pathname === '/ig') return igWebhook(env, req, url, ctx)
+    // Briza downloads the newsletter list: /newsletter.csv?k=<DECIDE_SECRET>
+    if (url.pathname === '/newsletter.csv' && env.RATE && url.searchParams.get('k') === env.DECIDE_SECRET) {
+      const rows = ['email,nombre,instagram,fecha']
+      let cursor: string | undefined
+      do {
+        const page = await env.RATE.list({ prefix: 'news:', cursor })
+        for (const k of page.keys) {
+          const v = JSON.parse(await env.RATE.get(k.name) ?? '{}') as { name?: string; instagram?: string; at?: string }
+          rows.push([k.name.slice(5), v.name ?? '', v.instagram ?? '', v.at ?? ''].map(x => `"${String(x).replace(/"/g, '""')}"`).join(','))
+        }
+        cursor = page.list_complete ? undefined : page.cursor
+      } while (cursor)
+      return new Response(rows.join('\n'), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="newsletter.csv"' } })
+    }
     if (req.method === 'GET' && url.pathname.startsWith('/ref/') && env.REFS) {
       const obj = await env.REFS.get(url.pathname.slice(5))
       return obj ? new Response(obj.body, { headers: { 'Content-Type': obj.httpMetadata?.contentType ?? 'image/jpeg', 'Cache-Control': 'public, max-age=31536000' } }) : new Response('Not found', { status: 404 })
@@ -550,7 +590,8 @@ export default {
       const clean = (v: unknown, n = 300) => String(v ?? '').slice(0, n)
       const out = await submitRequest(env, {
         name: clean(b.name, 80), idea: clean(b.idea), zone: clean(b.zone, 80), size: clean(b.size, 80), slot: clean(b.slot, 120),
-        slot_start: clean(b.slot_start, 40), contact: clean(b.contact, 60), notes: clean(b.notes, 500), deposit_ok: b.deposit_ok === true,
+        slot_start: clean(b.slot_start, 40), contact: clean(b.contact, 60), email: clean(b.email, 120), newsletter: b.newsletter === true,
+        notes: clean(b.notes, 500), deposit_ok: b.deposit_ok === true,
       }, { kind: 'web', ip })
       return Response.json(out, { status: out.ok ? 200 : 429, headers: cors })
     }

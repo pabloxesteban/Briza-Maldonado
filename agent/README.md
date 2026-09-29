@@ -16,6 +16,7 @@ flashes y turnos libres, da precios orientativos, recibe fotos de referencia y r
 | Lista de espera | Si no hay turnos, la anota; cuando Briza publica turnos nuevos, se les avisa |
 | Flashes vivos | Google Sheet publicado como CSV (`nombre, cm, precio, disponible`) → web y asistente se actualizan solos |
 | Reglas | `RULES` en `src/config.ts` |
+| Contacto | Solo Instagram: se pide el usuario (en DMs no hace falta) y un mail para la confirmación |
 | Anti-abuso | 25 mensajes/h, 80/día y 2 solicitudes/día por persona |
 | Instagram | Responde DMs. Briza puede tomar una conversación escribiendo **#pausa** en ese chat y devolvérsela a la IA con **#ia** |
 
@@ -52,6 +53,14 @@ Requiere cuenta **profesional** (creador o empresa).
 2. Conectar la cuenta @bri.t4tts y generar el token → `IG_TOKEN`; el ID de la cuenta → `IG_USER_ID`.
 3. Webhooks: URL `https://<worker>/ig`, token de verificación = el valor de `IG_VERIFY_TOKEN`, suscribir `messages`.
 4. App secret → `IG_APP_SECRET`. Pedir el permiso `instagram_business_manage_messages` (revisión de Meta) y pasar la app a modo Live.
+
+### Mails a clientes (Resend)
+Crear cuenta en resend.com, verificar un dominio (o usar el de prueba) y cargar `RESEND_API_KEY` y `MAIL_FROM`.
+Se envían: recepción de la solicitud, aceptación con link de seña, seña recibida, recordatorio y cuidados.
+
+### Newsletter
+Solo se anotan quienes dicen que sí (casilla o respuesta explícita en el chat). Lista descargable en
+`https://<worker>/newsletter.csv?k=<DECIDE_SECRET>`.
 
 ## Preguntas frecuentes
 `src/faq.ts`: las vacías la IA las deriva a Briza. Completarlas = menos mensajes repetidos.
