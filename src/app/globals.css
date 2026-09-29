@@ -1404,3 +1404,20 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 }
 .pr-bar { background: rgba(22,20,20,.16); box-shadow: none; }
 @media (min-width: 861px) { .pr-cue { padding: .9rem 1.4rem; } .pr-cue-txt { font-size: 1rem; } }
+
+/* Gallery progress meter: shows how much is left and when it's done */
+.co-meter { position: absolute; z-index: 4; right: clamp(16px, 3vw, 40px); bottom: clamp(1.2rem, 3vh, 2rem); display: flex; align-items: center; gap: .8rem; padding: .75rem 1.1rem; border-radius: 999px; background: var(--ink); color: var(--cream); box-shadow: 0 14px 34px -14px rgba(22,20,20,.6); transition: background .4s var(--ease), color .4s var(--ease); }
+.co-meter-lbl { font-weight: 700; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.co-meter-track { position: relative; width: clamp(110px, 12vw, 180px); height: 5px; border-radius: 3px; background: rgba(247,241,226,.22); overflow: hidden; }
+.co-meter-fill { position: absolute; inset: 0; background: var(--c-pink); transform: scaleX(0); transform-origin: 0 50%; }
+.co-meter-pct { min-width: 3.2ch; font-weight: 800; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.co-meter.done { background: var(--c-pink); color: var(--ink); }
+.co-meter.done .co-meter-track, .co-meter.done .co-meter-lbl { display: none; }
+@media (max-width: 767px) {
+  .co-meter { top: 84px; bottom: auto; right: 10px; padding: .5rem .8rem; gap: .5rem; }
+  .co-meter-track { width: 70px; }
+  .co-meter-pct { font-size: .85rem; }
+  .co-meter-lbl { display: none; }
+}
+@media (min-width: 768px) { .co-meter { top: 100px; bottom: auto; } }
+.co-hud { bottom: 6vh; }

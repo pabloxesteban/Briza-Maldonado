@@ -23,6 +23,9 @@ function useMobile() {
 
 function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
   const sec = useRef<HTMLDivElement>(null)
+  const meter = useRef<HTMLSpanElement>(null)
+  const pct = useRef<HTMLSpanElement>(null)
+  const meterBox = useRef<HTMLDivElement>(null)
   const colRefs = useRef<(HTMLDivElement | null)[]>([])
   const [hover, setHover] = useState<number | null>(null)
   const C = mobile ? 3 : 4
@@ -52,6 +55,10 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
           if (Math.abs(target - p) < 0.0001) p = target
           if (p !== last) {
             last = p
+            // Progress meter: how much of the gallery is left
+            if (meter.current) meter.current.style.transform = `scaleX(${p})`
+            if (pct.current) pct.current.textContent = p > 0.985 ? '¡Listo! Seguí bajando ↓' : `${Math.round(p * 100)}%`
+            meterBox.current?.classList.toggle('done', p > 0.985)
             colRefs.current.forEach((col, c) => {
               if (!col) return
               const travel = Math.max(0, col.scrollHeight - vh)
@@ -70,7 +77,7 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
   const h = hover !== null ? WORKS[hover] : null
 
   return (
-    <div ref={sec} className="co" style={{ height: mobile ? '480vh' : '440vh' }}>
+    <div ref={sec} className="co" style={{ height: mobile ? '300vh' : '280vh' }}>
       <div className={`co-stage ${hover !== null ? 'hovering' : ''}`} style={{ gridTemplateColumns: `repeat(${C}, 1fr)` }}>
         {columns.map((col, c) => (
           <div key={c} ref={el => { colRefs.current[c] = el }} className="co-col">
@@ -90,6 +97,11 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
             })}
           </div>
         ))}
+        <div ref={meterBox} className="co-meter" aria-hidden>
+          <span className="co-meter-lbl">Galería</span>
+          <span className="co-meter-track"><span ref={meter} className="co-meter-fill" /></span>
+          <span ref={pct} className="co-meter-pct">0%</span>
+        </div>
         {!mobile && (
           <div className="co-hud" aria-hidden>
             {h
