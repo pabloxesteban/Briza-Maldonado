@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 
 const V = '/Briza-Maldonado/proceso/'
-const CLIP = 'portada'
-// Same footage in three columns: each keeps a third of the loop apart and frames a different part,
-// so no two columns ever show the same moment
-const OFFSETS = [0, 1 / 3, 2 / 3]
+// Three studio clips, each starting at a different point of its loop so the columns never move in step
+const CLIPS = [{ src: 'portada', start: 0 }, { src: 'portada3', start: 0.45 }, { src: 'portada2', start: 0.7 }]
 
 // Full-bleed studio footage, tinted to the site's pink/ink duotone, with her name set edge to edge.
-// Desktop splits it into three staggered columns; phones show it once, full screen.
+// Desktop shows the three clips side by side; phones dissolve from one to the next.
 export default function Hero() {
   const ref = useRef<HTMLElement>(null)
   const word = useRef<HTMLDivElement>(null)
@@ -48,21 +46,11 @@ export default function Hero() {
     return () => { clearTimeout(t); cancelAnimationFrame(raf); mq.removeEventListener('change', on); window.removeEventListener('resize', fit) }
   }, [])
 
-  // Keep the columns locked a third of a loop apart (independent loops drift and end up in sync)
+  // Phones: one clip at a time
+  const [cur, setCur] = useState(0)
   useEffect(() => {
-    if (mobile) return
-    const id = setInterval(() => {
-      const vs = Array.from(ref.current?.querySelectorAll('video') ?? [])
-      const lead = vs[0]
-      if (!lead || !lead.duration) return
-      const d = lead.duration
-      vs.forEach((v, i) => {
-        if (!i || v.readyState < 2) return
-        const want = (lead.currentTime + OFFSETS[i] * d) % d
-        let diff = Math.abs(v.currentTime - want); diff = Math.min(diff, d - diff)
-        if (diff > 0.25) v.currentTime = want
-      })
-    }, 700)
+    if (!mobile) return
+    const id = setInterval(() => setCur(c => (c + 1) % CLIPS.length), 4800)
     return () => clearInterval(id)
   }, [mobile])
 
@@ -77,12 +65,12 @@ export default function Hero() {
   return (
     <section ref={ref} className="hero hero--t">
       <div className="t-media">
-        {(mobile ? [0] : OFFSETS).map((o, i) => (
-          <figure key={i} className="t-clip" style={{ ['--i' as string]: i }}>
-            <video muted autoPlay loop playsInline preload="auto" poster={`${V}${CLIP}-poster.jpg`} disablePictureInPicture aria-hidden
-              onLoadedMetadata={e => { const v = e.currentTarget; if (o && v.duration) v.currentTime = o * v.duration }}>
-              <source src={`${V}${CLIP}.webm`} type="video/webm" />
-              <source src={`${V}${CLIP}.mp4`} type="video/mp4" />
+        {CLIPS.map((c, i) => (
+          <figure key={c.src} className={`t-clip ${mobile && i === cur ? 'on' : ''}`} style={{ ['--i' as string]: i }}>
+            <video muted autoPlay loop playsInline preload="auto" poster={`${V}${c.src}-poster.jpg`} disablePictureInPicture aria-hidden
+              onLoadedMetadata={e => { const v = e.currentTarget; if (c.start && v.duration) v.currentTime = c.start * v.duration }}>
+              <source src={`${V}${c.src}.webm`} type="video/webm" />
+              <source src={`${V}${c.src}.mp4`} type="video/mp4" />
             </video>
           </figure>
         ))}
