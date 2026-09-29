@@ -109,6 +109,14 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const area = useRef<HTMLDivElement>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [framing, setFraming] = useState(false)
+  // Phones: once there's a photo, the try-on becomes a full-screen editor (like an Instagram story editor)
+  const [full, setFull] = useState(false)
+  useEffect(() => {
+    if (!full) return
+    window.dispatchEvent(new Event('lenis:stop'))
+    document.body.style.overflow = 'hidden'
+    return () => { window.dispatchEvent(new Event('lenis:start')); document.body.style.overflow = '' }
+  }, [full])
   const [view, setView] = useState<View>({ x: 0, y: 0, zoom: 1 })
   const [items, setItems] = useState<Placed[]>([])
   const [sel, setSel] = useState<number | null>(null)
@@ -142,6 +150,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
     setView({ x: 0, y: 0, zoom: 1 })
     setItems([]); setSel(null)
     setFraming(true)
+    if (window.innerWidth < 900) setFull(true)
   }
 
   const size = () => area.current!.getBoundingClientRect()
@@ -196,7 +205,14 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const unique = Array.from(new Set(items.map(i => i.f)))
 
   return (
-    <div className="try" data-hide-dock>
+    <div className={`try ${full ? 'fs' : ''}`} data-hide-dock>
+      {full && (
+        <div className="try-fs-bar">
+          <button type="button" onClick={() => setFull(false)} aria-label="Cerrar editor">✕</button>
+          <span>{framing ? 'Ajustá tu foto' : 'Sumá flashes'}</span>
+          <span className="try-fs-hint">{framing ? 'Arrastrá · pellizcá' : '1 dedo mueve · 2 dedos giran'}</span>
+        </div>
+      )}
       <header className="try-head">
         <p className="nb-kicker">Nuevo</p>
         <h3 className="try-title">Probalo en <span className="swash">tu cuerpo</span></h3>
@@ -249,6 +265,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
         {nudge && <p className="try-hint warn">Primero subí y aplicá tu foto</p>}
       </div>
 
+      {photo && !full && <button type="button" className="try-reopen cta-book" onClick={() => setFull(true)}>Abrir editor ↗</button>}
       <div className="try-controls">
         {framing && (
           <>
@@ -291,7 +308,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
               <button type="button" className="try-remove" onClick={() => setFraming(true)}>Ajustar foto</button>
               {unique.length > 0 && (
                 <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => book(unique.map(i => FLASHES[i].name))}>
-                  {unique.length > 1 ? `Quiero estos ${unique.length} flashes ●` : `Quiero ${FLASHES[unique[0]].name} ●`}
+                  {full ? (unique.length > 1 ? `Quiero estos ${unique.length} ●` : 'Lo quiero ●') : unique.length > 1 ? `Quiero estos ${unique.length} flashes ●` : `Quiero ${FLASHES[unique[0]].name} ●`}
                 </button>
               )}
             </div>

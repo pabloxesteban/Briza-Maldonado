@@ -231,7 +231,7 @@ async function joinWaitlist(env: Env, input: { name: string; idea: string; conta
 export type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; email: string; newsletter: boolean; notes: string; deposit_ok: boolean }
 
 // Shared by the assistant (web + Instagram) and the site's form: pending event + WhatsApp notice to Briza
-async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] = []) {
+async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] = [], source = ch.kind === 'ig' ? 'Instagram (Lila)' : 'Web · chat con Lila') {
   if (!b.deposit_ok) return { ok: false, error: 'Falta que la persona acepte la seña del 40%.' }
   const c = parseContact(b.contact, ch)
   if (!c) return { ok: false, error: 'Falta un usuario de Instagram (o un WhatsApp, si no usás Instagram) para que Briza pueda responder.' }
@@ -245,7 +245,7 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
     : c.contact.startsWith('@') ? `Instagram: ${c.contact} → https://ig.me/m/${c.contact.slice(1)}`
       : `WhatsApp (no usa Instagram): +${c.contact} → https://wa.me/${c.contact}`
   const lines = [
-    `Nombre: ${b.name}`, contactLine, `Idea: ${b.idea}`, `Zona: ${b.zone}`, `Tamaño: ${b.size}`,
+    `Origen: ${source}`, `Nombre: ${b.name}`, contactLine, `Idea: ${b.idea}`, `Zona: ${b.zone}`, `Tamaño: ${b.size}`,
     `Turno pedido: ${b.slot}`, `Mail: ${b.email}`, `Novedades: ${b.newsletter ? 'sí' : 'no'}`, 'Seña 40%: aceptada',
     ...(b.notes ? [`Notas: ${b.notes}`] : []),
     ...refs.map((r, i) => `Referencia ${i + 1}: ${r}`),
@@ -255,7 +255,7 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
     try {
       eventId = await createPending(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, {
         title: `⏳ Pendiente · ${b.name} · ${b.idea}`.slice(0, 120),
-        description: ['Solicitud desde la web/Instagram. Aceptala o rechazala desde el WhatsApp que te llegó.', '', ...lines].join('\n'),
+        description: ['Aceptala o rechazala desde el WhatsApp que te llegó.', '', ...lines].join('\n'),
         data: { name: b.name, channel: c.channel, contact: c.contact, email: b.email.trim(), idea: b.idea, slot: b.slot, start: b.slot_start, refs: refs.join(' ').slice(0, 1000) },
       })
     } catch { /* the WhatsApp notice below still carries everything */ }
@@ -272,7 +272,7 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
     [`Hola ${b.name}!`, '', 'Recibimos tu solicitud de turno:', `• Idea: ${b.idea}`, `• Turno pedido: ${b.slot}`, '',
       'Queda pendiente hasta que Briza la confirme (24–48 h). Cuando la acepte te llega otro mail con el link de Mercado Pago para la seña del 40%.',
       '', 'Cualquier cosa escribinos por Instagram: @bri.t4tts', '', '— Lila, asistente de Briza'].join('\n'))
-  return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !/^(Instagram|Referencia)/.test(l))].join('\n') }
+  return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !/^(Origen|Instagram|WhatsApp|Referencia)/.test(l))].join('\n') }
 }
 
 async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number; refs: string[] }, ch: Channel): Promise<{ result: unknown; action?: { summary: string } }> {
@@ -595,7 +595,7 @@ export default {
         name: clean(b.name, 80), idea: clean(b.idea), zone: clean(b.zone, 80), size: clean(b.size, 80), slot: clean(b.slot, 120),
         slot_start: clean(b.slot_start, 40), contact: clean(b.contact, 60), email: clean(b.email, 120), newsletter: b.newsletter === true,
         notes: clean(b.notes, 500), deposit_ok: b.deposit_ok === true,
-      }, { kind: 'web', ip })
+      }, { kind: 'web', ip }, [], 'Web · formulario de turnos')
       return Response.json(out, { status: out.ok ? 200 : 429, headers: cors })
     }
 
