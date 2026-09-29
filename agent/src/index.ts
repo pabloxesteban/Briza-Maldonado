@@ -1,9 +1,12 @@
 // Briza's booking assistant: a Cloudflare Worker that runs a Claude tool-use loop.
-// It answers questions, reads open slots from Briza's Google Calendar and flash list, and prepares a
-// booking request. It never books on its own: the request goes to Briza on WhatsApp and she decides.
+// It answers questions, reads open slots and flashes, and books requests that stay "Pendiente" until
+// Briza accepts or rejects them from the WhatsApp notice she receives. Her number never reaches the site.
 import Anthropic from '@anthropic-ai/sdk'
 import { FLASHES } from './flashes'
-import { createPendingEvent } from './gcal-write'
+import { FAQ } from './faq'
+import { createPending, getEvent, retitle, removeFreeSlot } from './gcal-write'
+import { whatsappToBriza } from './notify'
+import { LIMITS, hit, hourKey, dayKey } from './limits'
 
 interface Env {
   ANTHROPIC_API_KEY: string
@@ -13,7 +16,13 @@ interface Env {
   GCAL_PENDING_ID?: string
   GOOGLE_SA_JSON?: string
   ALLOWED_ORIGIN: string
-  WHATSAPP: string
+  // Briza's WhatsApp (secret, never sent to the browser) + CallMeBot key for her notices
+  BRIZA_PHONE?: string
+  CALLMEBOT_KEY?: string
+  // Signs the accept/reject links; public URL of this worker for those links
+  DECIDE_SECRET: string
+  PUBLIC_URL: string
+  RATE?: KVNamespace
 }
 
 type Msg = Anthropic.Beta.BetaMessageParam
@@ -31,10 +40,15 @@ Qué hacés:
 - Cuando la persona tenga idea (o flash), zona, tamaño aproximado, un turno elegido (o "lo antes posible"), su nombre y su WhatsApp, llamá a request_booking una sola vez. Pedí de a uno los datos que falten.
 
 Reglas:
-- No confirmás turnos: Briza tiene la última palabra. Decí siempre que la solicitud queda pendiente hasta que Briza la confirme por WhatsApp.
+- Podés reservar con request_booking, pero la reserva queda PENDIENTE: Briza la acepta o la rechaza y le escribe a la persona a su WhatsApp. Nunca digas que un turno está confirmado.
+- Antes de reservar, avisá siempre que todas las reservas se confirman con una seña de al menos el 40% del costo total, y pedí que lo acepte.
+- Nunca des el número de teléfono de Briza: el contacto es por esta solicitud o por Instagram (@bri.t4tts).
 - Diseños propios: el precio lo cotiza Briza según tamaño y detalle; no des cifras.
 - Si preguntan algo médico, legal o que no sabés, sugerí consultarlo con Briza por WhatsApp.
 - No hables de temas ajenos al estudio.`
+
+const FAQ_TEXT = FAQ.map(f => `- ${f.q}: ${f.a || '(sin definir: decí que eso lo confirma Briza al responder la solicitud)'}`).join('\n')
+const SYSTEM_FULL = `${SYSTEM}\n\nRespuestas de Briza a preguntas frecuentes (usalas, no inventes otras):\n${FAQ_TEXT}`
 
 const TOOLS: Anthropic.Beta.BetaTool[] = [
   {
@@ -59,7 +73,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
   },
   {
     name: 'request_booking',
-    description: 'Prepara la solicitud de turno para que la persona se la envíe a Briza por WhatsApp. No confirma nada: Briza decide.',
+    description: 'Reserva el turno como PENDIENTE y le avisa a Briza, que lo acepta o rechaza. Solo con la seña del 40% aceptada.',
     strict: true,
     input_schema: {
       type: 'object',
@@ -72,8 +86,9 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         slot_start: { type: 'string', description: 'El campo start (ISO) del turno elegido en get_open_slots; vacío si no eligió uno.' },
         contact: { type: 'string', description: 'WhatsApp de la persona para que Briza le responda.' },
         notes: { type: 'string', description: 'Otros detalles útiles; vacío si no hay.' },
+        deposit_ok: { type: 'boolean', description: 'true si la persona aceptó la seña del 40%.' },
       },
-      required: ['name', 'idea', 'zone', 'size', 'slot', 'slot_start', 'contact', 'notes'],
+      required: ['name', 'idea', 'zone', 'size', 'slot', 'slot_start', 'contact', 'notes', 'deposit_ok'],
       additionalProperties: false,
     },
   },
@@ -97,75 +112,72 @@ async function getOpenSlots(env: Env, input: { from_date: string; days: number }
   return { slots, note: slots.length ? '' : 'No hay turnos publicados en ese rango.' }
 }
 
-type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; notes: string }
+export type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; notes: string; deposit_ok: boolean }
 
-async function requestBooking(env: Env, b: Booking) {
-  const text = [
-    `Hola Bri! Soy ${b.name} y quiero un turno ✦`,
-    '',
-    `• Idea: ${b.idea}`,
-    `• Zona: ${b.zone}`,
-    `• Tamaño: ${b.size}`,
-    `• Turno: ${b.slot} (¿me lo confirmás?)`,
-    ...(b.notes ? [`• Notas: ${b.notes}`] : []),
-    '',
-    '(Lo armé con la asistente de la web)',
-  ].join('\n')
-  const url = `https://wa.me/${env.WHATSAPP}?text=${encodeURIComponent(text)}`
-
-  // Heads-up for Briza: a "Pendiente" event in her private requests calendar, whether or not the
-  // visitor ends up sending the WhatsApp. She approves by replying and editing the event.
-  let pending = false
-  if (env.GCAL_PENDING_ID && env.GOOGLE_SA_JSON) {
-    const phone = b.contact.replace(/[^\d]/g, '')
-    try {
-      await createPendingEvent(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, {
-        title: `⏳ Pendiente · ${b.name} · ${b.idea}`.slice(0, 120),
-        start: b.slot_start,
-        description: [
-          'Solicitud desde la asistente de la web. Confirmala o rechazala respondiendo por WhatsApp.',
-          '',
-          `Nombre: ${b.name}`,
-          `Contacto: ${b.contact}${phone ? ` → https://wa.me/${phone}` : ''}`,
-          `Idea: ${b.idea}`,
-          `Zona: ${b.zone}`,
-          `Tamaño: ${b.size}`,
-          `Turno pedido: ${b.slot}`,
-          ...(b.notes ? [`Notas: ${b.notes}`] : []),
-          '',
-          'Al confirmarlo: borrá "⏳ Pendiente" del título y el evento "Libre" de ese horario en el calendario de turnos.',
-        ].join('\n'),
-      })
-      pending = true
-    } catch { /* the WhatsApp message still carries everything */ }
-  }
-  return {
-    ok: true, whatsapp_url: url, summary: text, briza_notified: pending,
-    note: pending
-      ? 'Briza ya recibió el aviso en su calendario como pendiente. Decile que también puede tocar el botón para escribirle por WhatsApp, y que el turno se confirma cuando Briza responda.'
-      : 'Mostrale el resumen y decile que toque el botón para enviárselo a Briza. Queda pendiente hasta que ella confirme.',
-  }
+const hmac = async (secret: string, msg: string) => {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg))
+  return Array.from(new Uint8Array(sig).slice(0, 16), b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number }): Promise<{ result: unknown; action?: { whatsapp_url: string; summary: string } }> {
+// Shared by the assistant and the site's form: pending event + WhatsApp notice to Briza
+export async function submitRequest(env: Env, b: Booking, ip: string) {
+  if (!b.deposit_ok) return { ok: false, error: 'Falta que la persona acepte la seña del 40%.' }
+  const phone = b.contact.replace(/[^\d]/g, '')
+  if (phone.length < 8) return { ok: false, error: 'Falta un WhatsApp válido para que Briza pueda responder.' }
+  if (!(await hit(env.RATE, dayKey(ip, 'req'), LIMITS.requestsPerDay, 86400))) {
+    return { ok: false, error: 'Ya se enviaron varias solicitudes hoy desde esta conexión. Si necesitás algo más, escribí por Instagram @bri.t4tts.' }
+  }
+  const lines = [
+    `Nombre: ${b.name}`, `WhatsApp: ${b.contact} → https://wa.me/${phone}`, `Idea: ${b.idea}`,
+    `Zona: ${b.zone}`, `Tamaño: ${b.size}`, `Turno pedido: ${b.slot}`, 'Seña 40%: aceptada',
+    ...(b.notes ? [`Notas: ${b.notes}`] : []),
+  ]
+  let eventId = ''
+  if (env.GCAL_PENDING_ID && env.GOOGLE_SA_JSON) {
+    try {
+      eventId = await createPending(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, {
+        title: `⏳ Pendiente · ${b.name} · ${b.idea}`.slice(0, 120),
+        description: ['Solicitud desde la web. Aceptala o rechazala desde el WhatsApp que te llegó.', '', ...lines].join('\n'),
+        data: { name: b.name, phone, idea: b.idea, slot: b.slot, start: b.slot_start },
+      })
+    } catch { /* the WhatsApp notice below still carries everything */ }
+  }
+  let notified = false
+  if (env.BRIZA_PHONE && env.CALLMEBOT_KEY) {
+    const links = eventId
+      ? await (async () => {
+        const base = `${env.PUBLIC_URL}/decide?e=${encodeURIComponent(eventId)}`
+        return [`✅ Aceptar: ${base}&a=ok&s=${await hmac(env.DECIDE_SECRET, eventId + 'ok')}`,
+          `❌ Rechazar: ${base}&a=no&s=${await hmac(env.DECIDE_SECRET, eventId + 'no')}`]
+      })()
+      : ['Respondele directo por WhatsApp para aceptar o rechazar.']
+    const text = ['⏳ Nueva solicitud de turno', '', ...lines, '', '¿La aceptás o la rechazás?', ...links, '',
+      '📅 Acordate de chequear Google Calendar (calendario Solicitudes) antes de decidir.'].join('\n')
+    try { await whatsappToBriza(env.BRIZA_PHONE, env.CALLMEBOT_KEY, text); notified = true } catch { /* noop */ }
+  }
+  return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !l.startsWith('WhatsApp'))].join('\n') }
+}
+
+async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number }, ip: string): Promise<{ result: unknown; action?: { summary: string } }> {
   switch (name) {
     case 'get_open_slots': return { result: await getOpenSlots(env, input as { from_date: string; days: number }) }
     case 'list_flashes': return { result: FLASHES }
     case 'request_booking': {
       if (turn.bookings++ >= 1) return { result: { error: 'Ya se envió una solicitud en esta respuesta.' } }
-      const r = await requestBooking(env, input as Booking)
-      return { result: r, action: { whatsapp_url: r.whatsapp_url, summary: r.summary } }
+      const r = await submitRequest(env, input as Booking, ip)
+      return { result: r, action: r.ok ? { summary: r.summary! } : undefined }
     }
     default: return { result: { error: `Herramienta desconocida: ${name}` } }
   }
 }
 
 // ─── The loop ─────────────────────────────────────────────────────────────
-async function chat(env: Env, history: Msg[]) {
+async function chat(env: Env, history: Msg[], ip: string) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY })
   const messages: Msg[] = history.slice(-MAX_HISTORY)
   const turn = { bookings: 0 } // one booking request per visitor message
-  let action: { whatsapp_url: string; summary: string } | undefined
+  let action: { summary: string } | undefined
 
   const today = new Date().toLocaleDateString('es-AR', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -174,7 +186,7 @@ async function chat(env: Env, history: Msg[]) {
       model: MODEL,
       max_tokens: 4000,
       system: [
-        { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: SYSTEM_FULL, cache_control: { type: 'ephemeral' } },
         { type: 'text', text: `Hoy es ${today} (hora de Buenos Aires).` },
       ],
       tools: TOOLS,
@@ -188,7 +200,7 @@ async function chat(env: Env, history: Msg[]) {
     messages.push({ role: 'assistant', content: response.content })
 
     if (response.stop_reason === 'refusal') {
-      return { messages, reply: 'Eso no lo puedo responder por acá. Escribile a Briza por WhatsApp y te ayuda.', action }
+      return { messages, reply: 'Eso no lo puedo responder por acá. Podés escribirle a Briza por Instagram (@bri.t4tts).', action }
     }
     if (response.stop_reason === 'pause_turn') continue
     if (response.stop_reason !== 'tool_use') {
@@ -200,7 +212,7 @@ async function chat(env: Env, history: Msg[]) {
     const results: Anthropic.Beta.BetaToolResultBlockParam[] = []
     for (const u of uses) {
       try {
-        const r = await runTool(env, u.name, u.input, turn)
+        const r = await runTool(env, u.name, u.input, turn, ip)
         if (r.action) action = r.action
         results.push({ type: 'tool_result', tool_use_id: u.id, content: JSON.stringify(r.result) })
       } catch (e) {
@@ -221,8 +233,38 @@ function sanitize(raw: unknown): Msg[] | null {
   return out
 }
 
+const page = (title: string, body: string) => new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title><body style="margin:0;font-family:system-ui,sans-serif;background:#F7F1E2;color:#161414;display:grid;place-items:center;min-height:100vh;padding:24px">
+<div style="max-width:420px;background:#fffdf7;border-radius:20px;padding:28px;box-shadow:0 20px 50px -25px rgba(0,0,0,.35)">${body}</div></body>`, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+const esc = (t: string) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
+
+// Briza taps Aceptar / Rechazar in her WhatsApp notice
+async function decide(env: Env, url: URL) {
+  const id = url.searchParams.get('e') ?? '', a = url.searchParams.get('a') ?? '', sig = url.searchParams.get('s') ?? ''
+  if (!id || !['ok', 'no'].includes(a) || sig !== await hmac(env.DECIDE_SECRET, id + a)) return page('Link inválido', '<h2>Link inválido</h2>')
+  if (!env.GOOGLE_SA_JSON || !env.GCAL_PENDING_ID) return page('Falta configuración', '<h2>Falta configurar el calendario</h2>')
+  const ev = await getEvent(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, id)
+  const d = ev.extendedProperties?.private
+  if (!d) return page('Sin datos', '<h2>No encontré la solicitud</h2>')
+  const base = ev.summary.replace(/^(⏳ Pendiente|✅ Confirmado|❌ Rechazado)\s*·\s*/, '')
+  if (a === 'ok') {
+    await retitle(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, id, `✅ Confirmado · ${base}`, '10')
+    if (d.start && env.GCAL_ID) { try { await removeFreeSlot(env.GOOGLE_SA_JSON, env.GCAL_ID, d.start) } catch { /* Briza can remove it by hand */ } }
+    const msg = `Hola ${d.name}! Soy Briza ✦ Confirmo tu turno para ${d.idea} el ${d.slot}. Para dejarlo reservado necesito una seña del 40% del total; te paso los datos para transferir. ¡Gracias!`
+    return page('Turno aceptado', `<h2>✅ Turno aceptado</h2><p>${esc(d.name)} · ${esc(d.idea)} · ${esc(d.slot)}</p><p>Ya lo marqué como confirmado en tu calendario${d.start ? ' y saqué el turno libre de la web' : ''}. Ahora avisale:</p>
+<a href="https://wa.me/${d.phone}?text=${encodeURIComponent(msg)}" style="display:block;text-align:center;background:#161414;color:#F7F1E2;padding:14px;border-radius:999px;font-weight:800;text-decoration:none">Escribirle por WhatsApp ↗</a>`)
+  }
+  await retitle(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, id, `❌ Rechazado · ${base}`, '8')
+  const msg = `Hola ${d.name}! Soy Briza ✦ Gracias por escribirme. Ese turno no lo puedo tomar; si querés te propongo otra fecha.`
+  return page('Solicitud rechazada', `<h2>❌ Solicitud rechazada</h2><p>${esc(d.name)} · ${esc(d.idea)}</p><p>La marqué como rechazada en tu calendario. Avisale:</p>
+<a href="https://wa.me/${d.phone}?text=${encodeURIComponent(msg)}" style="display:block;text-align:center;background:#161414;color:#F7F1E2;padding:14px;border-radius:999px;font-weight:800;text-decoration:none">Escribirle por WhatsApp ↗</a>`)
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url)
+    if (req.method === 'GET' && url.pathname === '/decide') return decide(env, url)
+
     const origin = req.headers.get('Origin') ?? ''
     const allowed = origin === env.ALLOWED_ORIGIN || origin.startsWith('http://localhost')
     const cors = {
@@ -233,14 +275,31 @@ export default {
     }
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
     if (req.method !== 'POST' || !allowed) return new Response('Not allowed', { status: 403, headers: cors })
+    const ip = req.headers.get('CF-Connecting-IP') ?? 'anon'
 
-    let body: { messages?: unknown }
+    let body: { messages?: unknown; booking?: Booking }
     try { body = await req.json() } catch { return new Response('Bad JSON', { status: 400, headers: cors }) }
+
+    // The site's booking form
+    if (url.pathname === '/request') {
+      const b = body.booking
+      if (!b || typeof b.name !== 'string' || typeof b.contact !== 'string') return new Response('Bad booking', { status: 400, headers: cors })
+      const clean = (v: unknown, n = 300) => String(v ?? '').slice(0, n)
+      const out = await submitRequest(env, {
+        name: clean(b.name, 80), idea: clean(b.idea), zone: clean(b.zone, 80), size: clean(b.size, 80), slot: clean(b.slot, 120),
+        slot_start: clean(b.slot_start, 40), contact: clean(b.contact, 40), notes: clean(b.notes, 500), deposit_ok: b.deposit_ok === true,
+      }, ip)
+      return Response.json(out, { status: out.ok ? 200 : 429, headers: cors })
+    }
+
+    // The assistant
     const history = sanitize(body.messages)
     if (!history) return new Response('Bad messages', { status: 400, headers: cors })
-
+    if (!(await hit(env.RATE, hourKey(ip, 'chat'), LIMITS.chatPerHour, 3600)) || !(await hit(env.RATE, dayKey(ip, 'chatd'), LIMITS.chatPerDay, 86400))) {
+      return Response.json({ error: 'limit', reply: 'Llegaste al límite de mensajes por ahora. Probá más tarde o escribí por Instagram @bri.t4tts.' }, { status: 429, headers: cors })
+    }
     try {
-      const out = await chat(env, history)
+      const out = await chat(env, history, ip)
       return Response.json(out, { headers: cors })
     } catch (e) {
       if (e instanceof Anthropic.RateLimitError) return Response.json({ error: 'busy' }, { status: 429, headers: cors })

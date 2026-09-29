@@ -3,17 +3,21 @@
 import { useEffect, useRef, useState } from 'react'
 import BookingCalendar from './BookingCalendar'
 
-const WHATSAPP = '5491156233929'
 const INSTAGRAM = 'bri.t4tts'
+// Requests go to the booking worker (agent/): pending event + WhatsApp notice to Briza. Her number never reaches the site.
+const AGENT = process.env.NEXT_PUBLIC_AGENT_URL
 
 type Answers = {
   idea: string; detail: string
   zone: string; size: string
   when: string
   name: string
+  phone: string
+  slotStart: string
+  deposit: boolean
 }
 
-const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '' }
+const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '', phone: '', slotStart: '', deposit: false }
 
 const IDEAS = ['Un flash del cuaderno', 'Un diseño propio', 'Todavía no sé']
 const ZONES = ['Brazo', 'Antebrazo', 'Pierna', 'Costilla', 'Espalda', 'Otra zona']
@@ -31,6 +35,7 @@ function buildMessage(a: Answers) {
     `• Tamaño: ${a.size}`,
     /a las/.test(a.when) ? `• Turno: ${a.when} (¿me lo confirmás?)` : `• Cuándo: ${a.when}`,
     '',
+    'Acepto la seña del 40% para reservar.',
     'Te mando referencias por acá.',
   ].join('\n')
 }
@@ -74,17 +79,19 @@ const label: React.CSSProperties = { fontSize: '0.72rem', letterSpacing: '0.16em
 export default function Contact() {
   const [step, setStep] = useState(0)
   const [a, setA] = useState<Answers>(EMPTY)
-  const [done, setDone] = useState<null | 'whatsapp' | 'instagram'>(null)
+  const [done, setDone] = useState<null | 'sent' | 'instagram'>(null)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [copied, setCopied] = useState(false)
   const [flashes, setFlashes] = useState<string[]>([])
   const nameRef = useRef<HTMLInputElement>(null)
-  const set = (k: keyof Answers) => (v: string) => setA(p => ({ ...p, [k]: v }))
+  const set = (k: 'idea' | 'detail' | 'zone' | 'size' | 'when' | 'name' | 'phone') => (v: string) => setA(p => ({ ...p, [k]: v, ...(k === 'when' ? { slotStart: '' } : {}) }))
 
   const ready = [
     !!a.idea,
     !!a.zone && !!a.size,
     !!a.when,
-    a.name.trim().length > 1,
+    a.name.trim().length > 1 && a.phone.replace(/\D/g, '').length >= 8 && a.deposit,
   ][step]
 
   useEffect(() => {
@@ -109,16 +116,30 @@ export default function Contact() {
     return () => { window.removeEventListener('book:flash', onPick); window.removeEventListener('book:idea', onIdea) }
   }, [])
 
-  const send = async (via: 'whatsapp' | 'instagram') => {
+  const send = async (via: 'sent' | 'instagram') => {
     const msg = buildMessage(a)
-    if (via === 'whatsapp') {
-      window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener')
-    } else {
-      // Instagram DMs can't be pre-filled, so the message goes to the clipboard first
-      try { await navigator.clipboard.writeText(msg); setCopied(true) } catch { setCopied(false) }
-      window.open(`https://ig.me/m/${INSTAGRAM}`, '_blank', 'noopener')
+    if (via === 'sent' && AGENT) {
+      setSending(true); setSendError('')
+      try {
+        const res = await fetch(`${AGENT}/request`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking: {
+            name: a.name.trim(), contact: a.phone, idea: `${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}`,
+            zone: a.zone, size: a.size, slot: a.when, slot_start: a.slotStart, notes: '', deposit_ok: a.deposit,
+          } }),
+        })
+        const out = await res.json() as { ok: boolean; error?: string }
+        if (!out.ok) throw new Error(out.error || 'No se pudo enviar')
+        setDone('sent')
+      } catch (e) {
+        setSendError((e as Error).message || 'No se pudo enviar. Probá por Instagram.')
+      } finally { setSending(false) }
+      return
     }
-    setDone(via)
+    // Instagram DMs can't be pre-filled, so the message goes to the clipboard first
+    try { await navigator.clipboard.writeText(msg); setCopied(true) } catch { setCopied(false) }
+    window.open(`https://ig.me/m/${INSTAGRAM}`, '_blank', 'noopener')
+    setDone('instagram')
   }
 
   const next = () => { if (ready && step < 3) setStep(s => s + 1) }
@@ -138,7 +159,7 @@ export default function Contact() {
         {/* Left: title, progress and a live ticket of what will be sent */}
         <div className="bk-left">
           <h2 className="bk-title">Hagamos <span className="swash">algo tuyo.</span></h2>
-          <p className="bk-lede">Cuatro preguntas rápidas y te abro WhatsApp con todo escrito. Respondo en 24–48 h.</p>
+          <p className="bk-lede">Cuatro preguntas rápidas y tu solicitud me llega al instante. Te respondo por WhatsApp en 24–48 h.</p>
 
           {!done && (
             <div className="bk-progress" aria-label={`Paso ${step + 1} de 4`}>
@@ -162,26 +183,26 @@ export default function Contact() {
                 <span className="bk-v">{v || '—'}</span>
               </button>
             ))}
-            <p className="bk-ticket-foot">Palermo, CABA · Se confirma por WhatsApp</p>
+            <p className="bk-ticket-foot">Palermo, CABA · Seña del 40% para reservar</p>
           </div>
 
-          <p className="bk-alt">¿Preferís escribir directo? <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener">WhatsApp ↗</a> · <a href={`https://instagram.com/${INSTAGRAM}`} target="_blank" rel="noopener">@{INSTAGRAM} ↗</a></p>
+          <p className="bk-alt">¿Preferís escribir directo? <a href={`https://instagram.com/${INSTAGRAM}`} target="_blank" rel="noopener">@{INSTAGRAM} ↗</a></p>
         </div>
 
         {/* Right: one question at a time */}
         <div style={{ minHeight: '26rem' }}>
           {done ? (
             <div key="done" className="book-reveal">
-              <Question n="✦">{done === 'whatsapp' ? 'Listo, se abrió WhatsApp.' : 'Listo, se abrió Instagram.'}</Question>
+              <Question n="✦">{done === 'sent' ? 'Listo, Briza recibió tu solicitud.' : 'Listo, se abrió Instagram.'}</Question>
               <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '30rem', marginBottom: '2rem' }}>
-                {done === 'whatsapp'
-                  ? 'Tu mensaje ya está escrito: solo tocá enviar y sumá tus referencias.'
+                {done === 'sent'
+                  ? 'Queda pendiente hasta que Briza la confirme: te escribe a tu WhatsApp en 24–48 h. Para reservar se pide una seña del 40% del total.'
                   : copied
                     ? 'Copié tu mensaje: pegalo en el chat y sumá tus referencias.'
                     : 'Escribime en el chat con tu idea, zona, tamaño y cuándo te gustaría.'}
               </p>
               <div style={{ display: 'flex', gap: '1.2rem', flexWrap: 'wrap' }}>
-                <button type="button" className="book-link" data-hover onClick={() => send(done)}>Abrir de nuevo ↗</button>
+                {done === 'instagram' && <button type="button" className="book-link" data-hover onClick={() => send('instagram')}>Abrir de nuevo ↗</button>}
                 <button type="button" className="book-link" data-hover onClick={() => { setDone(null); setStep(0); setA(EMPTY) }}>Empezar otra consulta</button>
               </div>
             </div>
@@ -232,7 +253,7 @@ export default function Contact() {
               {step === 2 && (
                 <>
                   <Question n="03">Elegí tu turno</Question>
-                  <BookingCalendar value={a.when} onPick={set('when')} />
+                  <BookingCalendar value={a.when} onPick={(label, start) => setA(p => ({ ...p, when: label, slotStart: start }))} />
                   <p style={{ ...label, marginTop: '1.8rem' }}>¿Ninguno te sirve? Decime cuándo</p>
                   <div className="book-chips">
                     {WHEN.map(o => <Chip key={o} label={o} on={a.when === o} onClick={() => set('when')(o)} />)}
@@ -244,11 +265,17 @@ export default function Contact() {
                 <>
                   <Question n="04">¿Cómo te llamás?</Question>
                   <input ref={nameRef} className="book-input" value={a.name} onChange={e => set('name')(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" />
-                  <p style={{ ...label, marginTop: '2.4rem' }}>Enviar por</p>
-                  <div className="book-chips">
-                    <button type="button" className="book-send" data-hover disabled={!ready} onClick={() => send('whatsapp')}>WhatsApp ↗</button>
-                    <button type="button" className="book-send ghost" data-hover disabled={!ready} onClick={() => send('instagram')}>Instagram ↗</button>
+                  <p style={{ ...label, marginTop: '2rem' }}>Tu WhatsApp (para confirmarte el turno)</p>
+                  <input className="book-input" type="tel" inputMode="tel" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="11 1234 5678" autoComplete="tel" />
+                  <label className="book-deposit">
+                    <input type="checkbox" checked={a.deposit} onChange={e => setA(p => ({ ...p, deposit: e.target.checked }))} />
+                    <span>Entiendo que el turno se reserva con una <b>seña de al menos el 40%</b> del costo total.</span>
+                  </label>
+                  <div className="book-chips" style={{ marginTop: '1.6rem' }}>
+                    {AGENT && <button type="button" className="book-send" data-hover disabled={!ready || sending} onClick={() => send('sent')}>{sending ? 'Enviando…' : 'Enviar solicitud ●'}</button>}
+                    <button type="button" className={`book-send ${AGENT ? 'ghost' : ''}`} data-hover disabled={!ready} onClick={() => send('instagram')}>Por Instagram ↗</button>
                   </div>
+                  {sendError && <p className="book-error">{sendError}</p>}
                 </>
               )}
 

@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # Only the site may call the agent
 ALLOWED_ORIGIN = "https://pabloxesteban.github.io"
-WHATSAPP = "5491156233929"
+PUBLIC_URL = "https://briza-agent.CAMBIAR.workers.dev" # URL of this worker after the first deploy
 
 # Secrets (set with `npx wrangler secret put NAME`):
 #   ANTHROPIC_API_KEY  - Claude API key
@@ -14,3 +14,11 @@ WHATSAPP = "5491156233929"
 #   GCAL_KEY           - Google API key restricted to the Calendar API
 #   GCAL_PENDING_ID    - Briza's PRIVATE "Solicitudes" calendar (booking requests land here as Pendiente)
 #   GOOGLE_SA_JSON     - service-account key JSON with "Make changes to events" on that calendar
+#   BRIZA_PHONE        - Briza's WhatsApp with country code, e.g. 54911... (never in the repo or the site)
+#   CALLMEBOT_KEY      - CallMeBot API key for WhatsApp notices to Briza
+#   DECIDE_SECRET      - any long random string; signs the Aceptar / Rechazar links
+
+# Per-visitor limits (create with `npx wrangler kv namespace create RATE` and paste the id)
+[[kv_namespaces]]
+binding = "RATE"
+id = "CAMBIAR"

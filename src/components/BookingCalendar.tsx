@@ -13,7 +13,7 @@ export const slotLabel = (s: Date) =>
   `${DAYS[s.getDay()]} ${s.getDate()}/${s.getMonth() + 1} a las ${hhmm(s)}`
 
 // Month view of Briza's open slots (from her Google Calendar). Pick a day, then a time.
-export default function BookingCalendar({ value, onPick }: { value: string; onPick: (label: string) => void }) {
+export default function BookingCalendar({ value, onPick }: { value: string; onPick: (label: string, startISO: string) => void }) {
   const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
   const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [slots, setSlots] = useState<Slot[] | null>(null)
@@ -78,7 +78,7 @@ export default function BookingCalendar({ value, onPick }: { value: string; onPi
 
       {slots === null && <p className="cal-note">Cargando turnos…</p>}
       {slots !== null && !slots.length && (
-        <p className="cal-note">{error ? 'No pude cargar el calendario ahora.' : 'Por ahora no hay turnos publicados.'} Elegí abajo cuándo te gustaría y lo coordinamos por WhatsApp.</p>
+        <p className="cal-note">{error ? 'No pude cargar el calendario ahora.' : 'Por ahora no hay turnos publicados.'} Elegí abajo cuándo te gustaría y Briza te propone una fecha.</p>
       )}
 
       {day && (
@@ -89,7 +89,7 @@ export default function BookingCalendar({ value, onPick }: { value: string; onPi
               const label = slotLabel(s.start)
               return (
                 <button key={s.start.toISOString()} type="button" aria-pressed={value === label}
-                  className={`cal-time ${value === label ? 'on' : ''}`} onClick={() => onPick(label)}>{hhmm(s.start)}</button>
+                  className={`cal-time ${value === label ? 'on' : ''}`} onClick={() => onPick(label, s.start.toISOString())}>{hhmm(s.start)}</button>
               )
             })}
           </div>
@@ -97,7 +97,7 @@ export default function BookingCalendar({ value, onPick }: { value: string; onPi
       )}
 
       {value && byDay.size > 0 && /a las/.test(value) && (
-        <p className="cal-picked">✦ Elegiste <b>{value}</b>. Briza te lo confirma por WhatsApp.</p>
+        <p className="cal-picked">✦ Elegiste <b>{value}</b>. Queda pendiente hasta que Briza lo confirme.</p>
       )}
     </div>
   )

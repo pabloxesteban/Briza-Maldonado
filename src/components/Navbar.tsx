@@ -81,8 +81,14 @@ export default function Navbar() {
   }, [])
 
   const isSubPage = pathname !== '/'
-  // The booking button that follows you around goes straight to WhatsApp: one tap, no form
-  const quickWA = `https://wa.me/5491156233929?text=${encodeURIComponent('Hola Bri! Quiero pedir un turno ✦')}`
+  // The booking button that follows you around opens the assistant (fastest way to a booking);
+  // without it, it goes to the booking form. Briza's number never appears on the site.
+  const hasAgent = Boolean(process.env.NEXT_PUBLIC_AGENT_URL)
+  const bookHref = pathname === '/' ? '#turno' : '/#turno'
+  const quickBook = (e: React.MouseEvent) => {
+    setMenuOpen(false)
+    if (hasAgent) { e.preventDefault(); window.dispatchEvent(new Event('assistant:open')) }
+  }
   const show = isSubPage || visible
 
   return (
@@ -129,8 +135,7 @@ export default function Navbar() {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.6rem', zIndex: 1 }}>
-          <a href={quickWA} target="_blank" rel="noopener" className="cta-book nav-desktop" data-cursor="book"
-            onClick={() => setMenuOpen(false)} aria-label="Pedir turno por WhatsApp">Pedir turno <span className="wa-dot" aria-hidden>↗</span></a>
+          <a href={bookHref} className="cta-book nav-desktop" data-cursor="book" onClick={quickBook}>Pedir turno ●</a>
           <button className="nav-toggle" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} data-hover>
             <span>{menuOpen ? 'Cerrar' : 'Menu'}</span><i />
@@ -156,18 +161,17 @@ export default function Navbar() {
           })}
           <div className="menu-social">
             <a href="https://instagram.com/bri.t4tts" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://wa.me/5491156233929" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
         </div>
         <div className="menu-photo duo">
           <Image key={hoverPic ?? menuPic} src={hoverPic ?? menuPic} alt="" fill sizes="50vw" className="menu-pic" style={{ objectFit: 'cover' }} />
-          <p className="menu-place">Palermo, Buenos Aires · Turnos por WhatsApp</p>
+          <p className="menu-place">Palermo, Buenos Aires · Turnos online</p>
         </div>
       </div>
 
       {/* Mobile: booking always one thumb away */}
       <div className={`cta-dock ${bookingInView || footerIn || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
-        <a href={quickWA} target="_blank" rel="noopener" className="cta-book" aria-label="Pedir turno por WhatsApp">Pedir turno por WhatsApp ↗</a>
+        <a href={bookHref} className="cta-book" onClick={quickBook}>Pedir turno ●</a>
       </div>
     </>
   )

@@ -9,7 +9,7 @@ const URL_ = process.env.NEXT_PUBLIC_AGENT_URL
 
 type Block = { type: string; text?: string }
 type Msg = { role: 'user' | 'assistant'; content: string | Block[] }
-type Action = { whatsapp_url: string; summary: string }
+type Action = { summary: string }
 
 const SUGGEST = ['¿Qué turnos tenés libres?', '¿Qué flashes hay disponibles?', 'Quiero un diseño propio']
 
@@ -26,6 +26,13 @@ export default function Assistant() {
   const list = useRef<HTMLDivElement>(null)
 
   useEffect(() => { list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' }) }, [history, busy, action])
+  // "Pedir turno" anywhere on the page opens the assistant
+  useEffect(() => {
+    const o = () => setOpen(true)
+    window.addEventListener('assistant:open', o)
+    return () => window.removeEventListener('assistant:open', o)
+  }, [])
+
   useEffect(() => {
     if (!open) return
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
@@ -42,14 +49,15 @@ export default function Assistant() {
     setHistory(next); setInput(''); setBusy(true); setError('')
     try {
       const res = await fetch(URL_, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: next }) })
-      if (!res.ok) throw new Error(String(res.status))
-      const data = await res.json() as { messages: Msg[]; reply: string; action?: Action }
+      const data = await res.json() as { messages?: Msg[]; reply: string; action?: Action; error?: string }
+      if (data.error === 'limit') { setHistory(history); setError(data.reply); return }
+      if (!res.ok || !data.messages) throw new Error(String(res.status))
       setHistory(data.messages)
       if (data.action) setAction(data.action)
     } catch {
       setHistory(history) // drop the unsent turn so it can be retried
       setInput(t)
-      setError('No pude responder ahora. Probá de nuevo o escribile a Briza por WhatsApp.')
+      setError('No pude responder ahora. Probá de nuevo en un rato o escribí por Instagram @bri.t4tts.')
     } finally { setBusy(false) }
   }
 
@@ -71,21 +79,20 @@ export default function Assistant() {
           <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} />
           <div>
             <p className="ai-name">Asistente de Briza</p>
-            <p className="ai-sub">Te ayudo a elegir turno · Briza lo confirma</p>
+            <p className="ai-sub">Reservo tu turno · Briza lo confirma</p>
           </div>
           <button type="button" className="ai-x" onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
         </header>
 
         <div ref={list} className="ai-list" aria-live="polite">
-          <p className="ai-msg bot">¡Hola! Soy la asistente de Briza. Puedo contarte qué flashes hay, mostrarte turnos libres y armarte la solicitud para que Briza la confirme por WhatsApp. ¿En qué te ayudo?</p>
+          <p className="ai-msg bot">¡Hola! Soy la asistente de Briza. Puedo contarte qué flashes hay, mostrarte turnos libres y reservarte uno (Briza lo confirma). ¿En qué te ayudo?</p>
           {bubbles.map((b, i) => <p key={i} className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>{b.text}</p>)}
           {busy && <p className="ai-msg bot ai-typing" aria-label="Escribiendo"><i /><i /><i /></p>}
           {action && (
             <div className="ai-action">
-              <p className="ai-action-lbl">Tu solicitud</p>
+              <p className="ai-action-lbl">✓ Solicitud enviada</p>
               <pre>{action.summary}</pre>
-              <a href={action.whatsapp_url} target="_blank" rel="noopener" className="cta-book ai-wa">Enviar a Briza por WhatsApp ↗</a>
-              <p className="ai-note">Queda pendiente hasta que Briza la confirme.</p>
+              <p className="ai-note">Queda pendiente hasta que Briza la confirme. Te escribe a tu WhatsApp en 24–48 h. Para reservar se pide una seña del 40%.</p>
             </div>
           )}
           {error && <p className="ai-err">{error}</p>}
