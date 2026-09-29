@@ -43,7 +43,7 @@ export default function Hero() {
       if (cur !== last) {
         last = cur
         if (word.current) word.current.style.transform = `translate3d(0, ${cur * 18}vh, 0)`
-        if (fig.current) fig.current.style.transform = `translate3d(-50%, ${cur * -6}vh, 0) scale(${1 + cur * 0.05})`
+        if (fig.current) fig.current.style.transform = `translate3d(-50%, ${cur * -6}vh, 0) scale(${1 - cur * 0.04})`
         root.style.setProperty('--hero-p', cur.toFixed(4))
       }
       raf = requestAnimationFrame(tick)
@@ -68,7 +68,7 @@ export default function Hero() {
       </div>
 
       <div ref={fig} className="v-figure">
-        <Image src={P + 'briza-hero.png'} alt="Briza Maldonado en su estudio" fill priority sizes="(max-width: 767px) 60vw, 30vw" style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
+        <Image src={P + 'briza-tatuando.jpg'} alt="Briza Maldonado tatuando en su estudio" fill priority sizes="(max-width: 767px) 80vw, 36vw" style={{ objectFit: 'cover', objectPosition: '50% 30%' }} />
       </div>
 
       <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>
