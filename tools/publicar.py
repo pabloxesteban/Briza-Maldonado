@@ -115,6 +115,17 @@ def cut_flash(path, slug):
     out = np.zeros((*alpha2.shape, 4), 'uint8'); out[..., 0], out[..., 1], out[..., 2], out[..., 3] = 26, 22, 32, alpha2
     ink_im = Image.fromarray(out)
     ink_im.crop(ink_im.getbbox()).save(os.path.join(PUB, 'flash', 'ink', f'{slug}.png'), optimize=True)
+    # Neon dots like the stickers Briza uses: 3-4 points on the cut-out's edge, spread around it
+    h, w = border.shape
+    edge = border & ~ndimage.binary_erosion(border, iterations=6)
+    ys, xs = np.where(edge)
+    cy, cx = ys.mean(), xs.mean()
+    angles = np.arctan2(ys - cy, xs - cx)
+    dots = []
+    for target in (-2.4, -0.3, 1.2, 2.6)[: 4 if w * h > 250000 else 3]:
+        k = int(np.argmin(np.abs(np.angle(np.exp(1j * (angles - target))))))
+        dots.append([round(float(xs[k]) / w, 3), round(float(ys[k]) / h, 3)])
+    return round(float(h) / w, 3), dots
 
 
 def flash(path):
@@ -124,10 +135,10 @@ def flash(path):
         print(f'  ✗ {os.path.basename(path)}: el nombre tiene que ser "Nombre - cm - precio"'); return False
     title, cm, price = parts[0], re.sub(r'\D', '', parts[1]), re.sub(r'\D', '', parts[2])
     slug = slugify(title)
-    cut_flash(path, slug)
+    aspect, dots = cut_flash(path, slug)
     esc = title.replace("'", "\\'")
     insert_into_array(os.path.join(ROOT, 'src', 'components', 'Flash.tsx'), 'const FLASHES: FlashDef[] = [',
-                      f"  {{ slug: '{slug}', name: '{esc}', price: '{ars(price)}', cm: {int(cm or 0)}, available: true }},")
+                      f"  {{ slug: '{slug}', name: '{esc}', price: '{ars(price)}', cm: {int(cm or 0)}, available: true, aspect: {aspect}, dots: {dots} }},")
     insert_into_array(os.path.join(ROOT, 'agent', 'src', 'flashes.ts'), 'export const FALLBACK: Flash[] = [',
                       f"  {{ name: '{esc}', cm: {int(cm or 0)}, price: '{ars(price)}', available: true }},")
     print(f'  ✓ Flash: {title} · {cm} cm · {ars(price)}   → revisá public/flash/{slug}.png')

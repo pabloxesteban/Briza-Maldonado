@@ -1857,3 +1857,12 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
   .fl { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
 }
 .nb-stamp.res { border-color: #2a2626; color: #2a2626; }
+/* Flashes as cut-out paper stuck on the page with neon dots, like Briza's real notebook */
+.nb-art { background: none !important; box-shadow: none !important; display: grid; place-items: center; touch-action: pan-y; -webkit-user-drag: none; }
+.nb-cut { position: relative; display: block; max-width: 92%; max-height: 92%; filter: drop-shadow(0 .4px .5px rgba(40,30,20,.35)) drop-shadow(0 1.5px 2px rgba(60,50,30,.12)); transition: transform .4s var(--ease), filter .4s var(--ease); }
+.nb-cut img { filter: contrast(1.1) saturate(.85) brightness(1.03); }
+.nb-art:hover .nb-cut { filter: drop-shadow(0 .5px .4px rgba(40,30,20,.3)) drop-shadow(.5px 4px 5px rgba(60,50,30,.16)); }
+.nb-dot { position: absolute; z-index: 2; width: clamp(9px, 7%, 14px); aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 45% 40%, #7dff5e 0%, #5ef040 60%, #4fdc32 100%); box-shadow: 0 .4px .6px rgba(0,40,0,.35), 0 0 0 .5px rgba(40,160,20,.35); }
+.nb-item.taken .nb-art { opacity: 1 !important; filter: none !important; }
+.nb-item.taken .nb-cut { filter: grayscale(1) opacity(.55); }

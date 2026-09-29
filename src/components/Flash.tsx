@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
-type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean; status?: 'reservado' | 'tatuado' }
+// aspect = height / width of the cut-out; dots = neon sticker dots (fractions of the cut-out box), like Briza's notebook
+type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean; status?: 'reservado' | 'tatuado'; aspect?: number; dots?: number[][] }
 
 const BASE = '/Briza-Maldonado/flash/'
 const FLASHES: FlashDef[] = [
-  { slug: 'mariposa-daga', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true },
-  { slug: 'frutilla', name: 'Frutilla', price: '$40.000', cm: 5, available: true },
-  { slug: 'corazon-vegan', name: 'Corazón vegan', price: '$55.000', cm: 7, available: true },
-  { slug: 'gorrion', name: 'Gorrión', price: '$60.000', cm: 9, available: false },
-  { slug: 'flor-hojas', name: 'Flor con hojas', price: '$45.000', cm: 6, available: true },
-  { slug: 'cerdo-cabra', name: 'Cerdo & cabra', price: '$65.000', cm: 9, available: true },
-  { slug: 'rosa-alambre-flash', name: 'Rosa con alambre', price: '$50.000', cm: 8, available: true },
+  { slug: 'mariposa-daga', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]] },
+  { slug: 'frutilla', name: 'Frutilla', price: '$40.000', cm: 5, available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]] },
+  { slug: 'corazon-vegan', name: 'Corazón vegan', price: '$55.000', cm: 7, available: true, aspect: 0.816, dots: [[0.95, 0.568], [0.627, 0.897], [0.037, 0.316], [0.622, 0.037]] },
+  { slug: 'gorrion', name: 'Gorrión', price: '$60.000', cm: 9, available: false, aspect: 1.167, dots: [[0.943, 0.133], [0.731, 0.73], [0.049, 0.731], [0.435, 0.101]] },
+  { slug: 'flor-hojas', name: 'Flor con hojas', price: '$45.000', cm: 6, available: true, aspect: 1.161, dots: [[0.925, 0.16], [0.339, 0.921], [0.075, 0.06]] },
+  { slug: 'cerdo-cabra', name: 'Cerdo & cabra', price: '$65.000', cm: 9, available: true, aspect: 0.95, dots: [[0.947, 0.283], [0.541, 0.939], [0.039, 0.6], [0.485, 0.043]] },
+  { slug: 'rosa-alambre-flash', name: 'Rosa con alambre', price: '$50.000', cm: 8, available: true, aspect: 1.003, dots: [[0.944, 0.122], [0.654, 0.686], [0.051, 0.703], [0.405, 0.31]] },
 ]
 const img = (f: FlashDef) => `${BASE}${f.slug}.png`
 
@@ -54,6 +55,8 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
     setTimeout(() => setFlip(null), 900)
   }
   const touch = useRef<{ x: number; y: number } | null>(null)
+  const [canDrag, setCanDrag] = useState(false)
+  useEffect(() => { setCanDrag(window.matchMedia('(hover: hover) and (pointer: fine)').matches) }, [])
   const sheet = (pg: number) => (
     <div className="nb-sheet">
         <header className="nb-head">
@@ -64,10 +67,13 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
         <ul className="nb-grid">
           {FLASHES.map((f, i) => ({ f, i })).slice(pg * PER, pg * PER + PER).map(({ f, i }) => (
             <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
-              <div className="nb-art" draggable={f.available}
+              <div className="nb-art" draggable={f.available && canDrag}
                 onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
                 title={f.available ? 'Arrastralo a tu foto' : undefined}>
-                <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
+                <span className="nb-cut" style={{ aspectRatio: `1 / ${f.aspect ?? 1}`, ...((f.aspect ?? 1) >= 1 ? { height: '92%' } : { width: '92%' }), transform: `rotate(${[-4, 3, -2, 5, -5, 2, 4][i % 7]}deg)` }}>
+                  <Image src={`${BASE}${f.slug}-paper.png`} alt={f.name} fill sizes="200px" style={{ objectFit: 'contain' }} draggable={false} />
+                  {(f.dots ?? []).map(([x, y], k) => <i key={k} className="nb-dot" style={{ left: `${x * 100}%`, top: `${y * 100}%`, transform: `translate(-50%, -50%) rotate(${k * 47}deg)` }} />)}
+                </span>
                 {!f.available && <span className={`nb-stamp ${f.status === 'reservado' ? 'res' : ''}`}>{f.status === 'reservado' ? 'Reservado' : 'Tatuado'}</span>}
               </div>
               <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
