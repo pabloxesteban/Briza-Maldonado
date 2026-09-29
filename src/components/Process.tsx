@@ -5,13 +5,12 @@ import Image from 'next/image'
 
 const STAGES = [
   { n: '01', t: 'La idea', d: 'Me contás qué querés: referencias, zona y tamaño. Lo anoto todo en el cuaderno.' },
-  { n: '02', t: 'El dibujo', d: 'Lo diseño en el iPad, con línea firme y sombra de traditional.' },
-  { n: '03', t: 'El stencil', d: 'El diseño pasa a stencil violeta y lo probamos sobre tu piel hasta que quede perfecto.' },
+  { n: '02', t: 'El boceto', d: 'Lo dibujo en el iPad, línea por línea, hasta que el diseño es tuyo.' },
+  { n: '03', t: 'El stencil', d: 'Imprimo el diseño en stencil, lo recorto y lo probamos sobre tu piel hasta que quede perfecto.' },
   { n: '04', t: 'La piel', d: 'Aguja, tinta y pulso. Del papel a la piel, una sola vez.' },
 ]
 
-const DRAWING = '/Briza-Maldonado/flash/rosa-alambre-flash-paper.png'
-const TATTOO = '/Briza-Maldonado/portfolio/rosa-alambre.jpg'
+const V = '/Briza-Maldonado/proceso/'
 const ZZ = [{ x: 34, y: 8 }, { x: 64, y: 36 }, { x: 34, y: 64 }, { x: 64, y: 92 }]
 // Hand-drawn S-stroke through the steps, like a line pulled with the machine
 const INK_PATH = 'M34,8 C33,21 63,19 64,36 C65,53 35,47 34,64 C33,81 63,75 64,92'
@@ -45,10 +44,9 @@ export default function Process() {
   // Each stage owns a quarter of the scroll; local progress drives its transition
   const seg = (i: number) => clamp((p - i / 4) * 4)
   const active = Math.min(3, Math.floor(p * 4 + 0.0001))
-  const draw = still ? 1 : seg(1)       // pen reveals the drawing
-  const stencil = still ? 0 : seg(2)    // drawing turns violet
-  const skin = still ? 0 : seg(3)       // tattoo spreads from the centre
-  const note = still ? 0 : 1 - clamp(seg(1) * 2)
+  // Crossfade each stage in over the first fifth of its scroll span (a soft dissolve, never a cut)
+  const fade = (i: number) => clamp(seg(i) * 5)
+  const note = still ? 0 : 1 - fade(1)
 
   const ink = still ? 1 : Math.min(1, p * 1.12)
   useEffect(() => {
@@ -71,15 +69,12 @@ export default function Process() {
           <div className="process-frame" aria-hidden>
             <div className="process-paper" />
             <p className="process-note" style={{ opacity: note, transform: `translateY(${(1 - note) * -10}px)` }}>
-              rosa + alambre de púas<br />antebrazo · 8 cm<br />traditional, sombra negra ✶
+              chica hawaiana ✶<br />pierna · 12 cm<br />traditional, línea negra
             </p>
-            <div className="process-art" style={{ clipPath: `inset(0 ${100 - draw * 100}% 0 0)` }}>
-              <Image src={DRAWING} alt="" fill sizes="(max-width: 860px) 80vw, 40vw" style={{ objectFit: 'contain', opacity: 1 - stencil }} />
-              <Image src={DRAWING} alt="" fill sizes="(max-width: 860px) 80vw, 40vw" className="process-stencil" style={{ objectFit: 'contain', opacity: stencil }} />
-            </div>
-            <div className="process-skin" style={{ clipPath: `circle(${skin * 75}% at 50% 50%)` }}>
-              <Image src={TATTOO} alt="Rosa con alambre tatuada en el brazo" fill sizes="(max-width: 860px) 80vw, 40vw" style={{ objectFit: 'cover', transform: `scale(${1.12 - skin * 0.12})` }} />
-            </div>
+            {/* Real footage of one piece: sketch on the iPad, then the design on the skin */}
+            <StageVideo src={V + 'boceto.mp4'} poster={V + 'boceto-poster.jpg'} on={still || active === 1} show={still ? 0 : fade(1)} />
+            <StageVideo src={V + 'stencil.mp4'} poster={V + 'stencil-poster.jpg'} on={active === 2} show={still ? 0 : fade(2)} />
+            <StageVideo src={V + 'piel.mp4'} poster={V + 'piel-poster.jpg'} on={still || active === 3} show={still ? 1 : fade(3)} />
           </div>
 
           {/* Words for the current stage */}
@@ -113,5 +108,19 @@ export default function Process() {
         </div>
       </div>
     </section>
+  )
+}
+
+function StageVideo({ src, poster, on, show }: { src: string; poster: string; on: boolean; show: number }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+    if (on) { v.currentTime = 0; v.play().catch(() => {}) } else v.pause()
+  }, [on])
+  return (
+    <div className="process-media" style={{ opacity: show }}>
+      <video ref={ref} src={src} poster={poster} muted loop playsInline preload="metadata" />
+    </div>
   )
 }

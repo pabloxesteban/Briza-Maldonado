@@ -856,3 +856,6 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
   .tt-sticker { width: 26vw; left: auto; right: 6vw; bottom: 3vw; }
 }
 @media (prefers-reduced-motion: reduce) { .tt-line > span, .tt-reveal, .tt-photo, .tt-sticker { opacity: 1 !important; transform: none !important; transition: none; } }
+
+.process-media { position: absolute; inset: 0; transition: opacity .5s var(--ease); will-change: opacity; }
+.process-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
