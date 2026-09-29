@@ -14,6 +14,23 @@ const links = [
   { label: 'Turno',    hash: '#turno',   pic: '/Briza-Maldonado/briza-tatuando.jpg' },
 ]
 
+// Is the page dark at this point of the screen? Walks up from the element there to the first painted
+// background; photos and video count as dark (they sit under light text on this site).
+function isDarkAt(x: number, y: number) {
+  let el = document.elementFromPoint(x, y) as HTMLElement | null
+  while (el && el !== document.documentElement) {
+    if (el.tagName === 'VIDEO' || el.tagName === 'IMG' && el.closest('.hero, .t-media, .process-frame, .st')) return true
+    const bg = getComputedStyle(el).backgroundColor
+    const m = bg.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/)
+    if (m && (m[4] === undefined || Number(m[4]) > 0.4)) {
+      const [r, g, b] = [m[1], m[2], m[3]].map(Number)
+      return 0.299 * r + 0.587 * g + 0.114 * b < 140
+    }
+    el = el.parentElement
+  }
+  return false
+}
+
 export default function Navbar() {
   const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -96,7 +113,7 @@ export default function Navbar() {
   // The bar eases in as you start scrolling (0 → 1 over the first ~220px), never all at once
   const navRef = useRef<HTMLElement>(null)
   useEffect(() => {
-    let raf = 0, cur = isSubPage ? 1 : 0
+    let raf = 0, cur = isSubPage ? 1 : 0, frame = 0
     const tick = () => {
       const target = isSubPage || menuOpenRef.current ? 1 : Math.min(1, Math.max(0, (window.scrollY - 40) / 220))
       cur += (target - cur) * 0.09
@@ -104,7 +121,16 @@ export default function Navbar() {
       navRef.current?.style.setProperty('--np', cur.toFixed(3))
       navRef.current?.classList.toggle('on', true)
       // Over the dark hero, before the background fills in, the bar keeps its light-on-dark look
-      navRef.current?.classList.toggle('dark', !isSubPage && !menuOpenRef.current && cur < 0.5)
+      // No bar: logo and buttons read the colour right behind them and switch to keep contrast
+      if (++frame % 6 === 0 && navRef.current && !menuOpenRef.current) {
+        const nav = navRef.current
+        nav.style.visibility = 'hidden'
+        const y = nav.offsetHeight / 2
+        const dark = [window.innerWidth * 0.12, window.innerWidth * 0.88].filter(x => isDarkAt(x, y)).length > 0
+        nav.style.visibility = ''
+        nav.classList.toggle('dark', dark)
+      }
+      if (menuOpenRef.current) navRef.current?.classList.remove('dark')
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)

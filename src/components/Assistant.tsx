@@ -182,7 +182,7 @@ export default function Assistant() {
       const r = el.getBoundingClientRect()
       const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2)
       const d = Math.hypot(dx, dy)
-      const k = d < 220 ? (1 - d / 220) * 0.35 : 0
+      const k = 0 // no magnetic pull: kept calm
       el.style.setProperty('--mx', `${dx * k}px`); el.style.setProperty('--my', `${dy * k}px`)
     }
     window.addEventListener('pointermove', move, { passive: true })
@@ -286,13 +286,8 @@ export default function Assistant() {
           </div>
         )}
         <button ref={orb} type="button" className="lila-orb" onClick={() => { hideTeaser(); setOpen(true) }} aria-label="Hablar con Lila" data-hover>
-          <svg className="lila-spin" viewBox="0 0 100 100" aria-hidden>
-            <defs><path id="lilaCircle" d="M50,50 m-39,0 a39,39 0 1,1 78,0 a39,39 0 1,1 -78,0" /></defs>
-            <text><textPath href="#lilaCircle">HABLÁ CON LILA ✦ HABLÁ CON LILA ✦ </textPath></text>
-          </svg>
-          <span className="lila-blob" aria-hidden />
+          <span className="lila-cf" aria-hidden />
           <span className="lila-face"><LilaAvatar size={56} /></span>
-          <span className="lila-online" aria-hidden />
         </button>
       </div>
 
@@ -300,8 +295,8 @@ export default function Assistant() {
         <header className="ai-head">
           <LilaAvatar size={40} />
           <div>
-            <p className="ai-name">Lila <span>· asistente de Briza</span></p>
-            <p className="ai-sub">{demo ? 'Modo demo · no se envía nada' : 'Reservo tu turno · Briza lo confirma'}</p>
+            <p className="ai-name">Lila <span className="ai-verified" aria-label="Asistente de Briza">✓</span></p>
+            <p className="ai-sub"><i className="ai-dot" />{demo ? 'Activa ahora · demo' : 'Activa ahora'}</p>
           </div>
           <button type="button" className="ai-x" onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
         </header>
@@ -346,7 +341,7 @@ export default function Assistant() {
             <input type="file" accept="image/*" multiple onChange={e => { attach(e.target.files); e.target.value = '' }} disabled={pics.length >= 3 || uploading} />
             {uploading ? '…' : '📎'}
           </label>
-          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribí tu consulta…" maxLength={1500} aria-label="Tu mensaje" />
+          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Mensaje…" maxLength={1500} aria-label="Tu mensaje" />
           <button type="submit" disabled={busy || uploading || (!input.trim() && !pics.length)} aria-label="Enviar">↑</button>
         </form>
       </div>

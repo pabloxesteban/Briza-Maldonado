@@ -2055,3 +2055,49 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
   .lila-orb .lila-online { right: 22px; bottom: 22px; }
   .lila-bubble { width: 230px; }
 }
+
+/* ─── Nav v4: no bar; logo and buttons switch colours with what's behind them ─── */
+.nav2 { background: transparent !important; box-shadow: none !important; }
+.nav2 .nav-l1, .nav2 .nb2-menu, .nav2 .nb2-book { transition: color .45s var(--ease), background .45s var(--ease), box-shadow .45s var(--ease); }
+.nav2 .nb2-menu { background: rgba(247,241,226,.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: inset 0 0 0 1px rgba(22,20,20,.08); }
+.nav2.dark .nav-l1 { color: var(--cream) !important; }
+.nav2.dark .nav-l2 { color: var(--c-pink) !important; }
+.nav2.dark .nb2-book { background: var(--cream); color: var(--ink); }
+.nav2.dark .nb2-menu { background: rgba(22,20,20,.35); color: var(--cream); box-shadow: inset 0 0 0 1px rgba(247,241,226,.2); }
+
+/* ─── Lila v4: Close Friends ring, calm; chat like a DM ─── */
+.lila-spin, .lila-blob { display: none !important; }
+.lila-orb { width: 76px !important; height: 76px !important; transform: none !important; transition: transform .3s var(--ease) !important; }
+.lila-orb:hover { transform: scale(1.04) !important; }
+.lila-cf { position: absolute; inset: 0; border-radius: 50%; background: #1ec95b; box-shadow: 0 14px 30px -12px rgba(30,201,91,.7); }
+.lila-orb .lila-face { width: 64px !important; height: 64px !important; margin: -32px 0 0 -32px !important; border: 3px solid var(--cream) !important; box-shadow: none !important; }
+.lila-orb::after { content: '★'; position: absolute; right: -2px; bottom: 2px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #1ec95b; color: #fff; font-size: .7rem; border: 2.5px solid var(--cream); }
+@media (max-width: 767px) { .lila-orb { width: 66px !important; height: 66px !important; } .lila-orb .lila-face { width: 55px !important; height: 55px !important; margin: -27.5px 0 0 -27.5px !important; } }
+
+/* Chat panel: Instagram/WhatsApp DM */
+.ai-panel { background: #fff !important; border-radius: 26px !important; box-shadow: 0 40px 90px -30px rgba(22,20,20,.55), 0 0 0 1px rgba(22,20,20,.06) !important; }
+.ai-head { background: #fff !important; color: var(--ink) !important; border-bottom: 1px solid rgba(22,20,20,.08); padding: .8rem 1rem !important; }
+.ai-head .lila-av { box-shadow: 0 0 0 2px #fff, 0 0 0 4.5px #1ec95b !important; width: 40px; height: 40px; }
+.ai-name { font-size: 1.02rem !important; display: flex; align-items: center; gap: .3rem; }
+.ai-verified { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: #3897f0; color: #fff; font-size: .55rem; }
+.ai-sub { display: flex; align-items: center; gap: .35rem; opacity: 1 !important; color: #737373 !important; font-size: .78rem !important; }
+.ai-dot { width: 7px; height: 7px; border-radius: 50%; background: #1ec95b; }
+.ai-x { background: #f2f2f2 !important; color: var(--ink) !important; }
+.ai-list { background: #fff; }
+.ai-msg { font-size: .95rem !important; border-radius: 22px !important; padding: .6rem .95rem !important; box-shadow: none !important; }
+.ai-msg.bot { background: #efefef !important; color: var(--ink); border-bottom-left-radius: 6px !important; }
+.ai-msg.me { background: linear-gradient(135deg, #EE8FB2, #d65c8e 60%, #b546a8) !important; color: #fff !important; border-bottom-right-radius: 6px !important; }
+.ai-row .lila-av { width: 26px; height: 26px; }
+.ai-typing { background: #efefef !important; }
+.ai-suggest button { border-radius: 999px !important; background: #fff !important; border: 1px solid #dbdbdb !important; }
+.ai-form { background: #fff !important; border-top: 0 !important; padding: .6rem .7rem .8rem !important; }
+.ai-form input { background: #f2f2f2; border-radius: 999px; padding: .75rem 1rem !important; }
+.ai-clip { background: none !important; }
+.ai-form button[type=submit] { background: none !important; color: #3897f0 !important; width: auto !important; padding: 0 .4rem; font-weight: 800; font-size: 1.3rem !important; }
+.ai-form button[type=submit]:disabled { opacity: .25; }
+.ai-action { background: #fff7fa !important; border-radius: 18px !important; }
+.lila-bubble { background: #fff !important; color: var(--ink) !important; border-radius: 22px 22px 6px 22px !important; box-shadow: 0 20px 44px -16px rgba(22,20,20,.45), 0 0 0 1px rgba(22,20,20,.06) !important; }
+.lila-bubble-text { font-weight: 700 !important; }
+.lila-chips button { background: #f2f2f2 !important; color: var(--ink) !important; border: 0 !important; }
+.lila-chips button:hover { background: #1ec95b !important; color: #fff !important; }
+.lila-bubble-x { background: var(--ink) !important; color: #fff !important; }
