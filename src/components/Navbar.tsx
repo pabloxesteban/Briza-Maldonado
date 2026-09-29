@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
+import { WORKS } from '@/data/works'
 
 const links = [
   { label: 'Obra',    href: '/obra' },
@@ -15,6 +16,8 @@ export default function Navbar() {
   const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPic, setMenuPic] = useState(WORKS[4].src)
+  useEffect(() => { if (menuOpen) setMenuPic(p => { let n = p; while (n === p) n = WORKS[Math.floor(Math.random() * WORKS.length)].src; return n }) }, [menuOpen])
   const pathname = usePathname()
 
   useEffect(() => {
@@ -126,7 +129,7 @@ export default function Navbar() {
           </div>
         </div>
         <div className="menu-photo duo">
-          <Image src="/Briza-Maldonado/portfolio/daga-serpiente.jpg" alt="" fill sizes="50vw" style={{ objectFit: 'cover' }} />
+          <Image key={menuPic} src={menuPic} alt="" fill sizes="50vw" style={{ objectFit: 'cover' }} />
         </div>
       </div>
 
