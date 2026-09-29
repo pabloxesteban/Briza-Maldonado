@@ -1421,3 +1421,12 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 }
 @media (min-width: 768px) { .co-meter { top: 100px; bottom: auto; } }
 .co-hud { bottom: 6vh; }
+/* Gallery meter: vertical, along the right edge */
+.co-meter { top: 50% !important; bottom: auto !important; right: clamp(10px, 1.6vw, 24px) !important; transform: translateY(-50%); flex-direction: column; gap: .6rem; padding: .9rem .55rem; }
+.co-meter-lbl { writing-mode: vertical-rl; transform: rotate(180deg); display: block !important; font-size: .68rem; }
+.co-meter-track { width: 5px !important; height: clamp(140px, 28vh, 260px); }
+.co-meter-fill { transform: scaleY(0); transform-origin: 50% 0; }
+.co-meter-pct { min-width: 0; font-size: .82rem; }
+.co-meter.done { padding: .9rem .55rem; }
+.co-meter.done .co-meter-pct { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .85rem; }
+@media (max-width: 767px) { .co-meter { right: 4px !important; padding: .6rem .4rem; } .co-meter-track { height: 120px; } .co-meter-lbl { display: none !important; } .co-meter-pct { font-size: .7rem; } }

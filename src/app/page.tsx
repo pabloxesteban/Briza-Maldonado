@@ -33,9 +33,9 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Statement />
+      <Flash />
       <Archive />
       <ImageStrip />
-      <Flash />
       <div className="band" style={{ ['--band' as string]: 'var(--c-blue)' }}><Process /></div>
       <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><Contact /></div>
       <Footer />

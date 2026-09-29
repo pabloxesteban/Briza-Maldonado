@@ -56,7 +56,7 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
           if (p !== last) {
             last = p
             // Progress meter: how much of the gallery is left
-            if (meter.current) meter.current.style.transform = `scaleX(${p})`
+            if (meter.current) meter.current.style.transform = `scaleY(${p})`
             if (pct.current) pct.current.textContent = p > 0.985 ? '¡Listo! Seguí bajando ↓' : `${Math.round(p * 100)}%`
             meterBox.current?.classList.toggle('done', p > 0.985)
             colRefs.current.forEach((col, c) => {
