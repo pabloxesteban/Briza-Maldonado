@@ -83,7 +83,8 @@ export default function Navbar() {
   const isSubPage = pathname !== '/'
   // The booking button that follows you around opens the assistant (fastest way to a booking);
   // without it, it goes to the booking form. Briza's number never appears on the site.
-  const hasAgent = Boolean(process.env.NEXT_PUBLIC_AGENT_URL)
+  const [hasAgent, setHasAgent] = useState(Boolean(process.env.NEXT_PUBLIC_AGENT_URL))
+  useEffect(() => { if (new URLSearchParams(location.search).has('demo')) setHasAgent(true) }, [])
   const bookHref = pathname === '/' ? '#turno' : '/#turno'
   const quickBook = (e: React.MouseEvent) => {
     setMenuOpen(false)
