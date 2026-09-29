@@ -96,8 +96,8 @@ export default function Navbar() {
             zIndex: 1,
           }}
         >
-          <Image src="/Briza-Maldonado/brand/sirena-sticker.png" alt="" width={360} height={474} priority
-            sizes="60px" className="nav-sticker" />
+          <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={400} height={480} priority
+            sizes="56px" className="nav-arch" />
           <span className="nav-lockup"><span className="nav-l1">Briza</span><span className="nav-l2 swash">Maldonado</span></span>
         </Link>
 

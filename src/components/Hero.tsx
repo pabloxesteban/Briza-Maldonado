@@ -3,19 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 
 const V = '/Briza-Maldonado/proceso/'
-const CLIPS = [
-  { src: 'boceto', label: 'El boceto' },
-  { src: 'stencil', label: 'El stencil' },
-  { src: 'piel', label: 'La piel' },
-]
+const CLIP = 'portada'
+const OFFSETS = [0, 1.8, 3.6] // same footage, staggered per column
 
-// Full-bleed process triptych (sketch → stencil → skin) with her name running across it as a band.
-// Phones show one clip at a time, dissolving into the next. Scrolling pushes the band faster.
+// Full-bleed studio footage, tinted to the site's pink/ink duotone, with her name running across it as a band.
+// Desktop splits it into three staggered columns; phones show it once, full screen. Scrolling pushes the band faster.
 export default function Hero() {
   const ref = useRef<HTMLElement>(null)
   const band = useRef<HTMLDivElement>(null)
   const [mobile, setMobile] = useState(false)
-  const [cur, setCur] = useState(0)
 
   useEffect(() => {
     const introPlaying = document.documentElement.dataset.intro === 'playing' ||
@@ -47,13 +43,6 @@ export default function Hero() {
     return () => { clearTimeout(t); cancelAnimationFrame(raf); mq.removeEventListener('change', on) }
   }, [])
 
-  // Phones: cycle the three clips
-  useEffect(() => {
-    if (!mobile) return
-    const id = setInterval(() => setCur(c => (c + 1) % CLIPS.length), 4200)
-    return () => clearInterval(id)
-  }, [mobile])
-
   // Some phones refuse autoplay until a gesture
   useEffect(() => {
     const kick = () => ref.current?.querySelectorAll('video').forEach(v => { if (v.paused) v.play().catch(() => {}) })
@@ -73,13 +62,13 @@ export default function Hero() {
   return (
     <section ref={ref} className="hero hero--t">
       <div className="t-media">
-        {CLIPS.map((c, i) => (
-          <figure key={c.src} className={`t-clip ${mobile && i === cur ? 'on' : ''}`} style={{ ['--i' as string]: i }}>
-            <video muted autoPlay loop playsInline preload="auto" poster={`${V}${c.src}-poster.jpg`} disablePictureInPicture aria-hidden>
-              <source src={`${V}${c.src}.webm`} type="video/webm" />
-              <source src={`${V}${c.src}.mp4`} type="video/mp4" />
+        {(mobile ? [0] : OFFSETS).map((o, i) => (
+          <figure key={i} className="t-clip" style={{ ['--i' as string]: i }}>
+            <video muted autoPlay loop playsInline preload="auto" poster={`${V}${CLIP}-poster.jpg`} disablePictureInPicture aria-hidden
+              onLoadedMetadata={e => { if (o) e.currentTarget.currentTime = o % (e.currentTarget.duration || 5) }}>
+              <source src={`${V}${CLIP}.webm`} type="video/webm" />
+              <source src={`${V}${CLIP}.mp4`} type="video/mp4" />
             </video>
-            <figcaption><span>0{i + 1}</span> {c.label}</figcaption>
           </figure>
         ))}
       </div>

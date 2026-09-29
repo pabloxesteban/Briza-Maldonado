@@ -1012,3 +1012,15 @@ a:hover > .nav-mono { transform: rotate(-6deg); }
 .nav-on-dark .cta-book { background: var(--cream); color: var(--ink); }
 .nav-on-dark .nav-toggle { background: var(--cream); color: var(--ink); }
 .t-cta .cta-book, .nav-on-dark .cta-book { background: var(--cream) !important; color: var(--ink) !important; }
+
+/* Hero footage: pink/ink duotone to match the menu and the rest of the page */
+.t-clip { background: var(--c-pink); }
+.t-clip video { filter: grayscale(1) contrast(1.12) brightness(1.02); mix-blend-mode: multiply; }
+.t-clip::after { background: linear-gradient(to bottom, rgba(22,20,20,.28), rgba(22,20,20,0) 20%, rgba(22,20,20,0) 45%, rgba(22,20,20,.62)) !important; }
+@media (max-width: 767px) { .t-clip { opacity: 1 !important; } }
+.t-band { text-shadow: 0 4px 40px rgba(22,20,20,.35); }
+/* Logo: the mermaid's face and torso in a flash-style arch */
+.nav-arch { width: auto; height: 58px; display: block; transition: transform .5s var(--ease); margin-right: .25rem; }
+a:hover > .nav-arch { transform: rotate(-4deg) translateY(-2px); }
+@media (max-width: 767px) { .nav-arch { height: 50px; } }
+.nav-on-dark .nav-l2 { color: var(--cream); }
