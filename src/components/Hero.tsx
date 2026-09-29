@@ -91,8 +91,8 @@ export default function Hero() {
       <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>
 
       <div className="t-title">
-        <p className="t-swash swash" aria-hidden>Maldonado</p>
         <div ref={word} className="t-fit" aria-hidden><span ref={text} className="t-name">Briza</span></div>
+        <p className="t-swash swash" aria-hidden>Maldonado</p>
         <div className="t-row">
           <p>Tatuadora<br />traditional</p>
           <p>Palermo<br />Buenos Aires</p>

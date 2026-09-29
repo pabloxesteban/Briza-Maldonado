@@ -1069,3 +1069,12 @@ a:hover > .nav-arch { transform: rotate(-4deg) translateY(-2px); }
 .t-clip:nth-child(2) video { object-position: 70% 40%; transform: scaleX(-1) scale(1.25) !important; }
 .t-clip:nth-child(3) video { object-position: 50% 80%; transform: scale(1.12) !important; }
 @media (max-width: 767px) { .t-clip:nth-child(1) video { object-position: 50% 50%; } }
+/* Name v3: BRIZA large but not full-bleed, Maldonado underneath, stepped to the right */
+.t-fit { width: min(74%, 1250px); }
+.t-swash { align-self: flex-start !important; margin: -.34em 0 0 clamp(2.5rem, 16vw, 18rem) !important; font-size: clamp(3.4rem, 10.5vw, 12rem) !important; transform: rotate(-3deg) translateY(20px); }
+.hero--t.in .t-swash { transform: rotate(-3deg) !important; }
+@media (max-width: 767px) {
+  .t-fit { width: 88%; }
+  .t-swash { font-size: 17vw !important; margin-left: 12vw !important; }
+}
+@media (max-width: 767px) { .t-swash { font-size: 15vw !important; margin-left: 8vw !important; } }
