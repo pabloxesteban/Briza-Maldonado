@@ -99,7 +99,7 @@ function Entrance({ mobile }: { mobile: boolean }) {
           ))}
         </div>
         <div ref={title} className="arch-entrance-title" style={{ opacity: 0 }}>
-          <h2><span className="arch-t1">Trabajos</span><span className="arch-t2 swash">tatuados</span></h2>
+          <h2><span className="arch-t1">Diseños</span><span className="arch-t2 swash">tatuados</span></h2>
           <p>Traditional · Black &amp; white · Color</p>
         </div>
       </div>

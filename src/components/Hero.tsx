@@ -31,12 +31,7 @@ export default function Hero() {
       const y = window.scrollY
       boost += (Math.min(40, Math.abs(y - lastY)) - boost) * 0.1
       lastY = y
-      if (!reduce && band.current && y < window.innerHeight * 1.2) {
-        const w = band.current.scrollWidth / 2
-        x = (x + (0.04 + boost * 0.02) * dt) % w
-        band.current.style.transform = `translate3d(${-x}px, 0, 0)`
-        root.style.setProperty('--hero-p', Math.min(1, y / window.innerHeight).toFixed(4))
-      }
+      if (!reduce && y < window.innerHeight * 1.2) root.style.setProperty('--hero-p', Math.min(1, y / window.innerHeight).toFixed(4))
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -50,14 +45,6 @@ export default function Hero() {
     window.addEventListener('touchstart', kick, { passive: true, once: true })
     return () => window.removeEventListener('touchstart', kick)
   }, [mobile])
-
-  const name = (
-    <>
-      <span className="h-name">Briza</span>
-      <span className="h-name h-swash swash">Maldonado</span>
-      <span className="h-star">✦</span>
-    </>
-  )
 
   return (
     <section ref={ref} className="hero hero--t">
@@ -75,13 +62,10 @@ export default function Hero() {
 
       <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>
 
-      <p className="t-meta t-reveal">Tatuadora traditional<br />Palermo, Buenos Aires</p>
-
-      <div className="t-band" aria-hidden>
-        <div ref={band} className="t-band-track">
-          <div className="t-band-set">{name}{name}</div>
-          <div className="t-band-set">{name}{name}</div>
-        </div>
+      <div className="t-title" aria-hidden>
+        <span className="t-name">Briza</span>
+        <span className="t-swash swash">Maldonado</span>
+        <p className="t-sub">Tatuadora traditional <i>✦</i> Palermo, Buenos Aires <i>✦</i> Vegan tattoo artist</p>
       </div>
 
       <div className="t-cta t-reveal">

@@ -1024,3 +1024,25 @@ a:hover > .nav-mono { transform: rotate(-6deg); }
 a:hover > .nav-arch { transform: rotate(-4deg) translateY(-2px); }
 @media (max-width: 767px) { .nav-arch { height: 50px; } }
 .nav-on-dark .nav-l2 { color: var(--cream); }
+
+/* Hero title: static, giant, lockup like the logo */
+.t-title { position: absolute; z-index: 3; left: clamp(12px, 2vw, 28px); right: clamp(12px, 2vw, 28px); bottom: clamp(5rem, 11vh, 7rem); display: flex; flex-direction: column; pointer-events: none; text-shadow: 0 4px 40px rgba(22,20,20,.3); }
+.t-name { font-family: var(--font-grotesk); font-weight: 800; text-transform: uppercase; letter-spacing: -.055em; line-height: .78; font-size: clamp(6rem, 26vw, 30rem); color: var(--cream); margin-left: -.04em;
+  clip-path: inset(0 0 100% 0); transform: translateY(12%); transition: clip-path 1.3s var(--ease), transform 1.3s var(--ease); transition-delay: calc(var(--hero-delay, 0s) + .3s); }
+.t-swash { font-size: clamp(3.6rem, 12vw, 13rem); line-height: .9; color: var(--c-pink); margin: -.28em 0 0 .08em; align-self: flex-start;
+  opacity: 0; transform: translateY(20px); transition: opacity 1s var(--ease), transform 1.2s var(--ease); transition-delay: calc(var(--hero-delay, 0s) + .7s); }
+.t-sub { margin-top: clamp(.6rem, 1.4vw, 1.2rem); font-weight: 700; font-size: clamp(.78rem, 1.1vw, 1rem); letter-spacing: .1em; text-transform: uppercase; color: var(--cream);
+  opacity: 0; transition: opacity 1s var(--ease); transition-delay: calc(var(--hero-delay, 0s) + 1s); }
+.t-sub i { font-style: normal; color: var(--c-pink); margin: 0 .5em; }
+.hero--t.in .t-name { clip-path: inset(-10% 0 -10% 0); transform: none; }
+.hero--t.in .t-swash, .hero--t.in .t-sub { opacity: 1; transform: none; }
+@media (max-width: 767px) {
+  .t-title { bottom: 6.2rem; }
+  .t-name { font-size: 29vw; }
+  .t-swash { font-size: 17vw; }
+  .t-sub { font-size: .66rem; letter-spacing: .08em; line-height: 1.6; }
+}
+@media (prefers-reduced-motion: reduce) { .t-name, .t-swash, .t-sub { clip-path: none !important; opacity: 1 !important; transform: none !important; } }
+
+/* Menu: open the tracking a touch so "rn" never reads as "m" */
+.menu-mask a { letter-spacing: -.015em !important; }
