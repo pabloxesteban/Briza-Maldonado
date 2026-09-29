@@ -49,10 +49,15 @@ export default function Navbar() {
   // The floating booking dock steps aside at the very end of the page
   const [footerIn, setFooterIn] = useState(false)
   useEffect(() => {
-    const el = document.querySelector('footer')
-    if (!el) return
-    const io = new IntersectionObserver(([e]) => setFooterIn(e.isIntersecting), { rootMargin: '0px 0px -92% 0px' })
-    io.observe(el)
+    // Also out of the way over tools that need the bottom of the screen (e.g. the try-on)
+    const els = Array.from(document.querySelectorAll('footer, [data-hide-dock]'))
+    if (!els.length) return
+    const seen = new Set<Element>()
+    const io = new IntersectionObserver(es => {
+      es.forEach(e => (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)))
+      setFooterIn(seen.size > 0)
+    }, { threshold: 0.05 })
+    els.forEach(el => io.observe(el))
     return () => io.disconnect()
   }, [pathname])
 

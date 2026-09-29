@@ -98,15 +98,26 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
   )
 }
 
-// ─── Try it on: upload a photo, drop stencils on it ─────────────────────
+// ─── Try it on: upload a photo, frame it, then drop stencils on it ──────
+// Step 1 "Ajustá tu foto": drag / pinch (or the slider) to frame the zone, then Aplicar.
+// Step 2: add flashes (drag from the notebook, "Probar", or the strip right here) and place them:
+// one finger moves, two fingers resize + rotate; sliders do the same for mouse users.
+type View = { x: number; y: number; zoom: number }
+type Pt = { x: number; y: number }
+
 function TryOn({ pending, clearPending }: { pending: number | null; clearPending: () => void }) {
   const area = useRef<HTMLDivElement>(null)
   const [photo, setPhoto] = useState<string | null>(null)
+  const [framing, setFraming] = useState(false)
+  const [view, setView] = useState<View>({ x: 0, y: 0, zoom: 1 })
   const [items, setItems] = useState<Placed[]>([])
   const [sel, setSel] = useState<number | null>(null)
   const [over, setOver] = useState(false)
+  const [nudge, setNudge] = useState(false)
   const nextId = useRef(1)
-  const drag = useRef<{ id: number; dx: number; dy: number } | null>(null)
+  const ptrs = useRef(new Map<number, Pt>())
+  const gesture = useRef<{ kind: 'photo' | 'item'; id?: number; startPts: Pt[]; start: View | Placed } | null>(null)
+  const ready = !!photo && !framing
 
   const add = useCallback((f: number, x = 0.5, y = 0.45) => {
     const id = nextId.current++
@@ -117,62 +128,102 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   // "Probar" from the notebook
   useEffect(() => {
     if (pending === null) return
-    add(pending)
+    if (ready) add(pending)
+    else { setNudge(true); setTimeout(() => setNudge(false), 1800) }
     clearPending()
     if (window.innerWidth < 900) area.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [pending, add, clearPending])
+  }, [pending, add, clearPending, ready])
 
   useEffect(() => () => { if (photo) URL.revokeObjectURL(photo) }, [photo])
 
   const onFile = (file?: File) => {
     if (!file || !file.type.startsWith('image/')) return
     setPhoto(p => { if (p) URL.revokeObjectURL(p); return URL.createObjectURL(file) })
+    setView({ x: 0, y: 0, zoom: 1 })
+    setItems([]); setSel(null)
+    setFraming(true)
   }
 
-  const rel = (cx: number, cy: number) => {
-    const r = area.current!.getBoundingClientRect()
-    return { x: clamp((cx - r.left) / r.width), y: clamp((cy - r.top) / r.height) }
+  const size = () => area.current!.getBoundingClientRect()
+  const rel = (p: Pt) => { const r = size(); return { x: (p.x - r.left) / r.width, y: (p.y - r.top) / r.height } }
+  const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y)
+  const ang = (a: Pt, b: Pt) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI
+
+  const begin = (kind: 'photo' | 'item', id?: number) => {
+    const pts = Array.from(ptrs.current.values())
+    const start = kind === 'photo' ? view : items.find(i => i.id === id)!
+    gesture.current = { kind, id, startPts: pts, start }
   }
 
-  const onDown = (e: React.PointerEvent, it: Placed) => {
+  const onDown = (e: React.PointerEvent, kind: 'photo' | 'item', id?: number) => {
     e.stopPropagation()
-    setSel(it.id)
-    const p = rel(e.clientX, e.clientY)
-    drag.current = { id: it.id, dx: p.x - it.x, dy: p.y - it.y }
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+    ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (kind === 'item') setSel(id!)
+    begin(kind, id)
   }
   const onMove = (e: React.PointerEvent) => {
-    const d = drag.current
-    if (!d) return
-    const p = rel(e.clientX, e.clientY)
-    setItems(list => list.map(it => (it.id === d.id ? { ...it, x: clamp(p.x - d.dx), y: clamp(p.y - d.dy) } : it)))
+    if (!ptrs.current.has(e.pointerId)) return
+    ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const g = gesture.current
+    if (!g) return
+    const pts = Array.from(ptrs.current.values())
+    const r = size()
+    if (pts.length !== g.startPts.length) { begin(g.kind, g.id); return }
+    const c0 = pts.length > 1 ? { x: (g.startPts[0].x + g.startPts[1].x) / 2, y: (g.startPts[0].y + g.startPts[1].y) / 2 } : g.startPts[0]
+    const c1 = pts.length > 1 ? { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 } : pts[0]
+    const dx = (c1.x - c0.x) / r.width, dy = (c1.y - c0.y) / r.height
+    const k = pts.length > 1 ? dist(pts[0], pts[1]) / Math.max(1, dist(g.startPts[0], g.startPts[1])) : 1
+    const dr = pts.length > 1 ? ang(pts[0], pts[1]) - ang(g.startPts[0], g.startPts[1]) : 0
+    if (g.kind === 'photo') {
+      const s = g.start as View
+      setView({ x: s.x + dx, y: s.y + dy, zoom: clamp(s.zoom * k, 1, 4) })
+    } else {
+      const s = g.start as Placed
+      setItems(list => list.map(it => (it.id === g.id
+        ? { ...it, x: clamp(s.x + dx), y: clamp(s.y + dy), size: clamp(s.size * k, 0.08, 0.95), rot: s.rot + dr } : it)))
+    }
   }
-  const onUp = () => { drag.current = null }
+  const onUp = (e: React.PointerEvent) => {
+    ptrs.current.delete(e.pointerId)
+    const g = gesture.current
+    if (!ptrs.current.size) gesture.current = null
+    else if (g) begin(g.kind, g.id)
+  }
 
   const current = items.find(i => i.id === sel) ?? null
   const update = (patch: Partial<Placed>) => setItems(list => list.map(it => (it.id === sel ? { ...it, ...patch } : it)))
+  const unique = Array.from(new Set(items.map(i => i.f)))
 
   return (
-    <div className="try">
+    <div className="try" data-hide-dock>
       <header className="try-head">
         <p className="nb-kicker">Nuevo</p>
         <h3 className="try-title">Probalo en <span className="swash">tu cuerpo</span></h3>
-        <p className="try-sub">Subí una foto de la zona, arrastrá un flash del cuaderno encima y acomodalo como si fuera el stencil.</p>
+        <ol className="try-steps">
+          <li className={!photo ? 'now' : 'done'}>Subí una foto</li>
+          <li className={framing ? 'now' : ready ? 'done' : ''}>Ajustala</li>
+          <li className={ready ? 'now' : ''}>Sumá flashes</li>
+        </ol>
       </header>
 
-      <div ref={area} className={`try-area ${over ? 'over' : ''} ${photo ? 'has' : ''}`}
+      <div ref={area} className={`try-area ${over ? 'over' : ''} ${photo ? 'has' : ''} ${framing ? 'framing' : ''} ${nudge ? 'nudge' : ''}`}
         onDragOver={e => { e.preventDefault(); setOver(true) }}
         onDragLeave={() => setOver(false)}
         onDrop={e => {
           e.preventDefault(); setOver(false)
           const f = e.dataTransfer.getData('text/flash')
-          if (f !== '') { const p = rel(e.clientX, e.clientY); add(Number(f), p.x, p.y); return }
+          if (f !== '') {
+            if (!ready) { setNudge(true); setTimeout(() => setNudge(false), 1800); return }
+            const p = rel({ x: e.clientX, y: e.clientY }); add(Number(f), p.x, p.y); return
+          }
           onFile(e.dataTransfer.files?.[0])
         }}
-        onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-        onPointerDown={() => setSel(null)}>
+        onPointerDown={e => { if (framing) onDown(e, 'photo'); else setSel(null) }}
+        onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {photo
-          ? <img src={photo} alt="Tu foto" className="try-photo" draggable={false} />
+          ? <img src={photo} alt="Tu foto" className="try-photo" draggable={false}
+              style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }} />
           : (
             <label className="try-empty">
               <span className="try-plus" aria-hidden>+</span>
@@ -182,51 +233,72 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
             </label>
           )}
 
-        {items.map(it => {
+        {ready && items.map(it => {
           const f = FLASHES[it.f]
           return (
             <div key={it.id} className={`try-stencil ${sel === it.id ? 'sel' : ''}`}
               style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, width: `${it.size * 100}%`, transform: `translate(-50%, -50%) rotate(${it.rot}deg)` }}
-              onPointerDown={e => onDown(e, it)}>
+              onPointerDown={e => onDown(e, 'item', it.id)}>
               <img src={img(f)} alt={f.name} draggable={false} />
             </div>
           )
         })}
 
-        {!items.length && <p className="try-hint">Arrastrá un flash acá o tocá <b>Probar</b> en el cuaderno</p>}
+        {framing && <p className="try-hint">Arrastrá para mover · pellizcá o usá la barra para acercar</p>}
+        {ready && !items.length && <p className="try-hint">Elegí un flash de abajo o arrastralo desde el cuaderno</p>}
+        {nudge && <p className="try-hint warn">Primero subí y aplicá tu foto</p>}
       </div>
 
       <div className="try-controls">
-        <p className="try-privacy">Tu foto queda solo en tu dispositivo: no se sube a ningún lado.</p>
-        {current ? (
+        {framing && (
           <>
-            <p className="try-now"><b>{FLASHES[current.f].name}</b> · {FLASHES[current.f].cm} cm · {FLASHES[current.f].price}</p>
-            <label className="try-range">Tamaño
-              <input type="range" min={0.12} max={0.8} step={0.01} value={current.size} onChange={e => update({ size: Number(e.target.value) })} />
-            </label>
-            <label className="try-range">Rotación
-              <input type="range" min={-180} max={180} step={1} value={current.rot} onChange={e => update({ rot: Number(e.target.value) })} />
+            <label className="try-range">Zoom
+              <input type="range" min={1} max={4} step={0.01} value={view.zoom} onChange={e => setView(v => ({ ...v, zoom: Number(e.target.value) }))} />
             </label>
             <div className="try-btns">
-              <button type="button" className="try-remove" data-hover onClick={() => { setItems(l => l.filter(i => i.id !== sel)); setSel(null) }}>Quitar</button>
-              <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => book(FLASHES[current.f].name)}>Quiero este flash ●</button>
-            </div>
-          </>
-        ) : (
-          <div className="try-btns">
-            {items.length > 0 && (
-              <button type="button" className="cta-book try-book" data-cursor="book"
-                onClick={() => book(Array.from(new Set(items.map(i => FLASHES[i.f].name))))}>
-                {new Set(items.map(i => i.f)).size > 1 ? `Quiero estos ${new Set(items.map(i => i.f)).size} flashes ●` : `Quiero ${FLASHES[items[0].f].name} ●`}
-              </button>
-            )}
-            {photo && (
-              <label className="try-remove try-change">Cambiar foto
+              <label className="try-remove try-change">Otra foto
                 <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
               </label>
-            )}
-          </div>
+              <button type="button" className="cta-book try-book" onClick={() => setFraming(false)}>Aplicar ✓</button>
+            </div>
+          </>
         )}
+
+        {ready && (
+          <>
+            <div className="try-strip" role="list" aria-label="Flashes para probar">
+              {FLASHES.map((f, i) => f.available && (
+                <button key={f.slug} type="button" role="listitem" className="try-thumb" onClick={() => add(i)} aria-label={`Probar ${f.name}`}>
+                  <Image src={img(f)} alt="" fill sizes="64px" style={{ objectFit: 'contain' }} />
+                </button>
+              ))}
+            </div>
+
+            {current && (
+              <>
+                <p className="try-now"><b>{FLASHES[current.f].name}</b> · {FLASHES[current.f].cm} cm · {FLASHES[current.f].price}</p>
+                <label className="try-range">Tamaño
+                  <input type="range" min={0.08} max={0.95} step={0.01} value={current.size} onChange={e => update({ size: Number(e.target.value) })} />
+                </label>
+                <label className="try-range">Rotación
+                  <input type="range" min={-180} max={180} step={1} value={Math.round(((current.rot + 540) % 360) - 180)} onChange={e => update({ rot: Number(e.target.value) })} />
+                </label>
+              </>
+            )}
+
+            <div className="try-btns">
+              {current && <button type="button" className="try-remove" onClick={() => { setItems(l => l.filter(i => i.id !== sel)); setSel(null) }}>Quitar</button>}
+              <button type="button" className="try-remove" onClick={() => setFraming(true)}>Ajustar foto</button>
+              {unique.length > 0 && (
+                <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => book(unique.map(i => FLASHES[i].name))}>
+                  {unique.length > 1 ? `Quiero estos ${unique.length} flashes ●` : `Quiero ${FLASHES[unique[0]].name} ●`}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        <p className="try-privacy">Tu foto queda solo en tu dispositivo: no se sube a ningún lado.</p>
       </div>
     </div>
   )
