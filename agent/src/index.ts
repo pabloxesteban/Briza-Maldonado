@@ -62,7 +62,7 @@ Qué hacés:
 Reglas:
 - La reserva queda PENDIENTE: Briza la acepta o la rechaza. Nunca digas que un turno está confirmado.
 - Antes de reservar, avisá que todas las reservas se confirman con una seña de al menos el 40% del total (se paga por Mercado Pago cuando Briza acepta) y pedí que lo acepte.
-- El contacto es SOLO por Instagram (@bri.t4tts): nunca ofrezcas WhatsApp ni teléfono.
+- El contacto es por Instagram (@bri.t4tts). Pedí siempre el usuario de Instagram; solo si la persona no tiene o no quiere, aceptá su WhatsApp como última opción. Nunca des el teléfono de Briza.
 - Cuidados: usá la guía de abajo. Si describe fiebre, pus, enrojecimiento que se expande, calor intenso o dolor que empeora, decile que consulte a un médico ya y que le avise a Briza.
 - Si no sabés algo, decí que lo confirma Briza. No hables de temas ajenos al estudio.`
 
@@ -72,7 +72,7 @@ const RULES_TEXT = RULES.map(r => `- ${r}`).join('\n')
 const systemFor = (ch: Channel) => {
   const contactRule = ch.kind === 'ig'
     ? ' (por Instagram no hace falta pedir el usuario: Briza responde por acá)'
-    : ', su usuario de Instagram (Briza le escribe por ahí)'
+    : ', su usuario de Instagram (Briza le escribe por ahí; WhatsApp solo si no tiene o no quiere Instagram)'
   return `${SYSTEM.replace('${contactRule}', contactRule)}
 
 Reglas del estudio (respetalas y explicalas si hace falta):
@@ -140,7 +140,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         size: { type: 'string' },
         slot: { type: 'string', description: 'label del turno de get_open_slots, o "lo antes posible".' },
         slot_start: { type: 'string', description: 'start (ISO) del turno elegido; vacío si no eligió uno.' },
-        contact: { type: 'string', description: 'Usuario de Instagram; vacío si escribe por Instagram.' },
+        contact: { type: 'string', description: 'Usuario de Instagram (o WhatsApp solo si no usa Instagram); vacío si escribe por Instagram.' },
         email: { type: 'string', description: 'Mail para la confirmación del turno.' },
         newsletter: { type: 'boolean', description: 'true solo si pidió recibir descuentos y novedades.' },
         notes: { type: 'string', description: 'Otros detalles; vacío si no hay.' },
@@ -170,8 +170,8 @@ async function notifyBriza(env: Env, text: string) {
 // How Briza (or the worker) reaches a client
 function clientLink(d: Pick<PendingData, 'channel' | 'contact'>, text: string) {
   if (d.channel === 'ig') return ''
-  void text // Instagram links can't carry a pre-filled message
-  return `https://ig.me/m/${d.contact.replace(/^@/, '')}`
+  if (/^\d{8,}$/.test(d.contact)) return `https://wa.me/${d.contact}?text=${encodeURIComponent(text)}`
+  return `https://ig.me/m/${d.contact.replace(/^@/, '')}` // Instagram links can't carry a pre-filled message
 }
 async function messageClient(env: Env, d: Pick<PendingData, 'channel' | 'contact'>, text: string) {
   if (d.channel !== 'ig' || !env.IG_TOKEN || !env.IG_USER_ID) return false
@@ -180,7 +180,9 @@ async function messageClient(env: Env, d: Pick<PendingData, 'channel' | 'contact
 
 function parseContact(raw: string, ch: Channel): { channel: 'wa' | 'ig'; contact: string } | null {
   if (ch.kind === 'ig') return { channel: 'ig', contact: ch.sid }
-  // Web: Instagram user only (stored as "@user"; Briza answers from her account)
+  // Web: Instagram first (stored as "@user"); WhatsApp digits only as a last resort
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length >= 8 && !/[a-z]/i.test(raw)) return { channel: 'wa', contact: digits }
   const handle = raw.trim().replace(/^@/, '').replace(/^(https?:\/\/)?(www\.)?instagram\.com\//, '').replace(/[/?].*$/, '')
   return /^[a-z0-9._]{2,30}$/i.test(handle) ? { channel: 'wa', contact: `@${handle}` } : null
 }
@@ -218,7 +220,7 @@ type WaitEntry = { name: string; idea: string; channel: 'wa' | 'ig'; contact: st
 async function joinWaitlist(env: Env, input: { name: string; idea: string; contact: string }, ch: Channel) {
   if (!env.RATE) return { ok: false, error: 'La lista de espera no está disponible ahora.' }
   const c = parseContact(input.contact, ch)
-  if (!c) return { ok: false, error: 'Falta un usuario de Instagram válido.' }
+  if (!c) return { ok: false, error: 'Falta un usuario de Instagram (o WhatsApp) válido.' }
   const list = JSON.parse(await env.RATE.get('waitlist') ?? '[]') as WaitEntry[]
   if (list.some(w => w.contact === c.contact)) return { ok: true, note: 'Ya estaba anotada.' }
   list.push({ name: input.name.slice(0, 80), idea: input.idea.slice(0, 200), ...c, at: new Date().toISOString() })
@@ -232,7 +234,7 @@ export type Booking = { name: string; idea: string; zone: string; size: string; 
 async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] = []) {
   if (!b.deposit_ok) return { ok: false, error: 'Falta que la persona acepte la seña del 40%.' }
   const c = parseContact(b.contact, ch)
-  if (!c) return { ok: false, error: 'Falta un usuario de Instagram válido para que Briza pueda responder.' }
+  if (!c) return { ok: false, error: 'Falta un usuario de Instagram (o un WhatsApp, si no usás Instagram) para que Briza pueda responder.' }
   if (!validEmail(b.email)) return { ok: false, error: 'Falta un mail válido para mandarte la confirmación.' }
   const who = ch.kind === 'ig' ? ch.sid : ch.ip
   if (!(await hit(env.RATE, dayKey(who, 'req'), LIMITS.requestsPerDay, 86400))) {
@@ -240,7 +242,8 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
   }
   const igName = c.channel === 'ig' && env.IG_TOKEN ? await username(env.IG_TOKEN, c.contact) : ''
   const contactLine = c.channel === 'ig' ? `Instagram: ${igName ? '@' + igName : '(por DM)'}`
-    : `Instagram: ${c.contact} → https://ig.me/m/${c.contact.slice(1)}`
+    : c.contact.startsWith('@') ? `Instagram: ${c.contact} → https://ig.me/m/${c.contact.slice(1)}`
+      : `WhatsApp (no usa Instagram): +${c.contact} → https://wa.me/${c.contact}`
   const lines = [
     `Nombre: ${b.name}`, contactLine, `Idea: ${b.idea}`, `Zona: ${b.zone}`, `Tamaño: ${b.size}`,
     `Turno pedido: ${b.slot}`, `Mail: ${b.email}`, `Novedades: ${b.newsletter ? 'sí' : 'no'}`, 'Seña 40%: aceptada',

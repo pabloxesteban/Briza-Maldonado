@@ -1726,3 +1726,5 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .ai-row .ai-msg { max-width: 82%; }
 .ai-row .lila-av { margin-bottom: 2px; }
 .ai-fab { padding-left: .35rem; }
+.book-alt-contact { margin-top: .6rem; border: 0; background: none; padding: 0; font-size: .85rem; font-weight: 700; color: var(--ink-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.book-alt-contact:hover { color: #E0769C; }

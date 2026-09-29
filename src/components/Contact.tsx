@@ -12,14 +12,15 @@ type Answers = {
   zone: string; size: string
   when: string
   name: string
-  phone: string // Instagram user
+  phone: string // Instagram user, or WhatsApp as last resort
+  useWa: boolean
   email: string
   news: boolean
   slotStart: string
   deposit: boolean
 }
 
-const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '', phone: '', email: '', news: false, slotStart: '', deposit: false }
+const EMPTY: Answers = { idea: '', detail: '', zone: '', size: '', when: '', name: '', phone: '', useWa: false, email: '', news: false, slotStart: '', deposit: false }
 
 const IDEAS = ['Un flash del cuaderno', 'Un diseño propio', 'Todavía no sé']
 const ZONES = ['Brazo', 'Antebrazo', 'Pierna', 'Costilla', 'Espalda', 'Otra zona']
@@ -93,7 +94,7 @@ export default function Contact() {
     !!a.idea,
     !!a.zone && !!a.size,
     !!a.when,
-    a.name.trim().length > 1 && /^@?[a-z0-9._]{2,30}$/i.test(a.phone.trim()) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email.trim()) && a.deposit,
+    a.name.trim().length > 1 && (a.useWa ? a.phone.replace(/\D/g, '').length >= 8 : /^@?[a-z0-9._]{2,30}$/i.test(a.phone.trim())) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email.trim()) && a.deposit,
   ][step]
 
   useEffect(() => {
@@ -268,8 +269,12 @@ export default function Contact() {
                 <>
                   <Question n="04">¿Cómo te llamás?</Question>
                   <input ref={nameRef} className="book-input" value={a.name} onChange={e => set('name')(e.target.value)} placeholder="Tu nombre" autoComplete="given-name" />
-                  <p style={{ ...label, marginTop: '2rem' }}>Tu Instagram (Briza te escribe por ahí)</p>
-                  <input className="book-input" value={a.phone} onChange={e => set('phone')(e.target.value)} placeholder="@tuusuario" autoCapitalize="none" />
+                  <p style={{ ...label, marginTop: '2rem' }}>{a.useWa ? 'Tu WhatsApp' : 'Tu Instagram (Briza te escribe por ahí)'}</p>
+                  <input key={a.useWa ? 'wa' : 'ig'} className="book-input" value={a.phone} onChange={e => set('phone')(e.target.value)}
+                    placeholder={a.useWa ? '11 1234 5678' : '@tuusuario'} autoCapitalize="none" inputMode={a.useWa ? 'tel' : 'text'} />
+                  <button type="button" className="book-alt-contact" onClick={() => setA(p => ({ ...p, useWa: !p.useWa, phone: '' }))}>
+                    {a.useWa ? '← Mejor por Instagram' : 'No tengo / no uso Instagram → dejar WhatsApp'}
+                  </button>
                   <p style={{ ...label, marginTop: '2rem' }}>Tu mail (para la confirmación del turno)</p>
                   <input className="book-input" type="email" value={a.email} onChange={e => set('email')(e.target.value)} placeholder="vos@mail.com" autoComplete="email" />
                   <label className="book-deposit">

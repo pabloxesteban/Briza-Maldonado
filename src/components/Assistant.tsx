@@ -62,7 +62,7 @@ function demoReply(t: string, st: Demo, hasPics: boolean): { reply: string; acti
     if (!yes) return { reply: 'Sin la seña no puedo dejar el turno reservado 🙏 ¿Te va el 40% por Mercado Pago cuando Briza acepte?' }
     return {
       reply: `¡Listo, ya le llegó a Briza! 🙌 Queda pendiente hasta que la confirme (24–48 h). Te va a llegar la confirmación a ${st.email} con el link de Mercado Pago para la seña. ¡Nos vemos en Palermo!`,
-      action: { summary: `Solicitud enviada a Briza ✦\n\nNombre: ${st.name}\nInstagram: ${st.ig}\nMail: ${st.email}\nIdea: ${st.idea ?? 'A charlar con Briza'}\nTurno pedido: ${st.slot}\nNovedades y descuentos: ${st.news ? 'sí' : 'no'}\nSeña 40%: aceptada` },
+      action: { summary: `Solicitud enviada a Briza ✦\n\nNombre: ${st.name}\nContacto: ${st.ig}\nMail: ${st.email}\nIdea: ${st.idea ?? 'A charlar con Briza'}\nTurno pedido: ${st.slot}\nNovedades y descuentos: ${st.news ? 'sí' : 'no'}\nSeña 40%: aceptada` },
     }
   }
   if (st.step === 'news') {
@@ -76,12 +76,15 @@ function demoReply(t: string, st: Demo, hasPics: boolean): { reply: string; acti
     return { reply: '¡Gracias! ¿Querés que te avisemos de descuentos y próximos eventos de Briza (flash days, guest spots)? Es un mail de vez en cuando, nada de spam 💌 ¿Sí o no?' }
   }
   if (st.slot && st.name && !st.ig) {
+    const digits = t.replace(/\D/g, '')
+    if (digits.length >= 8 && !/[a-z]/i.test(t)) { st.ig = `WhatsApp +${digits}`; return { reply: 'Dale, te anoto el WhatsApp 👍 ¿Y un mail para mandarte la confirmación del turno?' } }
+    if (/\bno\b|no tengo|no uso|prefiero/.test(q)) return { reply: 'Todo bien 🙌 Entonces pasame tu WhatsApp y Briza te escribe por ahí.' }
     const h = t.trim().match(/@?([a-z0-9._]{2,30})/i)
     if (!h) return { reply: '¿Me pasás tu usuario de Instagram? (tipo @tuusuario)' }
     st.ig = `@${h[1]}`
     return { reply: `¡Buenísimo! Briza te escribe por Instagram (${st.ig}). ¿Y un mail para mandarte la confirmación del turno?` }
   }
-  if (st.slot && !st.name) { st.name = t.trim().split(/[ ,]/)[0]; return { reply: `¡Un gusto, ${st.name}! Todo el contacto es por Instagram 📲 ¿Cuál es tu usuario?` } }
+  if (st.slot && !st.name) { st.name = t.trim().split(/[ ,]/)[0]; return { reply: `¡Un gusto, ${st.name}! Todo el contacto es por Instagram 📲 ¿Cuál es tu usuario? (si no usás Instagram, decime y lo vemos por WhatsApp)` } }
 
   // Picking one or more flashes by number (or name) → names, sizes and prices
   const timeLike = /\d{1,2}[:.]\d{2}/.test(q)
@@ -234,7 +237,7 @@ export default function Assistant() {
             <div className="ai-action">
               <p className="ai-action-lbl">✓ Solicitud enviada</p>
               <pre>{action.summary}</pre>
-              <p className="ai-note">Queda pendiente hasta que Briza la confirme (24–48 h). Te llega la confirmación por mail e Instagram, con el link de Mercado Pago para la seña del 40%.</p>
+              <p className="ai-note">Queda pendiente hasta que Briza la confirme (24–48 h). Te llega la confirmación por mail, con el link de Mercado Pago para la seña del 40%.</p>
             </div>
           )}
           {error && <p className="ai-err">{error}</p>}
