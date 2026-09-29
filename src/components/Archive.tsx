@@ -1,266 +1,117 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { WORKS, type Work } from '@/data/works'
+import { WORKS } from '@/data/works'
 
-const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
-
+const INSTAGRAM = 'bri.t4tts'
+const FILTERS = ['Todos', 'Traditional', 'Black & white', 'Color'] as const
+type Filter = typeof FILTERS[number]
 type Rect = { left: number; top: number; width: number; height: number }
 
-function useViewport() {
-  const [vp, setVp] = useState({ w: 1280, h: 800, mobile: false })
+function useMobile() {
+  const [m, setM] = useState(false)
   useEffect(() => {
-    const on = () => setVp({ w: window.innerWidth, h: window.innerHeight, mobile: window.innerWidth < 768 })
-    on()
-    window.addEventListener('resize', on)
-    return () => window.removeEventListener('resize', on)
+    const mq = window.matchMedia('(max-width: 767px)')
+    const on = () => setM(mq.matches)
+    on(); mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
   }, [])
-  return vp
+  return m
 }
 
+// Editorial rhythm: every few pieces one plays big, so the grid reads like a spread, not a feed
+const isFeature = (k: number, mobile: boolean) => (mobile ? k % 5 === 0 : k % 7 === 0 || k % 7 === 4)
 
-// Runs fn(progress) on every frame while mounted. Writes go straight to the DOM (no React state),
-// so scrolling never re-renders the gallery. `ease` < 1 glides toward the scroll position
-// (frame-rate independent); 1 locks to it, which is what anything tied to the page itself wants:
-// Lenis already smooths the scroll, and a second lag would make columns drift against each other.
-function useSmoothProgress(ref: React.RefObject<HTMLElement>, fn: (p: number) => void, deps: unknown[], ease = 1) {
-  const fnRef = useRef(fn)
-  fnRef.current = fn
-  useEffect(() => {
-    let raf = 0, cur = -1, last = -2, prev = performance.now()
-    const tick = (now: number) => {
-      const dt = Math.min(64, now - prev); prev = now
-      const el = ref.current
-      const r = el?.getBoundingClientRect()
-      if (el && r && r.bottom > -200 && r.top < window.innerHeight + 200) {
-        const target = clamp(-r.top / Math.max(1, r.height - window.innerHeight))
-        const k = ease >= 1 ? 1 : 1 - Math.pow(1 - ease, dt / 16.67)
-        cur = cur < 0 ? target : cur + (target - cur) * k
-        if (Math.abs(target - cur) < 0.0002) cur = target
-        if (cur !== last) { last = cur; fnRef.current(cur) }
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
-}
-
-const smooth = (t: number) => t * t * (3 - 2 * t)
-const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a))
-
-// ─── Act 1: the entrance — big photos open around the title ───────────────
-function Entrance({ mobile }: { mobile: boolean }) {
+// ─── Grid ────────────────────────────────────────────────────────────────
+function Grid({ list, mobile, onOpen }: { list: number[]; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
   const ref = useRef<HTMLDivElement>(null)
-  const grid = useRef<HTMLDivElement>(null)
-  const colEls = useRef<(HTMLDivElement | null)[]>([])
-  const title = useRef<HTMLDivElement>(null)
-  const cols = mobile ? 2 : 3
-  const rows = 3
-  const tiles = WORKS.slice(0, cols * rows)
-  const mid = (cols - 1) / 2
 
-  useSmoothProgress(ref, p => {
-    // Starts already filling the screen (no empty start), then opens a space for the title
-    const open = smooth(seg(p, 0.08, 0.78))
-    const t = smooth(seg(p, 0.45, 0.85))
-    if (grid.current) grid.current.style.transform = `scale(${(mobile ? 1.7 : 1.6) - open * (mobile ? 0.55 : 0.6)})`
-    colEls.current.forEach((el, c) => {
-      if (!el) return
-      const side = c - mid
-      el.style.transform = side === 0
-        ? `translate3d(0, ${-open * 6}%, 0)`
-        : `translate3d(${side * open * (mobile ? 40 : 55)}%, ${(c % 2 ? 1 : -1) * open * 8}%, 0)`
-      el.style.opacity = side === 0 ? String(1 - open) : '1'
-    })
-    if (title.current) {
-      title.current.style.opacity = String(t)
-      title.current.style.transform = `translate3d(0, ${(1 - t) * 20}px, 0)`
-    }
-  }, [mobile], 0.18)
-
-  return (
-    <div ref={ref} className="arch-entrance" style={{ height: mobile ? '190vh' : '220vh' }}>
-      <div className="arch-stage">
-        <div ref={grid} className="arch-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-          {Array.from({ length: cols }).map((_, c) => (
-            <div key={c} ref={el => { colEls.current[c] = el }} className="arch-col">
-              {Array.from({ length: rows }).map((_, r) => {
-                const w = tiles[r * cols + c]
-                return (
-                  <div key={r} className="arch-tile">
-                    <Image src={w.src} alt="" fill sizes={mobile ? '60vw' : '40vw'} style={{ objectFit: 'cover' }} />
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-        <div ref={title} className="arch-entrance-title" style={{ opacity: 0 }}>
-          <h2><span className="arch-t1">Diseños</span><span className="arch-t2 swash">tatuados</span></h2>
-          <p>Traditional · Black &amp; white · Color</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Act 2: the wall — alternate column scroll ────────────────────────────
-// One column scrolls with the page; the others stay pinned and run the opposite way, so the
-// columns cross. Movement is eased toward the scroll position so it glides instead of jolting.
-function Wall({ still, mobile, onOpen }: { still: boolean; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const colRefs = useRef<(HTMLDivElement | null)[]>([])
-  const cols = mobile ? 2 : 3
-  const flowing = 1
-  const columns: { w: Work; i: number }[][] = Array.from({ length: cols }, () => [])
-  WORKS.forEach((w, i) => columns[i % cols].push({ w, i }))
-  // Phones: sticky columns fight the collapsing URL bar, so both columns flow and one drifts
-  const pinning = !still && !mobile
-
-  useSmoothProgress(ref, p => {
-    if (still) return
-    const vh = window.innerHeight
-    colRefs.current.forEach((el, c) => {
-      if (!el) return
-      if (mobile) {
-        if (c === 1) el.style.transform = `translate3d(0, ${(0.5 - p) * vh * 0.22}px, 0)`
-        return
-      }
-      if (c === flowing) return
-      const travel = Math.max(0, el.scrollHeight - vh)
-      el.style.transform = `translate3d(0, ${-travel * (1 - p)}px, 0)`
-    })
-  }, [still, cols, mobile])
-
-  // Each piece settles in as it reaches the screen
+  // Tiles settle in as they reach the screen
   useEffect(() => {
     const root = ref.current
-    if (!root || still || !('IntersectionObserver' in window)) return
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return
     root.classList.add('io')
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target) }
-    }), { rootMargin: '0px 0px -8% 0px' })
-    root.querySelectorAll('.arch-item').forEach(el => io.observe(el))
+    }), { rootMargin: '0px 0px -6% 0px' })
+    root.querySelectorAll('.g-tile').forEach(el => io.observe(el))
     return () => io.disconnect()
-  }, [still, cols])
+  }, [list])
 
   return (
-    <div ref={ref} className={`arch-wall ${still ? 'still' : ''} ${mobile ? 'm' : ''}`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-      {columns.map((col, c) => {
-        const pinned = pinning && c !== flowing
+    <div ref={ref} className="g-grid">
+      {list.map((i, k) => {
+        const w = WORKS[i]
+        const big = isFeature(k, mobile)
         return (
-          <div key={c} className={pinned ? 'arch-wall-pin' : 'arch-wall-flow'}>
-            <div ref={el => { colRefs.current[c] = el }} className="arch-wall-col"
-              style={pinned ? { flexDirection: 'column-reverse' } : undefined}>
-              {col.map(({ w, i }) => (
-                <button key={w.slug} type="button" className="arch-item" data-cursor="view" data-work={w.slug}
-                  onClick={e => onOpen(i, (e.currentTarget.querySelector('.arch-img') as HTMLElement))}>
-                  <span className="arch-img">
-                    <Image src={w.src} alt={w.title} fill sizes={mobile ? '48vw' : '31vw'} style={{ objectFit: 'cover' }} />
-                  </span>
-                  <span className="arch-cap">
-                    <span className="arch-name font-display">{w.title}</span>
-                    <span className="arch-style">{w.style}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <button key={w.slug} type="button" className={`g-tile ${big ? 'big' : ''}`} data-cursor="view" data-work={w.slug}
+            style={{ ['--d' as string]: `${(k % 4) * 70}ms` }}
+            onClick={e => onOpen(i, e.currentTarget.querySelector('.g-img') as HTMLElement)}>
+            <span className="g-img">
+              <Image src={w.src} alt={w.title} fill sizes={big ? (mobile ? '100vw' : '50vw') : (mobile ? '50vw' : '25vw')} style={{ objectFit: 'cover' }} />
+            </span>
+            <span className="g-cap">
+              <span className="g-name">{w.title}</span>
+              <span className="g-style">{w.style}</span>
+            </span>
+          </button>
         )
       })}
     </div>
   )
 }
 
-// ─── Index view ───────────────────────────────────────────────────────────
-function Index({ onOpen }: { onOpen: (i: number, el: HTMLElement) => void }) {
-  const [hover, setHover] = useState<number | null>(null)
-  const preview = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const move = (e: MouseEvent) => {
-      if (preview.current) preview.current.style.transform = `translate(${e.clientX + 24}px, ${e.clientY - 120}px)`
-    }
-    window.addEventListener('mousemove', move, { passive: true })
-    return () => window.removeEventListener('mousemove', move)
-  }, [])
-  return (
-    <div className="arch-index" onMouseLeave={() => setHover(null)}>
-      {WORKS.map((w, i) => (
-        <button key={w.slug} type="button" className="arch-row" data-cursor="view" data-work={w.slug}
-          onMouseEnter={() => setHover(i)}
-          onClick={e => onOpen(i, e.currentTarget.querySelector('.arch-row-thumb') as HTMLElement)}>
-          <span className="arch-row-name font-display">{w.title}</span>
-          <span className="arch-row-meta">{w.style} · {w.zone}</span>
-          <span className="arch-row-thumb"><Image src={w.src} alt="" fill sizes="96px" style={{ objectFit: 'cover' }} /></span>
-        </button>
-      ))}
-      <div ref={preview} className={`arch-preview ${hover !== null ? 'on' : ''}`} aria-hidden>
-        {hover !== null && <Image key={hover} src={WORKS[hover].src} alt="" fill sizes="280px" style={{ objectFit: 'cover' }} />}
-      </div>
-    </div>
-  )
-}
-
-// ─── Act 3: the piece ─────────────────────────────────────────────────────
-function frameRect(mobile: boolean): Rect {
+// ─── Desktop: the piece, grown from its tile, with a filmstrip to move around ─
+function frameRect(): Rect {
   const w = window.innerWidth, h = window.innerHeight
-  if (mobile) {
-    // leave room below for the name, details and the booking button
-    const height = Math.max(200, Math.min(h - 72 - 290, (w - 32) * 1.25))
-    const width = Math.min(w - 32, height * 0.8)
-    return { left: (w - width) / 2, top: 72, width, height }
-  }
-  const height = h * 0.78
-  const width = Math.min(height * 0.8, w * 0.46)
-  return { left: w * 0.07, top: h * 0.13, width, height }
+  const height = h - 190
+  const width = Math.min(height * 0.8, w * 0.44)
+  return { left: w * 0.08, top: 88, width, height }
 }
-
 const px = (r: Rect) => ({ left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` })
 
-function Detail({ index, from, mobile, onIndex, onClose }: {
-  index: number; from: Rect | null; mobile: boolean
-  onIndex: (i: number) => void; onClose: () => void
+function Detail({ index, list, from, onIndex, onClose, onBook }: {
+  index: number; list: number[]; from: Rect | null
+  onIndex: (i: number) => void; onClose: () => void; onBook: (i: number) => void
 }) {
   const frame = useRef<HTMLDivElement>(null)
+  const strip = useRef<HTMLDivElement>(null)
   const [ready, setReady] = useState(!from)
   const closing = useRef(false)
   const w = WORKS[index]
-  const target = frameRect(mobile)
+  const pos = Math.max(0, list.indexOf(index))
 
-  // Open: grow from the thumbnail to the frame
   useLayoutEffect(() => {
     const el = frame.current
-    if (!el) return
-    if (!from) { setReady(true); return }
-    const a = el.animate([{ ...px(from), borderRadius: '2px' }, { ...px(target), borderRadius: '4px' }],
-      { duration: 850, easing: 'cubic-bezier(.22,1,.36,1)' })
+    if (!el || !from) { setReady(true); return }
+    const a = el.animate([{ ...px(from) }, { ...px(frameRect()) }], { duration: 850, easing: 'cubic-bezier(.22,1,.36,1)' })
     const t = setTimeout(() => setReady(true), 260)
     return () => { a.cancel(); clearTimeout(t) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Keep the current thumbnail in view
+  useEffect(() => {
+    strip.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+  }, [index])
 
   const close = useCallback(() => {
     if (closing.current) return
     closing.current = true
     setReady(false)
     const el = frame.current
-    const thumb = document.querySelector(`[data-work="${WORKS[index].slug}"] .arch-img, [data-work="${WORKS[index].slug}"] .arch-row-thumb`) as HTMLElement | null
-    const r = thumb?.getBoundingClientRect()
-    const visible = r && r.bottom > 0 && r.top < window.innerHeight && r.width > 0
-    if (el && visible) {
-      const a = el.animate([{ ...px(frameRect(mobile)) }, { ...px({ left: r.left, top: r.top, width: r.width, height: r.height }) }],
-        { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' })
+    const r = (document.querySelector(`[data-work="${WORKS[index].slug}"] .g-img`) as HTMLElement | null)?.getBoundingClientRect()
+    if (el && r && r.bottom > 0 && r.top < window.innerHeight) {
+      const a = el.animate([{ ...px(frameRect()) }, { ...px(r) }], { duration: 700, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' })
       a.onfinish = onClose
     } else if (el) {
       const a = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' })
       a.onfinish = onClose
     } else onClose()
-  }, [index, mobile, onClose])
+  }, [index, onClose])
 
-  const step = useCallback((d: number) => onIndex((index + d + WORKS.length) % WORKS.length), [index, onIndex])
+  const step = useCallback((d: number) => onIndex(list[(pos + d + list.length) % list.length]), [pos, list, onIndex])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -274,58 +125,130 @@ function Detail({ index, from, mobile, onIndex, onClose }: {
     return () => { window.removeEventListener('keydown', key); window.removeEventListener('archive:close', back) }
   }, [close, step])
 
-  // Swipe between pieces on touch
-  const touch = useRef<{ x: number; y: number } | null>(null)
-
-  const book = () => {
-    close()
-    window.dispatchEvent(new CustomEvent('book:idea', { detail: `Algo como "${w.title}"` }))
-    setTimeout(() => document.getElementById('turno')?.scrollIntoView({ behavior: 'smooth' }), 750)
-  }
-
   return (
-    <div className="arch-detail" role="dialog" aria-modal="true" aria-label={w.title}
-      onTouchStart={e => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY } }}
-      onTouchEnd={e => {
-        const t = touch.current; touch.current = null
-        if (!t) return
-        const dx = e.changedTouches[0].clientX - t.x, dy = e.changedTouches[0].clientY - t.y
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) step(dx < 0 ? 1 : -1)
-      }}>
+    <div className="arch-detail" role="dialog" aria-modal="true" aria-label={w.title}>
       <div className={`arch-detail-bg ${ready ? 'on' : ''}`} onClick={close} />
-      <div ref={frame} className="arch-frame" style={px(target)}>
-        <Image key={w.slug} src={w.src} alt={w.title} fill priority sizes={mobile ? '100vw' : '46vw'} className="arch-frame-img" style={{ objectFit: 'cover' }} />
+      <div ref={frame} className="arch-frame" style={px(frameRect())}>
+        <Image key={w.slug} src={w.src} alt={w.title} fill priority sizes="44vw" className="arch-frame-img" style={{ objectFit: 'cover' }} />
       </div>
 
       {ready && (
         <div key={w.slug} className="arch-meta">
-          <h3 className="font-display">{w.title}</h3>
           <p className="arch-meta-line">{w.style} · {w.zone}</p>
+          <h3>{w.title}</h3>
           {w.note && <p className="arch-meta-note">{w.note}</p>}
-          <button type="button" className="cta-book" data-cursor="book" onClick={book}>Quiero algo así ●</button>
+          <button type="button" className="cta-book" data-cursor="book" onClick={() => { close(); onBook(index) }}>Quiero algo así ●</button>
         </div>
       )}
 
       <div className={`arch-controls ${ready ? 'on' : ''}`}>
-        <button type="button" className="arch-close" data-hover onClick={close}>← Volver</button>
+        <button type="button" className="arch-close" data-hover onClick={close}>← Volver a la galería</button>
         <div className="arch-arrows">
           <button type="button" data-hover aria-label="Anterior" onClick={() => step(-1)}>←</button>
           <button type="button" data-hover aria-label="Siguiente" onClick={() => step(1)}>→</button>
         </div>
       </div>
+
+      <div ref={strip} className={`d-strip ${ready ? 'on' : ''}`}>
+        {list.map(i => (
+          <button key={WORKS[i].slug} type="button" aria-label={WORKS[i].title} data-hover
+            className={i === index ? 'on' : ''} onClick={() => onIndex(i)}>
+            <Image src={WORKS[i].src} alt="" fill sizes="64px" style={{ objectFit: 'cover' }} />
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ─── The archive ──────────────────────────────────────────────────────────
+// ─── Phones: stories, like on Instagram ───────────────────────────────────
+const STORY_MS = 5200
+
+function Stories({ index, list, onIndex, onClose, onBook }: {
+  index: number; list: number[]
+  onIndex: (i: number) => void; onClose: () => void; onBook: (i: number) => void
+}) {
+  const pos = Math.max(0, list.indexOf(index))
+  const w = WORKS[index]
+  const bar = useRef<HTMLSpanElement>(null)
+  const [paused, setPaused] = useState(false)
+  const [drag, setDrag] = useState(0)
+  const touch = useRef<{ x: number; y: number; t: number } | null>(null)
+
+  const step = useCallback((d: number) => {
+    const n = pos + d
+    if (n < 0) return
+    if (n >= list.length) { onClose(); return }
+    onIndex(list[n])
+  }, [pos, list, onIndex, onClose])
+
+  // Auto-advance, drawn by the progress bar itself
+  useEffect(() => {
+    const el = bar.current
+    if (!el || paused) return
+    const a = el.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: STORY_MS, easing: 'linear', fill: 'forwards' })
+    a.onfinish = () => step(1)
+    return () => a.cancel()
+  }, [index, paused, step])
+
+  useEffect(() => {
+    const back = () => onClose()
+    window.addEventListener('archive:close', back)
+    return () => window.removeEventListener('archive:close', back)
+  }, [onClose])
+
+  return (
+    <div className="st" role="dialog" aria-modal="true" aria-label={w.title}
+      style={{ transform: drag ? `translateY(${drag}px) scale(${1 - drag / 3000})` : undefined, opacity: drag ? 1 - drag / 900 : undefined }}
+      onTouchStart={e => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }; setPaused(true) }}
+      onTouchMove={e => { const t = touch.current; if (t) setDrag(Math.max(0, e.touches[0].clientY - t.y)) }}
+      onTouchEnd={e => {
+        const t = touch.current; touch.current = null
+        setPaused(false)
+        if (!t) return
+        const dx = e.changedTouches[0].clientX - t.x, dy = e.changedTouches[0].clientY - t.y
+        setDrag(0)
+        if (dy > 110) { onClose(); return }
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { step(dx < 0 ? 1 : -1); return }
+        // A quick tap: left third goes back, the rest goes forward (the booking area handles its own taps)
+        if (Date.now() - t.t < 250 && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+          const target = e.target as HTMLElement
+          if (target.closest('button, a')) return
+          step(t.x < window.innerWidth / 3 ? -1 : 1)
+        }
+      }}>
+      <div className="st-bars" aria-hidden>
+        {list.map((i, k) => (
+          <span key={i} className="st-bar">
+            {k < pos && <span className="st-fill" style={{ transform: 'scaleX(1)' }} />}
+            {k === pos && <span ref={bar} key={index} className="st-fill" />}
+          </span>
+        ))}
+      </div>
+      <div className="st-head">
+        <span className="st-who"><Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} /> @{INSTAGRAM}</span>
+        <button type="button" className="st-x" aria-label="Cerrar" onClick={onClose}>✕</button>
+      </div>
+      <div key={w.slug} className="st-img">
+        <Image src={w.src} alt={w.title} fill priority sizes="100vw" style={{ objectFit: 'cover' }} />
+      </div>
+      <div className="st-foot">
+        <p className="st-style">{w.style} · {w.zone}</p>
+        <h3 className="st-title">{w.title}</h3>
+        <button type="button" className="cta-book st-book" onClick={() => { onClose(); onBook(index) }}>Quiero algo así ●</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── The gallery ─────────────────────────────────────────────────────────
 export default function Archive() {
-  const { mobile } = useViewport()
-  const [still, setStill] = useState(false)
-  const [view, setView] = useState<'wall' | 'index'>('wall')
+  const mobile = useMobile()
+  const [filter, setFilter] = useState<Filter>('Todos')
   const [open, setOpen] = useState<{ i: number; from: Rect | null } | null>(null)
   const pushed = useRef(false)
 
-  useEffect(() => { setStill(window.matchMedia('(prefers-reduced-motion: reduce)').matches) }, [])
+  const list = useMemo(() => WORKS.map((_, i) => i).filter(i => filter === 'Todos' || WORKS[i].style === filter), [filter])
 
   // Deep links (#obra-lobo) and the browser back button
   useEffect(() => {
@@ -354,33 +277,49 @@ export default function Archive() {
     history.pushState(null, '', `#obra-${WORKS[i].slug}`)
     pushed.current = true
   }
-  const onIndex = (i: number) => {
+  const onIndex = useCallback((i: number) => {
     setOpen(o => (o ? { ...o, i } : o))
     history.replaceState(null, '', `#obra-${WORKS[i].slug}`)
-  }
-  const onClose = () => {
+  }, [])
+  const onClose = useCallback(() => {
     setOpen(null)
     if (location.hash.startsWith('#obra-')) {
       if (pushed.current) { pushed.current = false; history.back() }
       else history.replaceState(null, '', location.pathname + location.search)
     }
-  }
+  }, [])
+  const onBook = useCallback((i: number) => {
+    window.dispatchEvent(new CustomEvent('book:idea', { detail: `Algo como "${WORKS[i].title}"` }))
+    setTimeout(() => document.getElementById('turno')?.scrollIntoView({ behavior: 'smooth' }), 750)
+  }, [])
+
+  const viewList = open && list.includes(open.i) ? list : WORKS.map((_, i) => i)
 
   return (
-    <section id="obra" className="archive">
-      {!still && <Entrance mobile={mobile} />}
-      <div className="arch-bar arch-float">
-        <div className="arch-toggle" role="tablist" aria-label="Vista">
-          <button type="button" role="tab" aria-selected={view === 'wall'} data-hover onClick={() => setView('wall')}>Pared</button>
-          <button type="button" role="tab" aria-selected={view === 'index'} data-hover onClick={() => setView('index')}>Índice</button>
-        </div>
+    <section id="obra" className="archive g">
+      <header className="g-head">
+        <h2 className="g-title"><span className="arch-t1">Diseños</span> <span className="arch-t2 swash">tatuados</span></h2>
+        <p className="g-lede">Traditional, black &amp; white y color. Tocá una pieza para verla de cerca o pedir algo parecido.</p>
+      </header>
+
+      <div className="g-filters" role="tablist" aria-label="Filtrar por estilo">
+        {FILTERS.map(f => (
+          <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
+        ))}
       </div>
 
-      <div key={view} className="arch-view">
-        {view === 'wall' ? <Wall still={still} mobile={mobile} onOpen={onOpen} /> : <Index onOpen={onOpen} />}
+      <div key={filter} className="g-view">
+        <Grid list={list} mobile={mobile} onOpen={onOpen} />
       </div>
 
-      {open && <Detail key="detail" index={open.i} from={open.from} mobile={mobile} onIndex={onIndex} onClose={onClose} />}
+      <div className="g-more">
+        <p>Hay más en mi Instagram: trabajos recién hechos, flashes y fechas libres.</p>
+        <a href={`https://instagram.com/${INSTAGRAM}`} target="_blank" rel="noopener" className="g-ig" data-hover>@{INSTAGRAM} ↗</a>
+      </div>
+
+      {open && (mobile
+        ? <Stories index={open.i} list={viewList} onIndex={onIndex} onClose={onClose} onBook={onBook} />
+        : <Detail key="detail" index={open.i} list={viewList} from={open.from} onIndex={onIndex} onClose={onClose} onBook={onBook} />)}
     </section>
   )
 }
