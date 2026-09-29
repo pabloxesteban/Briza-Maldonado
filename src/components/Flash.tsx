@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
-type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean }
+type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean; status?: 'reservado' | 'tatuado' }
 
 const BASE = '/Briza-Maldonado/flash/'
 const FLASHES: FlashDef[] = [
@@ -32,7 +32,15 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
   const cover = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   // One sheet at a time, 4 flashes per sheet (real notebook size); tap/swipe turns the page
-  const PER = 4
+  // 4 per sheet on phones, 6 on desktop (3 columns, shorter page)
+  const [PER, setPER] = useState(4)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 900px)')
+    const on = () => setPER(mq.matches ? 6 : 4)
+    on(); mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  useEffect(() => { setPage(0) }, [PER])
   const pages = Math.ceil(FLASHES.length / PER)
   const [page, setPage] = useState(0)
   // A real page turn: the sheet lifts from the spiral and folds over in 3D, showing its back
@@ -60,7 +68,7 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
                 onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
                 title={f.available ? 'Arrastralo a tu foto' : undefined}>
                 <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
-                {!f.available && <span className="nb-stamp">Tatuado</span>}
+                {!f.available && <span className={`nb-stamp ${f.status === 'reservado' ? 'res' : ''}`}>{f.status === 'reservado' ? 'Reservado' : 'Tatuado'}</span>}
               </div>
               <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
               <p className="nb-facts"><span>{f.cm} cm</span><span>{f.price}</span></p>
@@ -86,7 +94,9 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
         const r = el.getBoundingClientRect()
         const vh = window.innerHeight
         // Opens between entering the screen and reaching its upper third
-        const target = reduce ? 1 : clamp((vh * 0.95 - r.top) / (vh * 0.7))
+        // Starts once the whole cover has been seen (its top near the upper part of the screen) and
+        // finishes as it reaches the nav
+        const target = reduce ? 1 : clamp((vh * 0.3 - r.top) / Math.max(1, vh * 0.3 - 90))
         cur += (target - cur) * 0.12
         if (Math.abs(target - cur) < 0.001) cur = target
         cover.current.style.transform = `rotateY(${-cur * 172}deg)`
@@ -407,8 +417,23 @@ function useLiveFlashes() {
   }, [])
 }
 
+// Reserved / tattooed, from Briza's confirmed bookings (worker reads her calendar)
+const AGENT = process.env.NEXT_PUBLIC_AGENT_URL
+function useFlashStatus() {
+  const [, bump] = useState(0)
+  useEffect(() => {
+    if (!AGENT) return
+    fetch(`${AGENT}/flash-status`).then(r => (r.ok ? r.json() : {})).then((st: Record<string, 'reservado' | 'tatuado'>) => {
+      const key = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      for (const f of FLASHES) { const s = st[key(f.name)]; if (s) { f.status = s; f.available = false } }
+      bump(n => n + 1)
+    }).catch(() => {})
+  }, [])
+}
+
 export default function Flash() {
   useLiveFlashes()
+  useFlashStatus()
   const [pending, setPending] = useState<number | null>(null)
   const clear = useCallback(() => setPending(null), [])
   return (

@@ -1848,3 +1848,12 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 @keyframes nbShade { 50% { opacity: 1; } from, to { opacity: .2; } }
 .nb-flip .nb-item { opacity: 1 !important; transform: none !important; }
 .nb-page { perspective: 2200px; }
+/* Desktop notebook: 6 per sheet in 3 columns, shorter page */
+@media (min-width: 900px) {
+  .nb { max-width: 600px; }
+  .nb-page { aspect-ratio: 1100 / 1240; }
+  .nb-grid { grid-template-columns: repeat(3, 1fr) !important; gap: .9rem .8rem !important; }
+  .nb-actions button { font-size: .72rem; padding: .45rem .2rem; }
+  .fl { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+}
+.nb-stamp.res { border-color: #2a2626; color: #2a2626; }

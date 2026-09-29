@@ -275,10 +275,44 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
   return { ok: true, pending: true, notified, summary: ['Solicitud enviada a Briza ✦', '', ...lines.filter(l => !/^(Origen|Instagram|WhatsApp|Referencia)/.test(l))].join('\n') }
 }
 
+// ─── Flash status: a confirmed booking marks the flash "reservado"; once its date passes, "tatuado".
+// Cancelling = Briza deletes the event or marks it ❌ in her calendar.
+const slugify = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const plainText = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+async function flashStatus(env: Env): Promise<Record<string, 'reservado' | 'tatuado'>> {
+  if (!env.GOOGLE_SA_JSON || !env.GCAL_PENDING_ID) return {}
+  const cached = await env.RATE?.get('flash-status')
+  if (cached) return JSON.parse(cached)
+  const now = Date.now()
+  const events = await listEvents(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, new Date(now - 365 * 86400e3), new Date(now + 365 * 86400e3))
+  const flashes = await loadFlashes(env.FLASH_SHEET_URL)
+  const out: Record<string, 'reservado' | 'tatuado'> = {}
+  for (const e of events) {
+    if (!/^(✅|💰)/.test(e.summary)) continue
+    const d = e.extendedProperties?.private
+    const idea = plainText(d?.idea ?? e.summary)
+    const when = Date.parse(d?.start || e.start?.dateTime || e.start?.date || '')
+    for (const f of flashes) {
+      if (!idea.includes(plainText(f.name))) continue
+      const k = slugify(f.name)
+      if (!Number.isNaN(when) && when < now) out[k] = 'tatuado'
+      else if (out[k] !== 'tatuado') out[k] = 'reservado'
+    }
+  }
+  await env.RATE?.put('flash-status', JSON.stringify(out), { expirationTtl: 600 })
+  return out
+}
+
 async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number; refs: string[] }, ch: Channel): Promise<{ result: unknown; action?: { summary: string } }> {
   switch (name) {
     case 'get_open_slots': return { result: await getOpenSlots(env, input as { from_date: string; days: number }) }
-    case 'list_flashes': return { result: (await loadFlashes(env.FLASH_SHEET_URL)).map((f, i) => ({ n: `Nº ${String(i + 1).padStart(2, '0')}`, ...f })) }
+    case 'list_flashes': {
+      const st = await flashStatus(env)
+      return { result: (await loadFlashes(env.FLASH_SHEET_URL)).map((f, i) => {
+        const s = st[slugify(f.name)]
+        return { n: `Nº ${String(i + 1).padStart(2, '0')}`, ...f, ...(s ? { available: false, status: s } : {}) }
+      }) }
+    }
     case 'quote_estimate': return { result: quote(input as { size_cm: number; color: boolean }) }
     case 'join_waitlist': return { result: await joinWaitlist(env, input as { name: string; idea: string; contact: string }, ch) }
     case 'request_booking': {
@@ -378,6 +412,7 @@ async function decide(env: Env, req: Request, url: URL) {
   if (!d) return page('Sin datos', '<h2>No encontré la solicitud</h2>')
   const base = strip(ev.summary)
 
+  await env.RATE?.delete('flash-status')
   if (a === 'no') {
     await retitle(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, id, `❌ Rechazado · ${base}`, '8')
     const msg = `Hola ${d.name}! Soy Briza ✦ Gracias por escribirme. Ese turno no lo puedo tomar; si querés te propongo otra fecha.`
@@ -545,6 +580,10 @@ export default {
     if (url.pathname === '/decide') return decide(env, req, url)
     if (url.pathname === '/mp') return mpWebhook(env, url, req).catch(() => new Response('ok'))
     if (url.pathname === '/ig') return igWebhook(env, req, url, ctx)
+    if (url.pathname === '/flash-status') {
+      const st = await flashStatus(env).catch(() => ({}))
+      return Response.json(st, { headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300' } })
+    }
     // Briza downloads the newsletter list: /newsletter.csv?k=<DECIDE_SECRET>
     if (url.pathname === '/newsletter.csv' && env.RATE && url.searchParams.get('k') === env.DECIDE_SECRET) {
       const rows = ['email,nombre,instagram,fecha']

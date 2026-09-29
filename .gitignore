@@ -36,3 +36,11 @@ next-env.d.ts
 # booking agent (Cloudflare Worker)
 agent/node_modules
 agent/.wrangler
+
+# content inbox (photos stay local)
+inbox/**/*.jpg
+inbox/**/*.jpeg
+inbox/**/*.png
+inbox/**/*.heic
+inbox/**/*.webp
+inbox/_publicados/
