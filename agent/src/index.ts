@@ -634,7 +634,10 @@ export default {
         name: clean(b.name, 80), idea: clean(b.idea), zone: clean(b.zone, 80), size: clean(b.size, 80), slot: clean(b.slot, 120),
         slot_start: clean(b.slot_start, 40), contact: clean(b.contact, 60), email: clean(b.email, 120), newsletter: b.newsletter === true,
         notes: clean(b.notes, 500), deposit_ok: b.deposit_ok === true,
-      }, { kind: 'web', ip }, [], 'Web · formulario de turnos')
+      }, { kind: 'web', ip },
+      (Array.isArray((b as Booking & { refs?: unknown }).refs) ? (b as Booking & { refs: unknown[] }).refs : [])
+        .filter((u): u is string => typeof u === 'string' && u.startsWith(`${env.PUBLIC_URL}/ref/`)).slice(0, 3),
+      'Web · formulario de turnos')
       return Response.json(out, { status: out.ok ? 200 : 429, headers: cors })
     }
 

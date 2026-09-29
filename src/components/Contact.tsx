@@ -87,6 +87,22 @@ export default function Contact() {
   const [sendError, setSendError] = useState('')
   const [copied, setCopied] = useState(false)
   const [flashes, setFlashes] = useState<string[]>([])
+  // Reference photos (the try-on picture, or ones the client picks) as data URLs
+  const [refs, setRefs] = useState<string[]>([])
+  const [attach, setAttach] = useState(true)
+  const addRefs = (files: FileList | null) => {
+    Array.from(files ?? []).slice(0, 3 - refs.length).forEach(f => {
+      const img = new window.Image()
+      img.onload = () => {
+        const k = Math.min(1, 1280 / Math.max(img.width, img.height))
+        const c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k
+        c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height)
+        setRefs(r => [...r, c.toDataURL('image/jpeg', 0.82)].slice(0, 3)); setAttach(true)
+        URL.revokeObjectURL(img.src)
+      }
+      img.src = URL.createObjectURL(f)
+    })
+  }
   const nameRef = useRef<HTMLInputElement>(null)
   const set = (k: 'idea' | 'detail' | 'zone' | 'size' | 'when' | 'name' | 'phone' | 'email') => (v: string) => setA(p => ({ ...p, [k]: v, ...(k === 'when' ? { slotStart: '' } : {}) }))
 
@@ -104,8 +120,9 @@ export default function Contact() {
   // Pre-select the idea when a flash asks for it (see Flash notebook)
   useEffect(() => {
     const onPick = (e: Event) => {
-      const d = (e as CustomEvent<string | string[]>).detail
-      const names = Array.isArray(d) ? d : [d]
+      const d = (e as CustomEvent<string | string[] | { names: string[]; preview?: string }>).detail
+      const names = typeof d === 'string' ? [d] : Array.isArray(d) ? d : d.names
+      if (d && typeof d === 'object' && !Array.isArray(d) && d.preview) { setRefs([d.preview]); setAttach(true) }
       setFlashes(names)
       setA(p => ({ ...p, idea: 'Un flash del cuaderno', detail: names.join(' + ') }))
       setStep(0); setDone(null)
@@ -124,12 +141,20 @@ export default function Contact() {
     if (via === 'sent' && AGENT) {
       setSending(true); setSendError('')
       try {
+        // Upload the references first (the worker stores them and links them in Briza's notice)
+        const refUrls: string[] = []
+        if (attach) for (const r of refs) {
+          const blob = await (await fetch(r)).blob()
+          const up = await fetch(`${AGENT}/upload`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob })
+          const j = await up.json().catch(() => ({})) as { url?: string }
+          if (j.url) refUrls.push(j.url)
+        }
         const res = await fetch(`${AGENT}/request`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ booking: {
             name: a.name.trim(), contact: a.phone, idea: `${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}`,
             zone: a.zone, size: a.size, slot: a.when, slot_start: a.slotStart, notes: '', deposit_ok: a.deposit,
-            email: a.email.trim(), newsletter: a.news,
+            email: a.email.trim(), newsletter: a.news, refs: refUrls,
           } }),
         })
         const out = await res.json() as { ok: boolean; error?: string }
@@ -230,6 +255,24 @@ export default function Contact() {
                       </ul>
                     </div>
                   )}
+                  <div className="book-refs">
+                    <p style={label}>Referencias (opcional)</p>
+                    <div className="book-refs-row">
+                      {refs.map((r, k) => (
+                        <span key={k} className="book-ref"><img src={r} alt={`Referencia ${k + 1}`} />
+                          <button type="button" aria-label="Quitar referencia" onClick={() => setRefs(x => x.filter((_, j) => j !== k))}>✕</button></span>
+                      ))}
+                      {refs.length < 3 && (
+                        <label className="book-ref-add">+ Adjuntar foto<input type="file" accept="image/*" multiple onChange={e => { addRefs(e.target.files); e.target.value = '' }} /></label>
+                      )}
+                    </div>
+                    {refs.length > 0 && (
+                      <label className="book-deposit" style={{ marginTop: '.6rem' }}>
+                        <input type="checkbox" checked={attach} onChange={e => setAttach(e.target.checked)} />
+                        <span>Enviar {refs.length > 1 ? 'estas fotos' : 'esta foto'} a Briza como referencia{flashes.length ? ' (tu prueba con el flash)' : ''}.</span>
+                      </label>
+                    )}
+                  </div>
                   <Question n="01">¿Qué tenés en mente?</Question>
                   <div className="book-chips">
                     {IDEAS.map(o => <Chip key={o} label={o} on={a.idea === o} onClick={() => set('idea')(o)} />)}
