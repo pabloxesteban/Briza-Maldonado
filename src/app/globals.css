@@ -1079,3 +1079,24 @@ a:hover > .nav-arch { transform: rotate(-4deg) translateY(-2px); }
 .t-swash { opacity: 0; transform: translateY(18px) !important; }
 .hero--t.in .t-swash { opacity: 1; }
 @media (max-width: 767px) { .t-swash, .hero--t.in .t-swash { font-size: 17vw !important; margin: -.2em 0 0 0 !important; } }
+
+/* Name v5: BRIZA smaller so it never covers her face in the middle clip */
+.t-fit { width: min(54%, 900px) !important; }
+.t-swash, .hero--t.in .t-swash { font-size: clamp(3.2rem, 10vw, 12rem) !important; }
+.t-clip:nth-child(2) video { object-position: 50% 20%; }
+@media (max-width: 767px) { .t-fit { width: 72% !important; } .t-swash, .hero--t.in .t-swash { font-size: 15vw !important; } }
+
+/* Nav actions: booking is the loudest thing on screen, menu next */
+nav .cta-book.nav-desktop { background: var(--c-pink) !important; color: var(--ink) !important; font-size: 1.05rem !important; font-weight: 800 !important; padding: .95rem 1.6rem !important; box-shadow: 0 8px 24px -8px rgba(238,143,178,.7); transition: transform .3s var(--ease), background .3s var(--ease); }
+nav .cta-book.nav-desktop:hover { transform: translateY(-2px); background: #EE8FB2 !important; }
+nav .nav-toggle { font-size: 1.05rem !important; font-weight: 800 !important; padding: .95rem 1.5rem !important; background: var(--ink) !important; color: var(--cream) !important; box-shadow: 0 8px 24px -10px rgba(22,20,20,.5); }
+.nav-on-dark .nav-toggle { background: var(--cream) !important; color: var(--ink) !important; }
+nav .nav-toggle i { width: .7rem; height: .7rem; background: var(--c-pink) !important; }
+@media (max-width: 767px) { nav .nav-toggle { font-size: .95rem !important; padding: .8rem 1.2rem !important; } }
+.cta-dock .cta-book { background: var(--c-pink) !important; color: var(--ink) !important; font-size: .95rem !important; font-weight: 800 !important; padding: 1rem 1.8rem !important; }
+/* Booking pill: ink on the pink footage reads strongest; pink dot as the signal */
+nav .cta-book.nav-desktop, .nav-on-dark .cta-book.nav-desktop, .t-cta .cta-book, .cta-dock .cta-book { background: var(--ink) !important; color: var(--cream) !important; box-shadow: 0 10px 30px -8px rgba(22,20,20,.55) !important; }
+nav .cta-book.nav-desktop:hover, .t-cta .cta-book:hover { background: #2a2626 !important; }
+.t-cta .cta-book { font-size: 1.05rem !important; font-weight: 800 !important; padding: 1rem 1.8rem !important; }
+.t-cta .t-link { font-size: 1.05rem; }
+nav .nav-toggle { padding: .95rem 1.7rem !important; }
