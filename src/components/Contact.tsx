@@ -44,7 +44,7 @@ function Chip({ label, on, onClick }: { label: string; on: boolean; onClick: () 
       className="book-chip"
       style={{
         padding: '0.8rem 1.15rem',
-        border: `1px solid ${on ? 'var(--ink)' : 'rgba(255,255,255,0.2)'}`,
+        border: `1px solid ${on ? 'var(--ink)' : 'rgba(22,20,20,0.2)'}`,
         background: on ? 'var(--ink)' : 'transparent',
         color: on ? 'var(--bg)' : 'var(--ink)',
         borderRadius: 999,
@@ -125,7 +125,7 @@ export default function Contact() {
       data-cursor="book"
       className="booking"
       style={{
-        borderTop: '1px solid rgba(255,255,255,0.1)',
+        borderTop: '1px solid rgba(22,20,20,0.1)',
         padding: 'clamp(5rem, 10vw, 9rem) clamp(1.25rem, 4vw, 2.5rem)',
         minHeight: '90vh',
       }}

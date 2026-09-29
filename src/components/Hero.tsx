@@ -3,42 +3,46 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 
-const P = '/Briza-Maldonado/'
+const FL = '/Briza-Maldonado/flash/'
 
 export default function Hero() {
   const ref = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    // Lines rise from behind their masks, after the logo intro when it plays
+    // Everything pops in after the logo intro when it plays
     const introPlaying = document.documentElement.dataset.intro === 'playing' ||
       (() => { try { return sessionStorage.getItem('bm-intro') !== '1' } catch { return false } })()
-    const start = introPlaying ? 2300 : 200
     const root = ref.current
     if (!root) return
-    root.style.setProperty('--hero-delay', `${start / 1000}s`)
+    root.style.setProperty('--hero-delay', `${introPlaying ? 2.3 : 0.15}s`)
     const t = setTimeout(() => root.classList.add('in'), 30)
     return () => clearTimeout(t)
   }, [])
 
   return (
-    <section ref={ref} className="hero">
-      <div className="hero-photo hero-photo--a duo"><Image src={P + 'portfolio/lobo.jpg'} alt="" fill priority sizes="30vw" style={{ objectFit: 'cover' }} /></div>
-      <div className="hero-photo hero-photo--b duo"><Image src={P + 'briza-portrait.jpg'} alt="Briza Maldonado en su estudio" fill priority sizes="(max-width: 767px) 60vw, 34vw" style={{ objectFit: 'cover', objectPosition: '40% 35%' }} /></div>
-      <div className="hero-photo hero-photo--c duo"><Image src={P + 'portfolio/polilla-esterno.jpg'} alt="" fill sizes="20vw" style={{ objectFit: 'cover' }} /></div>
-
-      <div className="hero-copy">
+    <section ref={ref} className="hero checker" style={{ ['--a' as string]: 'var(--c-pink)', ['--b' as string]: 'var(--c-pink-2)' }}>
+      <div className="hero-card">
         <h1 className="hero-title">
-          <span className="hero-line"><span style={{ ['--i' as string]: 0 }}>Briza</span></span>
-          <span className="hero-line hero-line--swash"><span className="swash" style={{ ['--i' as string]: 1 }}>Maldonado</span></span>
+          <span className="hero-line" style={{ ['--i' as string]: 0 }}>Tatuajes</span>
+          <span className="hero-line" style={{ ['--i' as string]: 1 }}>traditional</span>
+          <span className="hero-line swash" style={{ ['--i' as string]: 2 }}>con onda.</span>
         </h1>
+        <p className="hero-sub hero-pop" style={{ ['--i' as string]: 3 }}>
+          Soy Briza, tatuadora en Palermo, Buenos Aires.<br />Black &amp; white y color. Cada pieza, una sola vez.
+        </p>
+        <div className="hero-cta hero-pop" style={{ ['--i' as string]: 4 }}>
+          <a href="#turno" className="cta-book" data-cursor="book">Pedir turno ●</a>
+          <a href="#obra" className="hero-link" data-cursor="view">Ver trabajos ↓</a>
+        </div>
 
-        <div className="hero-text">
-          <p className="hero-reveal" style={{ ['--i' as string]: 2 }}>Tatuadora traditional en Palermo, Buenos Aires. Black &amp; white y color.</p>
-          <p className="hero-reveal hero-text-muted" style={{ ['--i' as string]: 3 }}>Cada pieza se diseña para vos y se tatúa una sola vez. Del papel a la piel.</p>
-          <div className="hero-cta hero-reveal" style={{ ['--i' as string]: 4 }}>
-            <a href="#turno" className="cta-book" data-cursor="book">Pedir turno ●</a>
-            <a href="#obra" className="ghost-link" data-cursor="view">Ver trabajos</a>
-          </div>
+        <div className="hero-sticker hero-sticker--heart" style={{ ['--i' as string]: 5 }}>
+          <Image src={FL + 'corazon-vegan-paper.png'} alt="Flash de corazón vegano" fill priority sizes="(max-width: 767px) 55vw, 30vw" style={{ objectFit: 'contain' }} />
+        </div>
+        <div className="hero-sticker hero-sticker--berry" style={{ ['--i' as string]: 6 }}>
+          <Image src={FL + 'frutilla-paper.png'} alt="" fill sizes="(max-width: 767px) 32vw, 16vw" style={{ objectFit: 'contain' }} />
+        </div>
+        <div className="hero-sticker hero-sticker--bird" style={{ ['--i' as string]: 7 }}>
+          <Image src={FL + 'gorrion-paper.png'} alt="" fill sizes="20vw" style={{ objectFit: 'contain' }} />
         </div>
       </div>
     </section>

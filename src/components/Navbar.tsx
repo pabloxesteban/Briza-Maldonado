@@ -69,10 +69,10 @@ export default function Navbar() {
           opacity: show ? 1 : 0,
           transition: 'opacity 0.8s ease, background 0.4s ease, backdrop-filter 0.4s',
           pointerEvents: show ? 'all' : 'none',
-          background: scrolled || menuOpen ? 'rgba(0,0,0,0.95)' : 'transparent',
+          background: scrolled || menuOpen ? 'rgba(247,241,226,0.95)' : 'transparent',
           backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
           WebkitBackdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
-          borderBottom: scrolled && !menuOpen ? '1px solid rgba(255,255,255,0.07)' : 'none',
+          borderBottom: scrolled && !menuOpen ? '1px solid rgba(22,20,20,0.07)' : 'none',
         }}
       >
         {/* Logo → home */}

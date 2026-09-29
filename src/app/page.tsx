@@ -10,7 +10,6 @@ import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import ScrollProgress from '@/components/ScrollProgress'
 import CustomCursor from '@/components/CustomCursor'
-import InkLine from '@/components/InkLine'
 import Intro from '@/components/Intro'
 import Reveal from '@/components/Reveal'
 
@@ -35,13 +34,10 @@ export default function Home() {
       <Hero />
       <Archive />
       <ImageStrip />
-      <InkLine />
       <Flash />
-      <Process />
-      <InkLine flip />
-      <About />
-      <InkLine />
-      <Contact />
+      <div className="band" style={{ ['--band' as string]: 'var(--c-blue)' }}><Process /></div>
+      <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><About /></div>
+      <div className="band band--check" style={{ ['--band' as string]: 'var(--c-orange)' }}><Contact /></div>
       <Footer />
       <Reveal />
     </main>

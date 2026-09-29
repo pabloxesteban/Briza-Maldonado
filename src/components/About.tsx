@@ -48,7 +48,7 @@ export default function About() {
       ref={ref}
       className="about-grid"
       style={{
-        borderTop: '1px solid rgba(255,255,255,0.1)',
+        borderTop: '1px solid rgba(22,20,20,0.1)',
         minHeight: '90vh',
       }}
     >
@@ -58,7 +58,7 @@ export default function About() {
           position: 'relative',
           overflow: 'hidden',
           minHeight: '70vh',
-          backgroundColor: '#1a1416',
+          backgroundColor: '#ece4cf',
         }}
       >
         <img
@@ -78,7 +78,7 @@ export default function About() {
         <div style={{ position: 'absolute', bottom: '2.5rem', left: '2.5rem', zIndex: 2 }}>
           <p style={{
             fontSize: '0.55rem', letterSpacing: '0.25em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', lineHeight: 1.8,
+            textTransform: 'uppercase', color: 'rgba(22,20,20,0.7)', lineHeight: 1.8,
           }}>
             Briza Maldonado<br />
             Palermo, CABA<br />
@@ -95,7 +95,7 @@ export default function About() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          borderLeft: '1px solid rgba(255,255,255,0.1)',
+          borderLeft: '1px solid rgba(22,20,20,0.1)',
         }}
       >
         {/* Block 1 */}
@@ -157,7 +157,7 @@ export default function About() {
               key={tag}
               style={{
                 padding: '0.3rem 0.9rem',
-                border: '1px solid rgba(255,255,255,0.15)',
+                border: '1px solid rgba(22,20,20,0.15)',
                 fontSize: '0.55rem',
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
