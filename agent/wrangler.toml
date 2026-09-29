@@ -1,0 +1,14 @@
+name = "briza-agent"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Only the site may call the agent
+ALLOWED_ORIGIN = "https://pabloxesteban.github.io"
+WHATSAPP = "5491156233929"
+
+# Secrets (set with `npx wrangler secret put NAME`):
+#   ANTHROPIC_API_KEY  - Claude API key
+#   GCAL_ID            - Briza's public "Turnos" calendar id
+#   GCAL_KEY           - Google API key restricted to the Calendar API

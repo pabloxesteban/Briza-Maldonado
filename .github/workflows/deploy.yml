@@ -36,6 +36,8 @@ jobs:
           # Google Calendar with Briza's open slots (see src/lib/calendar.ts)
           NEXT_PUBLIC_GCAL_ID: ${{ vars.GCAL_ID }}
           NEXT_PUBLIC_GCAL_KEY: ${{ secrets.GCAL_KEY }}
+          # URL of the booking assistant worker (agent/)
+          NEXT_PUBLIC_AGENT_URL: ${{ vars.AGENT_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

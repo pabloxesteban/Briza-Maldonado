@@ -12,6 +12,7 @@ import ScrollProgress from '@/components/ScrollProgress'
 import CustomCursor from '@/components/CustomCursor'
 import Intro from '@/components/Intro'
 import Reveal from '@/components/Reveal'
+import Assistant from '@/components/Assistant'
 
 export const metadata: Metadata = {
   title: 'Briza Maldonado — Tatuadora en Palermo, Buenos Aires',
@@ -40,6 +41,7 @@ export default function Home() {
       <div className="band" style={{ ['--band' as string]: 'var(--c-pink)' }}><Contact /></div>
       <Footer />
       <Reveal />
+      <Assistant />
     </main>
   )
 }
