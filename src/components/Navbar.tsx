@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -18,6 +18,8 @@ export default function Navbar() {
   const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuOpenRef = useRef(false)
+  menuOpenRef.current = menuOpen
   const [menuPic, setMenuPic] = useState(WORKS[4].src)
   const [hoverPic, setHoverPic] = useState<string | null>(null)
   useEffect(() => { if (menuOpen) setMenuPic(p => { let n = p; while (n === p) n = WORKS[Math.floor(Math.random() * WORKS.length)].src; return n }) }, [menuOpen])
@@ -91,55 +93,41 @@ export default function Navbar() {
     if (hasAgent) { e.preventDefault(); window.dispatchEvent(new Event('assistant:open')) }
   }
   const show = isSubPage || visible
+  // The bar eases in as you start scrolling (0 → 1 over the first ~220px), never all at once
+  const navRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    let raf = 0, cur = isSubPage ? 1 : 0
+    const tick = () => {
+      const target = isSubPage || menuOpenRef.current ? 1 : Math.min(1, Math.max(0, (window.scrollY - 40) / 220))
+      cur += (target - cur) * 0.09
+      if (Math.abs(target - cur) < 0.001) cur = target
+      navRef.current?.style.setProperty('--np', cur.toFixed(3))
+      navRef.current?.classList.toggle('on', cur > 0.4)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [isSubPage])
 
   return (
     <>
-      <nav
-        className={!scrolled && !menuOpen && pathname === '/' ? 'nav-on-dark' : ''}
-        style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0,
-          zIndex: 500,
-          padding: '1.1rem clamp(1rem, 2.5vw, 2.5rem)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          opacity: show ? 1 : 0,
-          transition: 'opacity 0.8s ease, background 0.4s ease, backdrop-filter 0.4s',
-          pointerEvents: show ? 'all' : 'none',
-          background: scrolled || menuOpen ? 'rgba(247,241,226,0.95)' : 'transparent',
-          backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
-          WebkitBackdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
-          borderBottom: scrolled && !menuOpen ? '1px solid rgba(22,20,20,0.07)' : 'none',
-        }}
-      >
+      <nav ref={navRef} className={`nav2 ${menuOpen ? 'menu-open' : ''} ${isSubPage ? 'always' : ''}`} style={{ opacity: show ? undefined : 0 }}>
         {/* Logo → home */}
-        <Link
-          href="/"
-          aria-label="Briza Maldonado — inicio"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '0.9rem',
-            fontStyle: 'italic',
-            color: 'var(--ink)',
-            textDecoration: 'none',
-            letterSpacing: '0.01em',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            zIndex: 1,
-          }}
-        >
+        <Link href="/" aria-label="Briza Maldonado — inicio" className="nb2-brand">
           <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={400} height={480} priority
             sizes="56px" className="nav-arch" />
           <span className="nav-lockup"><span className="nav-l1">Briza</span><span className="nav-l2 swash">Maldonado</span></span>
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.6rem', zIndex: 1 }}>
-          <a href={bookHref} className="cta-book nav-desktop" data-cursor="book" onClick={quickBook}>Pedir turno ●</a>
-          <button className="nav-toggle" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen}
+        <div className="nb2-actions">
+          <a href={bookHref} className="nb2-book nav-desktop" data-cursor="book" onClick={quickBook}>
+            <span className="nb2-roll"><span>Pedir turno</span><span aria-hidden>Pedir turno</span></span>
+            <span className="nb2-book-ic" aria-hidden>→</span>
+          </a>
+          <button className={`nb2-menu ${menuOpen ? 'x' : ''}`} onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} data-hover>
-            <span>{menuOpen ? 'Cerrar' : 'Menu'}</span><i />
+            <span className="nb2-roll"><span>{menuOpen ? 'Cerrar' : 'Menu'}</span><span aria-hidden>{menuOpen ? 'Cerrar' : 'Menu'}</span></span>
+            <span className="nb2-burger" aria-hidden><i /><i /></span>
           </button>
         </div>
       </nav>
@@ -172,7 +160,10 @@ export default function Navbar() {
 
       {/* Mobile: booking always one thumb away */}
       <div className={`cta-dock ${bookingInView || footerIn || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
-        <a href={bookHref} className="cta-book" onClick={quickBook}>Pedir turno ●</a>
+        <a href={bookHref} className="nb2-book" onClick={quickBook}>
+          <span className="nb2-roll"><span>Pedir turno</span><span aria-hidden>Pedir turno</span></span>
+          <span className="nb2-book-ic" aria-hidden>→</span>
+        </a>
       </div>
     </>
   )

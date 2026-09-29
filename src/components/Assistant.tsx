@@ -123,6 +123,23 @@ const textOf = (m: Msg) => (typeof m.content === 'string' ? m.content
 
 export default function Assistant() {
   const [open, setOpen] = useState(false)
+  // A friendly nudge a few seconds after the visitor starts exploring (once per visit, dismissible)
+  const [teaser, setTeaser] = useState(false)
+  useEffect(() => {
+    let seen = false
+    try { seen = sessionStorage.getItem('lila-teaser') === '1' } catch { /* noop */ }
+    if (seen) return
+    const t = setTimeout(() => setTeaser(true), 9000)
+    return () => clearTimeout(t)
+  }, [])
+  // Lila waits until the hero is behind, so she doesn't sit on top of its buttons
+  const [past, setPast] = useState(false)
+  useEffect(() => {
+    const on = () => setPast(window.scrollY > window.innerHeight * 0.6)
+    on(); window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+  const hideTeaser = () => { setTeaser(false); try { sessionStorage.setItem('lila-teaser', '1') } catch { /* noop */ } }
   const [history, setHistory] = useState<Msg[]>([])
   const [action, setAction] = useState<Action | null>(null)
   const [input, setInput] = useState('')
@@ -206,10 +223,23 @@ export default function Assistant() {
 
   return (
     <>
-      <button type="button" className={`ai-fab ${open ? 'hide' : ''}`} onClick={() => setOpen(true)} aria-label="Hablar con Lila" data-hover>
-        <LilaAvatar size={34} />
-        <span>¿Dudas? <b>Hablá con Lila</b></span>
-      </button>
+      <div className={`lila-dock ${open || !past ? 'hide' : ''}`}>
+        {teaser && !open && (
+          <div className="lila-teaser" role="status">
+            <button type="button" className="lila-teaser-x" aria-label="Cerrar" onClick={hideTeaser}>✕</button>
+            <button type="button" className="lila-teaser-body" onClick={() => { hideTeaser(); setOpen(true) }}>
+              <b>Hola, soy Lila ✦</b>
+              <span>¿Te ayudo a elegir un flash o a pedir turno?</span>
+            </button>
+          </div>
+        )}
+        <button type="button" className="lila-fab" onClick={() => { hideTeaser(); setOpen(true) }} aria-label="Hablar con Lila" data-hover>
+          <span className="lila-ring" aria-hidden />
+          <span className="lila-face"><LilaAvatar size={52} /></span>
+          <span className="lila-online" aria-hidden />
+          <span className="lila-label"><b>Lila</b><em>Te respondo al toque</em></span>
+        </button>
+      </div>
 
       <div className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
         <header className="ai-head">
