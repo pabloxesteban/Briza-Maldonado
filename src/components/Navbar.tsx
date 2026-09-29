@@ -46,7 +46,7 @@ export default function Navbar() {
     return () => io.disconnect()
   }, [pathname])
 
-  // Over the dark footer the bar switches to its light-on-dark look and the dock steps aside
+  // The floating booking dock steps aside at the very end of the page
   const [footerIn, setFooterIn] = useState(false)
   useEffect(() => {
     const el = document.querySelector('footer')
@@ -71,7 +71,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={!menuOpen && ((!scrolled && pathname === '/') || footerIn) ? `nav-on-dark ${footerIn ? 'nav-footer' : ''}` : ''}
+        className={!scrolled && !menuOpen && pathname === '/' ? 'nav-on-dark' : ''}
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,

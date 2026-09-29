@@ -1617,3 +1617,13 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 nav.nav-footer { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border-bottom: 0 !important; }
 .nav-on-dark .nav-l1 { color: var(--cream) !important; }
 nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; color: var(--ink) !important; }
+
+/* Footer: one quiet line */
+.ft2 { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .8rem 1.5rem; padding: 1.4rem clamp(16px, 4vw, 56px); border-top: 1px solid rgba(22,20,20,.1); background: var(--cream); font-size: .85rem; color: var(--ink); }
+.ft2-brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; }
+.ft2-brand span { font-weight: 500; color: var(--ink-muted); }
+.ft2-arch { width: 22px; height: auto; }
+.ft2-links { display: flex; gap: 1.4rem; }
+.ft2-links a, .ft2-links button { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--ink-muted); text-decoration: none; transition: color .25s var(--ease); }
+.ft2-links a:hover, .ft2-links button:hover { color: #E0769C; }
+@media (max-width: 767px) { .ft2 { padding-bottom: 5.5rem; } .ft2-brand span { display: block; width: 100%; } .ft2-brand { flex-wrap: wrap; } }
