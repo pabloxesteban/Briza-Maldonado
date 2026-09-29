@@ -124,7 +124,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const [nudge, setNudge] = useState(false)
   const nextId = useRef(1)
   const ptrs = useRef(new Map<number, Pt>())
-  const gesture = useRef<{ kind: 'photo' | 'item'; id?: number; startPts: Pt[]; start: View | Placed } | null>(null)
+  const gesture = useRef<{ kind: 'photo' | 'item'; id?: number; startPts: Pt[]; start: View | Placed; cur: View | Placed } | null>(null)
   const ready = !!photo && !framing
 
   const add = useCallback((f: number, x = 0.5, y = 0.45) => {
@@ -158,18 +158,35 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y)
   const ang = (a: Pt, b: Pt) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI
 
-  const begin = (kind: 'photo' | 'item', id?: number) => {
+  // Gestures write straight to the DOM on every frame (no React re-render per move) and commit on release
+  const photoEl = useRef<HTMLImageElement>(null)
+  const stencilEls = useRef(new Map<number, HTMLDivElement>())
+  const frame = useRef(0)
+  const photoStyle = (v: View) => `translate(${v.x * 100}%, ${v.y * 100}%) scale(${v.zoom})`
+  const paint = (kind: 'photo' | 'item', id: number | undefined, v: View | Placed) => {
+    cancelAnimationFrame(frame.current)
+    frame.current = requestAnimationFrame(() => {
+      if (kind === 'photo') { if (photoEl.current) photoEl.current.style.transform = photoStyle(v as View); return }
+      const el = stencilEls.current.get(id!), it = v as Placed
+      if (!el) return
+      el.style.left = `${it.x * 100}%`; el.style.top = `${it.y * 100}%`; el.style.width = `${it.size * 100}%`
+      el.style.transform = `translate(-50%, -50%) rotate(${it.rot}deg)`
+    })
+  }
+
+  const begin = (kind: 'photo' | 'item', id?: number, from?: View | Placed) => {
     const pts = Array.from(ptrs.current.values())
-    const start = kind === 'photo' ? view : items.find(i => i.id === id)!
-    gesture.current = { kind, id, startPts: pts, start }
+    const start = from ?? (kind === 'photo' ? view : items.find(i => i.id === id)!)
+    gesture.current = { kind, id, startPts: pts, start, cur: start }
   }
 
   const onDown = (e: React.PointerEvent, kind: 'photo' | 'item', id?: number) => {
     e.stopPropagation()
     ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
     ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    if (kind === 'item') setSel(id!)
-    begin(kind, id)
+    if (kind === 'item' && sel !== id) setSel(id!)
+    const g = gesture.current
+    begin(kind, id, g && g.kind === kind && g.id === id ? g.cur : undefined)
   }
   const onMove = (e: React.PointerEvent) => {
     if (!ptrs.current.has(e.pointerId)) return
@@ -177,8 +194,8 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
     const g = gesture.current
     if (!g) return
     const pts = Array.from(ptrs.current.values())
+    if (pts.length !== g.startPts.length) { begin(g.kind, g.id, g.cur); return }
     const r = size()
-    if (pts.length !== g.startPts.length) { begin(g.kind, g.id); return }
     const c0 = pts.length > 1 ? { x: (g.startPts[0].x + g.startPts[1].x) / 2, y: (g.startPts[0].y + g.startPts[1].y) / 2 } : g.startPts[0]
     const c1 = pts.length > 1 ? { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 } : pts[0]
     const dx = (c1.x - c0.x) / r.width, dy = (c1.y - c0.y) / r.height
@@ -186,18 +203,21 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
     const dr = pts.length > 1 ? ang(pts[0], pts[1]) - ang(g.startPts[0], g.startPts[1]) : 0
     if (g.kind === 'photo') {
       const s = g.start as View
-      setView({ x: s.x + dx, y: s.y + dy, zoom: clamp(s.zoom * k, 1, 4) })
+      g.cur = { x: s.x + dx, y: s.y + dy, zoom: clamp(s.zoom * k, 1, 4) }
     } else {
       const s = g.start as Placed
-      setItems(list => list.map(it => (it.id === g.id
-        ? { ...it, x: clamp(s.x + dx), y: clamp(s.y + dy), size: clamp(s.size * k, 0.08, 0.95), rot: s.rot + dr } : it)))
+      g.cur = { ...s, x: clamp(s.x + dx), y: clamp(s.y + dy), size: clamp(s.size * k, 0.06, 0.95), rot: s.rot + dr }
     }
+    paint(g.kind, g.id, g.cur)
   }
   const onUp = (e: React.PointerEvent) => {
     ptrs.current.delete(e.pointerId)
     const g = gesture.current
-    if (!ptrs.current.size) gesture.current = null
-    else if (g) begin(g.kind, g.id)
+    if (!g) return
+    if (ptrs.current.size) { begin(g.kind, g.id, g.cur); return }
+    gesture.current = null
+    if (g.kind === 'photo') setView(g.cur as View)
+    else { const c = g.cur as Placed; setItems(list => list.map(it => (it.id === g.id ? c : it))) }
   }
 
   const current = items.find(i => i.id === sel) ?? null
@@ -238,8 +258,8 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
         onPointerDown={e => { if (framing) onDown(e, 'photo'); else setSel(null) }}
         onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {photo
-          ? <img src={photo} alt="Tu foto" className="try-photo" draggable={false}
-              style={{ transform: `translate(${view.x * 100}%, ${view.y * 100}%) scale(${view.zoom})` }} />
+          ? <img ref={photoEl} src={photo} alt="Tu foto" className="try-photo" draggable={false}
+              style={{ transform: photoStyle(view) }} />
           : (
             <label className="try-empty">
               <span className="try-plus" aria-hidden>+</span>
@@ -252,15 +272,16 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
         {ready && items.map(it => {
           const f = FLASHES[it.f]
           return (
-            <div key={it.id} className={`try-stencil ${sel === it.id ? 'sel' : ''}`}
+            <div key={it.id} ref={el => { if (el) stencilEls.current.set(it.id, el); else stencilEls.current.delete(it.id) }}
+              className={`try-stencil ${sel === it.id ? 'sel' : ''}`}
               style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, width: `${it.size * 100}%`, transform: `translate(-50%, -50%) rotate(${it.rot}deg)` }}
               onPointerDown={e => onDown(e, 'item', it.id)}>
-              <img src={img(f)} alt={f.name} draggable={false} />
+              <img src={`${BASE}ink/${f.slug}.png`} alt={f.name} draggable={false} />
             </div>
           )
         })}
 
-        {framing && <p className="try-hint">Arrastrá para mover · pellizcá o usá la barra para acercar</p>}
+        {framing && <p className="try-hint">Arrastrá para mover · pellizcá para acercar</p>}
         {ready && !items.length && <p className="try-hint">Elegí un flash de abajo o arrastralo desde el cuaderno</p>}
         {nudge && <p className="try-hint warn">Primero subí y aplicá tu foto</p>}
       </div>
@@ -269,7 +290,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
       <div className="try-controls">
         {framing && (
           <>
-            <label className="try-range">Zoom
+            <label className="try-range try-desk">Zoom
               <input type="range" min={1} max={4} step={0.01} value={view.zoom} onChange={e => setView(v => ({ ...v, zoom: Number(e.target.value) }))} />
             </label>
             <div className="try-btns">
@@ -294,10 +315,10 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
             {current && (
               <>
                 <p className="try-now"><b>{FLASHES[current.f].name}</b> · {FLASHES[current.f].cm} cm · {FLASHES[current.f].price}</p>
-                <label className="try-range">Tamaño
+                <label className="try-range try-desk">Tamaño
                   <input type="range" min={0.08} max={0.95} step={0.01} value={current.size} onChange={e => update({ size: Number(e.target.value) })} />
                 </label>
-                <label className="try-range">Rotación
+                <label className="try-range try-desk">Rotación
                   <input type="range" min={-180} max={180} step={1} value={Math.round(((current.rot + 540) % 360) - 180)} onChange={e => update({ rot: Number(e.target.value) })} />
                 </label>
               </>

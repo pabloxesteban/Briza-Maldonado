@@ -1795,3 +1795,9 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .ws-soft { font-family: var(--font-swash); text-transform: none; letter-spacing: 0; -webkit-text-stroke: 0; color: #EE8FB2; font-size: clamp(2.4rem, 6vw, 5.6rem); opacity: .85; }
 .ws i { font-style: normal; font-size: clamp(1rem, 2vw, 1.6rem); color: #EE8FB2; opacity: .7; }
 @media (max-width: 899px) { .try.fs .try-area.framing .try-hint { display: none; } }
+/* Stencils: pre-extracted ink (no paper), blended into the skin like a fresh tattoo */
+.try-stencil { mix-blend-mode: multiply; will-change: left, top, width, transform; }
+.try-stencil img { filter: blur(.25px) !important; opacity: .82 !important; mix-blend-mode: normal; }
+.try-stencil.sel { outline: 1.5px dashed rgba(247,241,226,.9); outline-offset: 6px; }
+@media (max-width: 899px) { .try.fs .try-desk { display: none; } }
+@media (hover: none) { .try-desk { display: none; } }
