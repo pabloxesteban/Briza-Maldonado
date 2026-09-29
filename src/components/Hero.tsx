@@ -1,18 +1,21 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import Image from 'next/image'
+import { useEffect, useRef, useState } from 'react'
 
-const P = '/Briza-Maldonado/'
-const NAME = 'BRIZA'
+const V = '/Briza-Maldonado/proceso/'
+const CLIPS = [
+  { src: 'boceto', label: 'El boceto' },
+  { src: 'stencil', label: 'El stencil' },
+  { src: 'piel', label: 'La piel' },
+]
 
-// One figure, cut out, in front of her name set edge to edge (Monolith / Vitalina pattern).
-// On scroll the page lifts off her: the name rises slower than she does and the frame closes softly.
+// Full-bleed process triptych (sketch → stencil → skin) with her name running across it as a band.
+// Phones show one clip at a time, dissolving into the next. Scrolling pushes the band faster.
 export default function Hero() {
   const ref = useRef<HTMLElement>(null)
-  const fig = useRef<HTMLDivElement>(null)
-  const word = useRef<HTMLDivElement>(null)
-  const text = useRef<HTMLSpanElement>(null)
+  const band = useRef<HTMLDivElement>(null)
+  const [mobile, setMobile] = useState(false)
+  const [cur, setCur] = useState(0)
 
   useEffect(() => {
     const introPlaying = document.documentElement.dataset.intro === 'playing' ||
@@ -21,67 +24,81 @@ export default function Hero() {
     if (!root) return
     root.style.setProperty('--hero-delay', `${introPlaying ? 2.3 : 0.15}s`)
     const t = setTimeout(() => root.classList.add('in'), 30)
-
-    // Fit the name to the full width, whatever the font metrics
-    const fit = () => {
-      const w = word.current, s = text.current
-      if (!w || !s) return
-      s.style.fontSize = '100px'
-      const natural = s.getBoundingClientRect().width
-      if (natural) s.style.fontSize = `${(100 * w.clientWidth) / natural}px`
-    }
-    fit()
-    document.fonts?.ready.then(fit)
-    window.addEventListener('resize', fit)
+    const mq = window.matchMedia('(max-width: 767px)')
+    const on = () => setMobile(mq.matches)
+    on(); mq.addEventListener('change', on)
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let raf = 0, cur = 0, last = -1
-    const tick = () => {
-      const target = reduce ? 0 : Math.min(1, window.scrollY / window.innerHeight)
-      cur += (target - cur) * 0.14
-      if (Math.abs(target - cur) < 0.0005) cur = target
-      if (cur !== last) {
-        last = cur
-        if (word.current) word.current.style.transform = `translate3d(0, ${cur * 18}vh, 0)`
-        if (fig.current) fig.current.style.transform = `translate3d(-50%, ${cur * -6}vh, 0) scale(${1 - cur * 0.04})`
-        root.style.setProperty('--hero-p', cur.toFixed(4))
+    let raf = 0, x = 0, lastY = window.scrollY, boost = 0, prev = performance.now()
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - prev); prev = now
+      const y = window.scrollY
+      boost += (Math.min(40, Math.abs(y - lastY)) - boost) * 0.1
+      lastY = y
+      if (!reduce && band.current && y < window.innerHeight * 1.2) {
+        const w = band.current.scrollWidth / 2
+        x = (x + (0.04 + boost * 0.02) * dt) % w
+        band.current.style.transform = `translate3d(${-x}px, 0, 0)`
+        root.style.setProperty('--hero-p', Math.min(1, y / window.innerHeight).toFixed(4))
       }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => { clearTimeout(t); cancelAnimationFrame(raf); window.removeEventListener('resize', fit) }
+    return () => { clearTimeout(t); cancelAnimationFrame(raf); mq.removeEventListener('change', on) }
   }, [])
 
+  // Phones: cycle the three clips
+  useEffect(() => {
+    if (!mobile) return
+    const id = setInterval(() => setCur(c => (c + 1) % CLIPS.length), 4200)
+    return () => clearInterval(id)
+  }, [mobile])
+
+  // Some phones refuse autoplay until a gesture
+  useEffect(() => {
+    const kick = () => ref.current?.querySelectorAll('video').forEach(v => { if (v.paused) v.play().catch(() => {}) })
+    kick()
+    window.addEventListener('touchstart', kick, { passive: true, once: true })
+    return () => window.removeEventListener('touchstart', kick)
+  }, [mobile])
+
+  const name = (
+    <>
+      <span className="h-name">Briza</span>
+      <span className="h-name h-swash swash">Maldonado</span>
+      <span className="h-star">✦</span>
+    </>
+  )
+
   return (
-    <section ref={ref} className="hero hero--v">
-      <div className="v-meta v-reveal">
-        <p>Tatuadora<br />traditional</p>
-        <p>Palermo<br />Buenos Aires</p>
-        <p className="v-meta-hide">Black &amp; white<br />y color</p>
-        <p className="v-meta-hide">Diseños únicos<br />dibujados a mano</p>
-      </div>
-
-      <div ref={word} className="v-word" aria-hidden>
-        <span ref={text} className="v-mask">
-          {NAME.split('').map((c, i) => <span key={i} style={{ ['--i' as string]: i }}>{c}</span>)}
-        </span>
-      </div>
-
-      <div ref={fig} className="v-figure">
-        <Image src={P + 'briza-tatuando.jpg'} alt="Briza Maldonado tatuando en su estudio" fill priority sizes="(max-width: 767px) 80vw, 36vw" style={{ objectFit: 'cover', objectPosition: '50% 30%' }} />
+    <section ref={ref} className="hero hero--t">
+      <div className="t-media">
+        {CLIPS.map((c, i) => (
+          <figure key={c.src} className={`t-clip ${mobile && i === cur ? 'on' : ''}`} style={{ ['--i' as string]: i }}>
+            <video muted autoPlay loop playsInline preload="auto" poster={`${V}${c.src}-poster.jpg`} disablePictureInPicture aria-hidden>
+              <source src={`${V}${c.src}.webm`} type="video/webm" />
+              <source src={`${V}${c.src}.mp4`} type="video/mp4" />
+            </video>
+            <figcaption><span>0{i + 1}</span> {c.label}</figcaption>
+          </figure>
+        ))}
       </div>
 
       <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>
 
-      <div className="v-corner v-corner--bl v-reveal">
-        <p className="v-surname swash">Maldonado</p>
-        <p className="v-tag">Cada pieza, una sola vez.</p>
+      <p className="t-meta t-reveal">Tatuadora traditional<br />Palermo, Buenos Aires</p>
+
+      <div className="t-band" aria-hidden>
+        <div ref={band} className="t-band-track">
+          <div className="t-band-set">{name}{name}</div>
+          <div className="t-band-set">{name}{name}</div>
+        </div>
       </div>
-      <div className="v-corner v-corner--br v-reveal">
+
+      <div className="t-cta t-reveal">
         <a href="#turno" className="cta-book" data-cursor="book">Pedir turno ●</a>
-        <a href="#obra" className="hero-link" data-cursor="view">Ver trabajos ↓</a>
+        <a href="#obra" className="t-link" data-cursor="view">Ver trabajos ↓</a>
       </div>
-      <span className="v-scroll v-reveal" aria-hidden><i /></span>
     </section>
   )
 }

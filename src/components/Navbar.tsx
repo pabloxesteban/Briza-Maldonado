@@ -61,6 +61,7 @@ export default function Navbar() {
   return (
     <>
       <nav
+        className={!scrolled && !menuOpen && pathname === '/' ? 'nav-on-dark' : ''}
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,
@@ -95,8 +96,8 @@ export default function Navbar() {
             zIndex: 1,
           }}
         >
-          <Image src="/Briza-Maldonado/brand/monogram.png" alt="" width={160} height={160} priority
-            sizes="44px" className="nav-mono" />
+          <Image src="/Briza-Maldonado/brand/sirena-sticker.png" alt="" width={360} height={474} priority
+            sizes="60px" className="nav-sticker" />
           <span className="nav-lockup"><span className="nav-l1">Briza</span><span className="nav-l2 swash">Maldonado</span></span>
         </Link>
 
