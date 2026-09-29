@@ -893,3 +893,13 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
 @media (max-width: 767px) { .v-figure { width: 112vw; bottom: 60px; } .v-word { top: 36%; } }
 .v-figure { width: min(40vw, 64vh); left: 60%; }
 @media (max-width: 767px) { .v-figure { width: 88vw; left: 58%; bottom: 72px; } .v-word { top: 30%; } }
+
+/* Process on phones: media big, path compact */
+@media (max-width: 860px) {
+  .process-pin { padding-top: 76px; }
+  .process-body { grid-template-rows: minmax(0, 1.6fr) auto !important; gap: .6rem !important; }
+  .process-frame { max-height: none !important; height: 100% !important; width: 100%; aspect-ratio: auto; border-radius: 22px; }
+  .zz { height: 22vh !important; }
+  .zz-caption { margin-top: .4rem !important; }
+  .process-title { font-size: 2rem !important; }
+}

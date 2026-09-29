@@ -113,14 +113,24 @@ export default function Process() {
 
 function StageVideo({ src, poster, on, show }: { src: string; poster: string; on: boolean; show: number }) {
   const ref = useRef<HTMLVideoElement>(null)
+  // Phones (iOS low-power, data saver) can refuse a programmatic play; autoplay + a retry on first touch covers it
   useEffect(() => {
     const v = ref.current
     if (!v) return
-    if (on) { v.currentTime = 0; v.play().catch(() => {}) } else v.pause()
+    const play = () => { v.play().catch(() => {}) }
+    if (on) { v.currentTime = 0; play() }
+    const retry = () => { if (on && v.paused) play() }
+    window.addEventListener('touchstart', retry, { passive: true })
+    window.addEventListener('scroll', retry, { passive: true })
+    return () => { window.removeEventListener('touchstart', retry); window.removeEventListener('scroll', retry) }
   }, [on])
   return (
     <div className="process-media" style={{ opacity: show }}>
-      <video ref={ref} src={src} poster={poster} muted loop playsInline preload="metadata" />
+      <video ref={ref} poster={poster} muted autoPlay loop playsInline preload="auto" disablePictureInPicture
+        {...{ 'webkit-playsinline': 'true', 'x5-playsinline': 'true' }}>
+        <source src={src.replace('.mp4', '.webm')} type="video/webm" />
+        <source src={src} type="video/mp4" />
+      </video>
     </div>
   )
 }
