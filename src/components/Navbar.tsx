@@ -6,10 +6,12 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { WORKS } from '@/data/works'
 
+// Same order as the home page; each one previews its own picture on hover
 const links = [
-  { label: 'Obra',    href: '/obra' },
-  { label: 'Flash',   href: '/flash' },
-  { label: 'Proceso', href: '/proceso' },
+  { label: 'Flashes',  hash: '#flash',   pic: '/Briza-Maldonado/flash/cover.jpg' },
+  { label: 'Diseños',  hash: '#obra',    pic: '' },
+  { label: 'Proceso',  hash: '#proceso', pic: '/Briza-Maldonado/proceso/boceto-poster.jpg' },
+  { label: 'Turno',    hash: '#turno',   pic: '/Briza-Maldonado/briza-tatuando.jpg' },
 ]
 
 export default function Navbar() {
@@ -17,6 +19,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPic, setMenuPic] = useState(WORKS[4].src)
+  const [hoverPic, setHoverPic] = useState<string | null>(null)
   useEffect(() => { if (menuOpen) setMenuPic(p => { let n = p; while (n === p) n = WORKS[Math.floor(Math.random() * WORKS.length)].src; return n }) }, [menuOpen])
   const pathname = usePathname()
 
@@ -26,6 +29,14 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => { clearTimeout(t); window.removeEventListener('scroll', onScroll) }
   }, [])
+
+  // Esc closes the menu
+  useEffect(() => {
+    if (!menuOpen) return
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [menuOpen])
 
   // Close menu on route change
   useEffect(() => { setMenuOpen(false) }, [pathname])
@@ -120,7 +131,7 @@ export default function Navbar() {
           <Link href={bookHref} className="cta-book nav-desktop" data-cursor="book">Pedir turno ●</Link>
           <button className="nav-toggle" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} data-hover>
-            <span>{menuOpen ? 'Close' : 'Menu'}</span><i />
+            <span>{menuOpen ? 'Cerrar' : 'Menu'}</span><i />
           </button>
         </div>
       </nav>
@@ -128,13 +139,15 @@ export default function Navbar() {
       {/* Full-screen menu: giant links left, duotone photo right */}
       <div className={`menu ${menuOpen ? 'open' : ''}`} aria-hidden={!menuOpen}>
         <div className="menu-links">
-          {[...links, { label: 'Turno', href: bookHref }].map((l, i) => {
-            const active = pathname === l.href || pathname === l.href + '/'
+          {links.map((l, i) => {
+            const href = pathname === '/' ? l.hash : `/${l.hash}`
             return (
-              <div key={l.href} className="menu-mask">
-                <Link href={l.href} onClick={() => setMenuOpen(false)} className={active ? 'active' : ''}
+              <div key={l.hash} className="menu-mask">
+                <Link href={href} onClick={() => setMenuOpen(false)}
+                  onMouseEnter={() => setHoverPic(l.pic || menuPic)} onFocus={() => setHoverPic(l.pic || menuPic)}
+                  onMouseLeave={() => setHoverPic(null)}
                   style={{ transitionDelay: menuOpen ? `${i * 70 + 300}ms` : '0ms' }}>
-                  {l.label}
+                  <span className="menu-n">0{i + 1}</span>{l.label}
                 </Link>
               </div>
             )
@@ -145,7 +158,8 @@ export default function Navbar() {
           </div>
         </div>
         <div className="menu-photo duo">
-          <Image key={menuPic} src={menuPic} alt="" fill sizes="50vw" style={{ objectFit: 'cover' }} />
+          <Image key={hoverPic ?? menuPic} src={hoverPic ?? menuPic} alt="" fill sizes="50vw" className="menu-pic" style={{ objectFit: 'cover' }} />
+          <p className="menu-place">Palermo, Buenos Aires · Turnos por WhatsApp</p>
         </div>
       </div>
 
