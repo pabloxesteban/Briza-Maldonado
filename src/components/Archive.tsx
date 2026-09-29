@@ -20,16 +20,14 @@ function useMobile() {
   return m
 }
 
-// ─── Columns: 4 (2 on phones) that glide in opposite directions, driven only by scroll ─
+// ─── Columns: 4 (3 on phones) that glide in opposite directions, driven only by scroll ─
 // No autoplay, no drag: the wall moves exactly as much as you scroll, so it never gets dizzy.
-// Each piece sits in a shape from the flash sheet (arch, pill, oval, card) that opens up on hover.
-const SHAPES = ['arch', 'card', 'pill', 'oval'] as const
 
 function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
   const sec = useRef<HTMLDivElement>(null)
   const colRefs = useRef<(HTMLDivElement | null)[]>([])
   const [hover, setHover] = useState<number | null>(null)
-  const C = mobile ? 2 : 4
+  const C = mobile ? 3 : 4
   // Deal the pieces into columns, repeating so every column is tall enough to travel
   const columns = useMemo(() => {
     const per = Math.max(5, Math.ceil(list.length / C) + 2)
@@ -77,15 +75,14 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
           <div key={c} ref={el => { colRefs.current[c] = el }} className="co-col">
             {col.map((i, r) => {
               const w = WORKS[i]
-              const shape = SHAPES[(c + r) % SHAPES.length]
               const first = r === 0 || col.indexOf(i) === r
               return (
-                <button key={r} type="button" className={`co-tile ${shape} ${hover === i ? 'on' : ''}`}
+                <button key={r} type="button" className={`co-tile ${hover === i ? 'on' : ''}`}
                   data-work={first ? w.slug : undefined} aria-hidden={!first} tabIndex={first ? 0 : -1} aria-label={w.title}
                   data-cursor="view"
                   onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
                   onClick={e => onOpen(i, e.currentTarget.querySelector('.g-img') as HTMLElement)}>
-                  <span className="g-img"><Image src={w.src} alt="" fill sizes={mobile ? '50vw' : '25vw'} style={{ objectFit: 'cover' }} /></span>
+                  <span className="g-img"><Image src={w.src} alt="" fill sizes={mobile ? '34vw' : '25vw'} style={{ objectFit: 'cover' }} /></span>
                   {mobile && <span className="co-cap">{w.title}</span>}
                 </button>
               )

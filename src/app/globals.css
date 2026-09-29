@@ -1293,3 +1293,11 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
   .co-col { gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .co { height: auto !important; } .co-stage { position: relative; height: auto; } }
+/* Columns: plain rectangles */
+.co-tile .g-img { border-radius: 6px !important; aspect-ratio: 4 / 5 !important; }
+@media (max-width: 767px) {
+  .co-stage { padding: 0 8px; gap: 6px; }
+  .co-col { gap: 6px; }
+  .co-tile .g-img { border-radius: 4px !important; }
+  .co-cap { font-size: .66rem; bottom: .35rem; }
+}
