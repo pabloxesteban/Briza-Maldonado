@@ -20,21 +20,25 @@ function useViewport() {
 }
 
 
-// Runs fn(progress) on every frame while mounted, easing toward the real scroll position.
-// Writes go straight to the DOM (no React state), so scrolling never re-renders the gallery.
-function useSmoothProgress(ref: React.RefObject<HTMLElement>, fn: (p: number) => void, deps: unknown[]) {
+// Runs fn(progress) on every frame while mounted. Writes go straight to the DOM (no React state),
+// so scrolling never re-renders the gallery. `ease` < 1 glides toward the scroll position
+// (frame-rate independent); 1 locks to it, which is what anything tied to the page itself wants:
+// Lenis already smooths the scroll, and a second lag would make columns drift against each other.
+function useSmoothProgress(ref: React.RefObject<HTMLElement>, fn: (p: number) => void, deps: unknown[], ease = 1) {
   const fnRef = useRef(fn)
   fnRef.current = fn
   useEffect(() => {
-    let raf = 0, cur = -1
-    const tick = () => {
+    let raf = 0, cur = -1, last = -2, prev = performance.now()
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - prev); prev = now
       const el = ref.current
       const r = el?.getBoundingClientRect()
       if (el && r && r.bottom > -200 && r.top < window.innerHeight + 200) {
         const target = clamp(-r.top / Math.max(1, r.height - window.innerHeight))
-        cur = cur < 0 ? target : cur + (target - cur) * 0.12
+        const k = ease >= 1 ? 1 : 1 - Math.pow(1 - ease, dt / 16.67)
+        cur = cur < 0 ? target : cur + (target - cur) * k
         if (Math.abs(target - cur) < 0.0002) cur = target
-        fnRef.current(cur)
+        if (cur !== last) { last = cur; fnRef.current(cur) }
       }
       raf = requestAnimationFrame(tick)
     }
@@ -75,7 +79,7 @@ function Entrance({ mobile }: { mobile: boolean }) {
       title.current.style.opacity = String(t)
       title.current.style.transform = `translate3d(0, ${(1 - t) * 20}px, 0)`
     }
-  }, [mobile])
+  }, [mobile], 0.18)
 
   return (
     <div ref={ref} className="arch-entrance" style={{ height: mobile ? '190vh' : '220vh' }}>
@@ -110,24 +114,43 @@ function Wall({ still, mobile, onOpen }: { still: boolean; mobile: boolean; onOp
   const ref = useRef<HTMLDivElement>(null)
   const colRefs = useRef<(HTMLDivElement | null)[]>([])
   const cols = mobile ? 2 : 3
-  const flowing = mobile ? 0 : 1
+  const flowing = 1
   const columns: { w: Work; i: number }[][] = Array.from({ length: cols }, () => [])
   WORKS.forEach((w, i) => columns[i % cols].push({ w, i }))
+  // Phones: sticky columns fight the collapsing URL bar, so both columns flow and one drifts
+  const pinning = !still && !mobile
 
   useSmoothProgress(ref, p => {
     if (still) return
     const vh = window.innerHeight
     colRefs.current.forEach((el, c) => {
-      if (!el || c === flowing) return
+      if (!el) return
+      if (mobile) {
+        if (c === 1) el.style.transform = `translate3d(0, ${(0.5 - p) * vh * 0.22}px, 0)`
+        return
+      }
+      if (c === flowing) return
       const travel = Math.max(0, el.scrollHeight - vh)
       el.style.transform = `translate3d(0, ${-travel * (1 - p)}px, 0)`
     })
+  }, [still, cols, mobile])
+
+  // Each piece settles in as it reaches the screen
+  useEffect(() => {
+    const root = ref.current
+    if (!root || still || !('IntersectionObserver' in window)) return
+    root.classList.add('io')
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target) }
+    }), { rootMargin: '0px 0px -8% 0px' })
+    root.querySelectorAll('.arch-item').forEach(el => io.observe(el))
+    return () => io.disconnect()
   }, [still, cols])
 
   return (
-    <div ref={ref} className={`arch-wall ${still ? 'still' : ''}`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+    <div ref={ref} className={`arch-wall ${still ? 'still' : ''} ${mobile ? 'm' : ''}`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
       {columns.map((col, c) => {
-        const pinned = !still && c !== flowing
+        const pinned = pinning && c !== flowing
         return (
           <div key={c} className={pinned ? 'arch-wall-pin' : 'arch-wall-flow'}>
             <div ref={el => { colRefs.current[c] = el }} className="arch-wall-col"
