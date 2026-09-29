@@ -45,19 +45,19 @@ const TZ = 'America/Argentina/Buenos_Aires'
 const IG_HANDLE = '@bri.t4tts'
 
 // ─── Prompt ───────────────────────────────────────────────────────────────
-const SYSTEM = `Sos la asistente virtual de Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires (vegan tattoo artist, black & white y color). Hablás en español rioplatense, cálida y breve (2-4 oraciones), sin emojis de más.
+const SYSTEM = `Sos Lila, la asistente de Briza Maldonado, tatuadora traditional en Palermo, CABA (vegan tattoo artist, black & white y color).
+Personalidad: re buena onda, cool y friendly, como alguien del estudio que te recibe con un mate. Hablás en rioplatense (vos, dale, re, buenísimo, genial), mensajes cortos (1-3 oraciones), algún emoji suelto (🖤 ✨ 🙌) sin exagerar. Nunca suenes a robot ni a formulario.
 
 Qué hacés:
-- Respondés dudas: estilos, flashes (list_flashes, nunca inventes precios ni disponibilidad), cuidados, reglas del estudio y cómo se reserva.
-- Diseños propios: podés dar un rango orientativo con quote_estimate; aclarás que el precio final lo define Briza.
-- Si la persona manda fotos de referencia, describilas en una frase para confirmar la idea; se adjuntan solas a la solicitud.
-- Turnos: usá get_open_slots y ofrecé 2-4 opciones concretas. Nunca inventes horarios.
-- Si no hay turnos que le sirvan, ofrecé anotarla en la lista de espera (join_waitlist).
-- Reserva: cuando tengas idea (o flash), zona, tamaño aproximado, turno elegido (o "lo antes posible"), nombre${'${contactRule}'} y la aceptación de la seña, llamá a request_booking una sola vez. Pedí de a uno los datos que falten.
+- Preguntás si quiere un flash del cuaderno o un diseño propio.
+- Flashes: NO describas ni recites precios ni tamaños (ya están en la web). Si quiere un flash, usá list_flashes y pasale solo la lista numerada de los disponibles ("Nº 02 · Frutilla"), para que elija por número. Si pregunta el precio de uno puntual, decíselo.
+- Diseño propio: se charla con Briza. Podés dar un estimativo con quote_estimate, aclarando que el precio final lo define ella. Pedí referencias (se adjuntan con el 📎 o por foto en Instagram) y describilas en una frase.
+- Turnos: usá get_open_slots y ofrecé 2-4 opciones concretas. Nunca inventes horarios. Si no le sirve ninguno, ofrecé la lista de espera (join_waitlist).
+- Reserva: cuando tengas idea (flash o diseño propio), zona, tamaño aproximado (si es diseño propio), turno (o "lo antes posible"), nombre${'${contactRule}'} y la aceptación de la seña, llamá a request_booking una sola vez. Pedí de a un dato por vez.
 
 Reglas:
 - La reserva queda PENDIENTE: Briza la acepta o la rechaza. Nunca digas que un turno está confirmado.
-- Antes de reservar, avisá que todas las reservas se confirman con una seña de al menos el 40% del costo total (se paga por Mercado Pago cuando Briza acepta) y pedí que lo acepte.
+- Antes de reservar, avisá que todas las reservas se confirman con una seña de al menos el 40% del total (se paga por Mercado Pago cuando Briza acepta) y pedí que lo acepte.
 - Nunca des el número de teléfono de Briza.
 - Cuidados: usá la guía de abajo. Si describe fiebre, pus, enrojecimiento que se expande, calor intenso o dolor que empeora, decile que consulte a un médico ya y que le avise a Briza.
 - Si no sabés algo, decí que lo confirma Briza. No hables de temas ajenos al estudio.`
@@ -96,7 +96,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
   },
   {
     name: 'list_flashes',
-    description: 'Flashes del cuaderno con tamaño, precio y disponibilidad actual.',
+    description: 'Flashes del cuaderno con su número (Nº), tamaño, precio y disponibilidad. Mostrá solo los disponibles, numerados, sin precios.',
     strict: true,
     input_schema: { type: 'object', properties: {}, required: [], additionalProperties: false },
   },
@@ -258,7 +258,7 @@ async function submitRequest(env: Env, b: Booking, ch: Channel, refs: string[] =
 async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number; refs: string[] }, ch: Channel): Promise<{ result: unknown; action?: { summary: string } }> {
   switch (name) {
     case 'get_open_slots': return { result: await getOpenSlots(env, input as { from_date: string; days: number }) }
-    case 'list_flashes': return { result: await loadFlashes(env.FLASH_SHEET_URL) }
+    case 'list_flashes': return { result: (await loadFlashes(env.FLASH_SHEET_URL)).map((f, i) => ({ n: `Nº ${String(i + 1).padStart(2, '0')}`, ...f })) }
     case 'quote_estimate': return { result: quote(input as { size_cm: number; color: boolean }) }
     case 'join_waitlist': return { result: await joinWaitlist(env, input as { name: string; idea: string; contact: string }, ch) }
     case 'request_booking': {
@@ -325,7 +325,7 @@ async function chat(env: Env, history: Msg[], ch: Channel) {
     }
     messages.push({ role: 'user', content: results })
   }
-  return { messages, reply: 'Se me complicó un poco. ¿Me repetís qué necesitás?', action }
+  return { messages, reply: 'Uy, me maree un toque 😅 ¿Me repetís qué necesitás?', action }
 }
 
 // Web chat: plain turns only; the new visitor turn is text, optionally with up to 3 of our reference photos

@@ -73,7 +73,7 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
                 <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
                 {!f.available && <span className="nb-stamp">Tatuado</span>}
               </div>
-              <p className="nb-name">{f.name}</p>
+              <p className="nb-name"><span className="nb-num">Nº {String(i + 1).padStart(2, '0')}</span>{f.name}</p>
               <p className="nb-facts"><span>{f.cm} cm</span><span>{f.price}</span></p>
               {f.available && (
                 <div className="nb-actions">
