@@ -20,140 +20,85 @@ function useMobile() {
   return m
 }
 
-// ─── Canvas: an endless wall of pieces you drag around (and drift through as you scroll) ─
-const wrap = (v: number, m: number) => ((v % m) + m) % m
+// ─── Columns: 4 (2 on phones) that glide in opposite directions, driven only by scroll ─
+// No autoplay, no drag: the wall moves exactly as much as you scroll, so it never gets dizzy.
+// Each piece sits in a shape from the flash sheet (arch, pill, oval, card) that opens up on hover.
+const SHAPES = ['arch', 'card', 'pill', 'oval'] as const
 
-function Canvas({ filter, setFilter, mobile, onOpen }: { filter: Filter; setFilter: (f: Filter) => void; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
-  const section = useRef<HTMLDivElement>(null)
-  const stage = useRef<HTMLDivElement>(null)
-  const tiles = useRef<(HTMLButtonElement | null)[]>([])
-  const label = useRef<HTMLParagraphElement>(null)
+function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
+  const sec = useRef<HTMLDivElement>(null)
+  const colRefs = useRef<(HTMLDivElement | null)[]>([])
   const [hover, setHover] = useState<number | null>(null)
-  const [dragging, setDragging] = useState(false)
-
-  const C = mobile ? 3 : 6
-  const R = mobile ? 6 : 4
-  // Spread the pieces so the same one never sits next to itself
-  const cells = useMemo(() => Array.from({ length: C * R }, (_, k) => {
-    const r = Math.floor(k / C), c = k % C
-    return { r, c, i: (r * 5 + c * 3) % WORKS.length }
-  }), [C, R])
+  const C = mobile ? 2 : 4
+  // Deal the pieces into columns, repeating so every column is tall enough to travel
+  const columns = useMemo(() => {
+    const per = Math.max(5, Math.ceil(list.length / C) + 2)
+    // Each column owns its own pieces (no neighbour shows the same one), then repeats them
+    return Array.from({ length: C }, (_, c) => {
+      const own = list.filter((_, k) => k % C === c)
+      const src = own.length ? own : [list[c % list.length]]
+      return Array.from({ length: per }, (_, r) => src[r % src.length])
+    })
+  }, [list, C])
 
   useEffect(() => {
-    const st = stage.current, sec = section.current
-    if (!st || !sec) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let tw = 0, th = 0, gap = 0, W = 0, H = 0
-    const measure = () => {
-      const vw = st.clientWidth
-      tw = mobile ? vw * 0.46 : Math.max(220, vw * 0.19)
-      th = tw * 1.25
-      gap = mobile ? 10 : Math.max(16, vw * 0.018)
-      W = C * (tw + gap); H = R * (th + gap)
-      tiles.current.forEach(el => { if (el) { el.style.width = `${tw}px`; el.style.height = `${th}px` } })
-    }
-    measure()
-    window.addEventListener('resize', measure)
-
-    // Drag with inertia
-    let x = 0, y = 0, vx = 0, vy = 0, down = false, lx = 0, ly = 0, moved = 0, auto = 1
-    const onDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('.cv-filters')) return
-      down = true; moved = 0; lx = e.clientX; ly = e.clientY; vx = vy = 0; auto = 0
-    }
-    const onMove = (e: PointerEvent) => {
-      if (!down) return
-      const dx = e.clientX - lx, dy = e.clientY - ly
-      lx = e.clientX; ly = e.clientY
-      moved += Math.abs(dx) + Math.abs(dy)
-      if (moved > 6) setDragging(true)
-      vx = dx; vy = dy; x += dx; y += dy
-    }
-    const onUp = () => { down = false; setTimeout(() => { setDragging(false); moved = 0 }, 0) }
-    // Swallow the click that ends a drag
-    const onClick = (e: MouseEvent) => { if (moved > 6) { e.stopPropagation(); e.preventDefault() } }
-    st.addEventListener('pointerdown', onDown)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    st.addEventListener('click', onClick, true)
-
-    let raf = 0, sp = 0, scale = 1, lastScroll = -1
+    let raf = 0, last = -1
     const tick = () => {
-      const r = sec.getBoundingClientRect()
-      const vh = window.innerHeight
-      const onScreen = r.bottom > 0 && r.top < vh
-      if (onScreen) {
-        // Scroll through the section drifts the wall diagonally
-        const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)))
-        const scrollShift = reduce ? 0 : p * H * 0.9
-        if (!down) { vx *= 0.93; vy *= 0.93; x += vx; y += vy; if (!reduce) { auto = Math.min(1, auto + 0.004); x -= 0.25 * auto } }
-        const speed = Math.hypot(vx, vy) + Math.abs(scrollShift - (lastScroll < 0 ? scrollShift : lastScroll)) * 0.6
-        lastScroll = scrollShift
-        sp += (speed - sp) * 0.15
-        const target = reduce ? 1 : 1 - Math.min(0.1, sp * 0.004)
-        scale += (target - scale) * 0.15
-        const ox = x - scrollShift * 0.25, oy = y - scrollShift
-        cells.forEach((cell, k) => {
-          const el = tiles.current[k]
-          if (!el) return
-          const colShift = cell.c % 2 ? (th + gap) / 2 : 0
-          const tx = wrap(cell.c * (tw + gap) + ox, W) - (tw + gap)
-          const ty = wrap(cell.r * (th + gap) + colShift + oy, H) - (th + gap)
-          el.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`
-        })
+      const el = sec.current
+      if (el) {
+        const r = el.getBoundingClientRect()
+        const vh = window.innerHeight
+        if (r.bottom > 0 && r.top < vh) {
+          const p = reduce ? 0.5 : Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)))
+          if (p !== last) {
+            last = p
+            colRefs.current.forEach((col, c) => {
+              if (!col) return
+              const travel = Math.max(0, col.scrollHeight - vh)
+              const y = c % 2 ? -travel * (1 - p) : -travel * p
+              col.style.transform = `translate3d(0, ${y}px, 0)`
+            })
+          }
+        }
       }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', measure)
-      st.removeEventListener('pointerdown', onDown)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-      st.removeEventListener('click', onClick, true)
-    }
-  }, [C, R, cells, mobile])
+    return () => cancelAnimationFrame(raf)
+  }, [columns])
 
   const h = hover !== null ? WORKS[hover] : null
-  const seen = new Set<number>()
 
   return (
-    <div ref={section} className="cv">
-      <div ref={stage} className={`cv-stage ${dragging ? 'drag' : ''} ${hover !== null ? 'hovering' : ''}`} data-cursor="drag">
-        {cells.map((cell, k) => {
-          const w = WORKS[cell.i]
-          const off = filter !== 'Todos' && w.style !== filter
-          const first = !seen.has(cell.i); seen.add(cell.i)
-          return (
-            <button key={k} ref={el => { tiles.current[k] = el }} type="button"
-              className={`cv-tile ${off ? 'off' : ''} ${hover === cell.i ? 'on' : ''}`}
-              data-work={first ? w.slug : undefined} aria-hidden={!first || off} tabIndex={first && !off ? 0 : -1}
-              aria-label={w.title}
-              onMouseEnter={() => !off && setHover(cell.i)} onMouseLeave={() => setHover(null)}
-              onFocus={() => setHover(cell.i)} onBlur={() => setHover(null)}
-              onClick={e => { if (!off) onOpen(cell.i, e.currentTarget.querySelector('.g-img') as HTMLElement) }}>
-              <span className="g-img">
-                <Image src={w.src} alt="" fill draggable={false} sizes={mobile ? '46vw' : '20vw'} style={{ objectFit: 'cover' }} />
-              </span>
-            </button>
-          )
-        })}
-
-        <div className="g-filters cv-filters" role="tablist" aria-label="Filtrar por estilo">
-          {FILTERS.map(f => (
-            <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
-          ))}
-        </div>
-
-        <div className="cv-hud" aria-hidden>
-          <p ref={label} key={h?.slug ?? 'hint'} className="cv-label">
-            {h ? <><span className="cv-name">{h.title}</span><span className="cv-meta">{h.style} · {h.zone}</span></>
-              : <span className="cv-hint">{mobile ? 'Deslizá para explorar · tocá una pieza' : 'Arrastrá para explorar · clic para ver'}</span>}
-          </p>
-        </div>
+    <div ref={sec} className="co" style={{ height: mobile ? '320vh' : '300vh' }}>
+      <div className={`co-stage ${hover !== null ? 'hovering' : ''}`} style={{ gridTemplateColumns: `repeat(${C}, 1fr)` }}>
+        {columns.map((col, c) => (
+          <div key={c} ref={el => { colRefs.current[c] = el }} className="co-col">
+            {col.map((i, r) => {
+              const w = WORKS[i]
+              const shape = SHAPES[(c + r) % SHAPES.length]
+              const first = r === 0 || col.indexOf(i) === r
+              return (
+                <button key={r} type="button" className={`co-tile ${shape} ${hover === i ? 'on' : ''}`}
+                  data-work={first ? w.slug : undefined} aria-hidden={!first} tabIndex={first ? 0 : -1} aria-label={w.title}
+                  data-cursor="view"
+                  onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
+                  onClick={e => onOpen(i, e.currentTarget.querySelector('.g-img') as HTMLElement)}>
+                  <span className="g-img"><Image src={w.src} alt="" fill sizes={mobile ? '50vw' : '25vw'} style={{ objectFit: 'cover' }} /></span>
+                  {mobile && <span className="co-cap">{w.title}</span>}
+                </button>
+              )
+            })}
+          </div>
+        ))}
+        {!mobile && (
+          <div className="co-hud" aria-hidden>
+            {h
+              ? <p key={h.slug} className="co-label"><span className="co-name">{h.title}</span><span className="co-meta">{h.style} · {h.zone}</span></p>
+              : <p className="co-label"><span className="co-hint">Pasá el mouse para ver cada pieza · clic para abrirla</span></p>}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -396,11 +341,17 @@ export default function Archive() {
     <section id="obra" className="archive g">
       <header className="g-head">
         <h2 className="g-title"><span className="arch-t1">Diseños</span> <span className="arch-t2 swash">tatuados</span></h2>
-        <p className="g-lede">Una pared sin fin con todo lo que tatué. Arrastrala en cualquier dirección, filtrá por estilo y abrí la pieza que te guste para pedir algo parecido.</p>
+        <p className="g-lede">Bajá y las columnas se deslizan con vos. Tocá la pieza que te guste para verla de cerca o pedir algo parecido.</p>
       </header>
 
 
-      <Canvas filter={filter} setFilter={setFilter} mobile={mobile} onOpen={onOpen} />
+      <div className="g-filters" role="tablist" aria-label="Filtrar por estilo">
+        {FILTERS.map(f => (
+          <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
+        ))}
+      </div>
+
+      <Columns key={filter} list={list} mobile={mobile} onOpen={onOpen} />
 
       <div className="g-more">
         <p>Hay más en mi Instagram: trabajos recién hechos, flashes y fechas libres.</p>
