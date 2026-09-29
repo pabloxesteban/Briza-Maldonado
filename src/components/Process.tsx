@@ -15,7 +15,6 @@ const TATTOO = '/Briza-Maldonado/portfolio/rosa-alambre.jpg'
 const ZZ = [{ x: 34, y: 8 }, { x: 64, y: 36 }, { x: 34, y: 64 }, { x: 64, y: 92 }]
 // Hand-drawn S-stroke through the steps, like a line pulled with the machine
 const INK_PATH = 'M34,8 C33,21 63,19 64,36 C65,53 35,47 34,64 C33,81 63,75 64,92'
-const STAR = 'M12 1.5l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7L2 8.7l7.1-.6z'
 const clamp = (v: number) => Math.min(1, Math.max(0, v))
 
 export default function Process() {
@@ -97,7 +96,7 @@ export default function Process() {
                 const state = still || i === active ? 'now' : i < active ? 'done' : ''
                 return (
                   <div key={st.n} role="listitem" className={`zz-node ${state} ${n.x < 50 ? 'l' : 'r'}`} style={{ left: `${n.x}%`, top: `${n.y}%` }}>
-                    <svg className="zz-star" viewBox="0 0 24 24" aria-hidden><path d={STAR} /></svg>
+                    <span className="zz-dot" aria-hidden />
                     <div className="zz-label">
                       <p className="zz-title"><span className="zz-num swash">{st.n}</span>{st.t}</p>
                       <p className="zz-desc">{st.d}</p>

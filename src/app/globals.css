@@ -615,7 +615,6 @@ p, li, label, input { letter-spacing: .02em; }
 .zz-base { stroke: rgba(255,255,255,.28); stroke-width: 1.4; stroke-dasharray: 1 6; }
 .zz-ink { stroke: var(--mark); stroke-width: 3; stroke-dasharray: 1; }
 .zz-needle { position: absolute; width: .5rem; height: .5rem; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); box-shadow: 0 0 0 .3rem rgba(247,190,212,.35), 0 0 18px 4px rgba(247,190,212,.55); transition: opacity .2s; pointer-events: none; z-index: 2; }
-.zz-dot { display: none; }
 .zz-star { display: block; width: 1.6rem; height: 1.6rem; transform: rotate(-8deg); transition: transform var(--t-mid) var(--ease); }
 .zz-star path { fill: #000; stroke: rgba(255,255,255,.45); stroke-width: 1.4; stroke-linejoin: round; transition: fill var(--t-fast), stroke var(--t-fast); }
 .zz-node.done .zz-star path { fill: #000; stroke: var(--mark); }
