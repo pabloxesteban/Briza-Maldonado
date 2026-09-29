@@ -1801,3 +1801,17 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .try-stencil.sel { outline: 1.5px dashed rgba(247,241,226,.9); outline-offset: 6px; }
 @media (max-width: 899px) { .try.fs .try-desk { display: none; } }
 @media (hover: none) { .try-desk { display: none; } }
+/* Gallery on phones: cleaner tiles, room under the nav, slim meter */
+@media (max-width: 767px) {
+  .co-stage { padding: 0 6px !important; gap: 5px !important; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 90px, #000 92%, transparent) !important; mask-image: linear-gradient(to bottom, transparent 0, #000 90px, #000 92%, transparent) !important; }
+  .co-col { gap: 5px !important; }
+  .co-tile .g-img { border-radius: 10px !important; }
+  .co-tile:active .g-img { transform: scale(.97); }
+  .co-meter { right: 3px !important; padding: .5rem .25rem !important; gap: .35rem !important; background: rgba(22,20,20,.75) !important; backdrop-filter: blur(6px); }
+  .co-meter-track { width: 3px !important; height: 90px !important; }
+  .co-meter-pct { font-size: .6rem !important; }
+  .co-meter.done { padding: .5rem .3rem !important; }
+  .co-meter.done .co-meter-pct { font-size: .7rem !important; }
+  .g-head { margin-bottom: .6rem !important; }
+  .g-lede { font-size: .85rem !important; }
+}

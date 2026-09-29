@@ -77,7 +77,7 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
   const h = hover !== null ? WORKS[hover] : null
 
   return (
-    <div ref={sec} className="co" style={{ height: mobile ? '300vh' : '280vh' }}>
+    <div ref={sec} className="co" data-hide-dock style={{ height: mobile ? '300vh' : '280vh' }}>
       <div className={`co-stage ${hover !== null ? 'hovering' : ''}`} style={{ gridTemplateColumns: `repeat(${C}, 1fr)` }}>
         {columns.map((col, c) => (
           <div key={c} ref={el => { colRefs.current[c] = el }} className="co-col">
@@ -91,7 +91,7 @@ function Columns({ list, mobile, onOpen }: { list: number[]; mobile: boolean; on
                   onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}
                   onClick={e => onOpen(i, e.currentTarget.querySelector('.g-img') as HTMLElement)}>
                   <span className="g-img"><Image src={w.src} alt="" fill sizes={mobile ? '34vw' : '25vw'} style={{ objectFit: 'cover' }} /></span>
-                  {mobile && <span className="co-cap">{w.title}</span>}
+                  
                 </button>
               )
             })}
@@ -405,7 +405,7 @@ export default function Archive() {
     <section id="obra" className="archive g">
       <header className="g-head">
         <h2 className="g-title"><span className="arch-t1">Diseños</span> <span className="arch-t2 swash">tatuados</span></h2>
-        <p className="g-lede">Bajá y las columnas se deslizan con vos. Tocá la pieza que te guste para verla de cerca o pedir algo parecido.</p>
+        <p className="g-lede">Tocá cualquier pieza para verla en grande y pedir algo parecido.</p>
       </header>
 
 
