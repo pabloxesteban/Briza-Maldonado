@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 const SELECTOR = [
   '#sobre-mi h2', '#sobre-mi p', '#sobre-mi .font-display',
   '#turno h2', '#turno .booking-grid > div:first-child > p',
-  '#flash > div:first-child', 'footer > *',
+  'footer > *',
 ].join(',')
 
 export default function Reveal() {

@@ -1,629 +1,238 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
-type Place = { x: number; y: number; s: number; rot: number } // x,s: fraction of page width · y: fraction of page height
-type Note = { x: number; y: number; w: number } // x,w: fraction of width · y: fraction of height (snapped to a ruled line)
-type FlashDef = {
-  src: string; name: string; price: string; cm: number; available: boolean
-  p: Place; note: Note
-  aspect: number // image height / width
-  dots: [number, number][] // dot centres on the cut edge, as fractions of the image
-}
+type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean }
 
 const BASE = '/Briza-Maldonado/flash/'
-const PAGES: FlashDef[][] = [
-  [
-    { src: BASE + 'mariposa-daga-paper.png', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]],
-      p: { x: .06, y: .17, s: .5, rot: -4 }, note: { x: .56, y: .22, w: .42 } },
-    { src: BASE + 'frutilla-paper.png', name: 'Frutilla', price: '$40.000', cm: 5, available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]],
-      p: { x: .52, y: .55, s: .4, rot: 6 }, note: { x: .1, y: .62, w: .38 } },
-  ],
-  [
-    { src: BASE + 'corazon-vegan-paper.png', name: 'Corazón vegan', price: '$55.000', cm: 7, available: true, aspect: 0.816, dots: [[0.95, 0.568], [0.627, 0.897], [0.037, 0.316], [0.622, 0.037]],
-      p: { x: .08, y: .08, s: .5, rot: 5 }, note: { x: .62, y: .12, w: .35 } },
-    { src: BASE + 'gorrion-paper.png', name: 'Gorrión', price: '$60.000', cm: 9, available: false, aspect: 1.167, dots: [[0.943, 0.133], [0.731, 0.73], [0.049, 0.731], [0.435, 0.101]],
-      p: { x: .5, y: .52, s: .46, rot: -6 }, note: { x: .1, y: .56, w: .34 } },
-  ],
-  [
-    { src: BASE + 'flor-hojas-paper.png', name: 'Flor con hojas', price: '$45.000', cm: 6, available: true, aspect: 1.161, dots: [[0.925, 0.16], [0.339, 0.921], [0.075, 0.06]],
-      p: { x: .1, y: .08, s: .44, rot: -7 }, note: { x: .6, y: .14, w: .37 } },
-    { src: BASE + 'cerdo-cabra-paper.png', name: 'Cerdo & cabra', price: '$65.000', cm: 9, available: true, aspect: 0.95, dots: [[0.947, 0.283], [0.541, 0.939], [0.039, 0.6], [0.485, 0.043]],
-      p: { x: .42, y: .5, s: .54, rot: 4 }, note: { x: .1, y: .58, w: .32 } },
-  ],
-  [
-    { src: BASE + 'rosa-alambre-flash-paper.png', name: 'Rosa con alambre', price: '$50.000', cm: 8, available: true, aspect: 1.003, dots: [[0.944, 0.122], [0.654, 0.686], [0.051, 0.703], [0.405, 0.31]],
-      p: { x: .2, y: .07, s: .6, rot: 8 }, note: { x: .12, y: .6, w: .8 } },
-  ],
+const FLASHES: FlashDef[] = [
+  { slug: 'mariposa-daga', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true },
+  { slug: 'frutilla', name: 'Frutilla', price: '$40.000', cm: 5, available: true },
+  { slug: 'corazon-vegan', name: 'Corazón vegan', price: '$55.000', cm: 7, available: true },
+  { slug: 'gorrion', name: 'Gorrión', price: '$60.000', cm: 9, available: false },
+  { slug: 'flor-hojas', name: 'Flor con hojas', price: '$45.000', cm: 6, available: true },
+  { slug: 'cerdo-cabra', name: 'Cerdo & cabra', price: '$65.000', cm: 9, available: true },
+  { slug: 'rosa-alambre-flash', name: 'Rosa con alambre', price: '$50.000', cm: 8, available: true },
 ]
-const RATIO = 1100 / 1680 // width / height of the real notebook
+const img = (f: FlashDef) => `${BASE}${f.slug}.png`
 
-function rng(seed: number) {
-  return () => {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+type Placed = { id: number; f: number; x: number; y: number; size: number; rot: number }
+
+const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+
+function book(name: string) {
+  window.dispatchEvent(new CustomEvent('book:flash', { detail: name }))
+  setTimeout(() => document.getElementById('turno')?.scrollIntoView({ behavior: 'smooth' }), 100)
 }
 
-function useSize<T extends HTMLElement>() {
-  const ref = useRef<T>(null)
-  const [size, setSize] = useState({ w: 0, h: 0 })
+// ─── The notebook: its cover swings open as you scroll into it ───────────
+function Notebook({ onTry }: { onTry: (f: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const cover = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const ro = new ResizeObserver(([e]) => {
-      const w = Math.round(e.contentRect.width), h = Math.round(e.contentRect.height)
-      setSize(s => (s.w === w && s.h === h ? s : { w, h }))
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let raf = 0, cur = 0
+    const tick = () => {
+      const el = ref.current
+      if (el && cover.current) {
+        const r = el.getBoundingClientRect()
+        const vh = window.innerHeight
+        // Opens between entering the screen and reaching its upper third
+        const target = reduce ? 1 : clamp((vh * 0.95 - r.top) / (vh * 0.7))
+        cur += (target - cur) * 0.12
+        if (Math.abs(target - cur) < 0.001) cur = target
+        cover.current.style.transform = `rotateY(${-cur * 172}deg)`
+        cover.current.style.setProperty('--shade', String(cur))
+        const isOpen = cur > 0.85
+        setOpen(o => (o === isOpen ? o : isOpen))
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
-  return [ref, size] as const
-}
-
-const HOLE_X = 16
-const PAPER = '#faf6ea'
-const PEN = '#26318c'
-let grainImg: Promise<HTMLImageElement> | null = null
-const loadGrain = () => (grainImg ??= new Promise(res => {
-  const img = new window.Image()
-  img.onload = () => res(img)
-  img.src = `${BASE}paper-grain.png`
-}))
-const lineTop = (H: number) => Math.round(H * 0.075)
-const lineGap = (W: number) => Math.max(21, Math.round(W * 0.062))
-const holeYs = (H: number) => Array.from({ length: 16 }, (_, k) => H * 0.04 + (k * H * 0.92) / 15)
-const snapToLine = (yFrac: number, W: number, H: number) => {
-  const gap = lineGap(W), top = lineTop(H)
-  return top + Math.max(1, Math.round((yFrac * H - top) / gap)) * gap
-}
-
-// ─── Paper: flat ivory, lighting, thin grey rules, slot holes ─────────────
-function drawPaper(canvas: HTMLCanvasElement, W: number, H: number, seed: number, mirror: boolean, grain: HTMLImageElement) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
-  canvas.width = W * dpr
-  canvas.height = H * dpr
-  const ctx = canvas.getContext('2d')!
-  ctx.scale(dpr, dpr)
-  if (mirror) { ctx.translate(W, 0); ctx.scale(-1, 1) }
-  const r = rng(seed * 7919 + 13)
-
-  ctx.fillStyle = PAPER
-  ctx.fillRect(0, 0, W, H)
-
-  // Very soft large-scale tone drift (daylight falling unevenly on the page)
-  const g = document.createElement('canvas')
-  g.width = 5; g.height = 7
-  const gc = g.getContext('2d')!
-  const id = gc.createImageData(5, 7)
-  for (let i = 0; i < id.data.length; i += 4) {
-    const v = 128 + (r() - 0.5) * 40
-    id.data[i] = v; id.data[i + 1] = v; id.data[i + 2] = v - 4; id.data[i + 3] = 255
-  }
-  gc.putImageData(id, 0, 0)
-  ctx.save()
-  ctx.globalAlpha = 0.18
-  ctx.globalCompositeOperation = 'soft-light'
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(g, -W * 0.2, -H * 0.2, W * 1.4, H * 1.4)
-  ctx.restore()
-
-  // Grain photographed from the real notebook
-  ctx.save()
-  ctx.globalCompositeOperation = 'overlay'
-  ctx.globalAlpha = 0.5
-  ctx.fillStyle = ctx.createPattern(grain, 'repeat')!
-  ctx.fillRect(0, 0, W, H)
-  ctx.restore()
-
-  // Printed rules: thin, grey, slightly uneven ink
-  const gap = lineGap(W)
-  const x0 = HOLE_X + 14, x1 = W - 10
-  for (let y = lineTop(H); y < H - gap * 0.6; y += gap) {
-    let px = x0
-    const yy = Math.round(y) + 0.5
-    for (let x = x0 + 18; x <= x1 + 17; x += 18) {
-      const nx = Math.min(x, x1)
-      ctx.beginPath()
-      ctx.moveTo(px, yy)
-      ctx.lineTo(nx, yy)
-      ctx.strokeStyle = `rgba(120,122,124,${0.28 + r() * 0.1})`
-      ctx.lineWidth = 0.75
-      ctx.stroke()
-      px = nx
-    }
-  }
-
-  // Slot holes for the twin-loop wire
-  for (const y of holeYs(H)) {
-    const w = 7, h = 11, x = HOLE_X - w / 2, top = y - h / 2
-    ctx.beginPath()
-    ctx.roundRect(x, top, w, h, 1.5)
-    ctx.fillStyle = '#35302b'
-    ctx.fill()
-    ctx.beginPath()
-    ctx.moveTo(x + 0.5, top + h + 0.6)
-    ctx.lineTo(x + w - 0.5, top + h + 0.6)
-    ctx.strokeStyle = 'rgba(255,255,255,.6)'
-    ctx.lineWidth = 0.8
-    ctx.stroke()
-  }
-}
-
-function PaperCanvas({ w, h, seed, mirror = false }: { w: number; h: number; seed: number; mirror?: boolean }) {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    if (!(w > 0 && h > 0)) return
-    let live = true
-    loadGrain().then(g => { if (live && ref.current) drawPaper(ref.current, w, h, seed, mirror, g) })
-    return () => { live = false }
-  }, [w, h, seed, mirror])
-  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
-}
-
-function Paper({ W, H, seed, mirror = false }: { W: number; H: number; seed: number; mirror?: boolean }) {
-  return (
-    <>
-      <PaperCanvas w={W} h={H} seed={seed} mirror={mirror} />
-      {/* Warm daylight from the top, slight falloff at the bottom */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(130% 80% at 60% 0%, rgba(150,130,90,0) 45%, rgba(150,130,90,.06) 100%)',
-      }} />
-    </>
-  )
-}
-
-// ─── Twin-loop wire binding ───────────────────────────────────────────────
-function WireSpiral({ height }: { height: number }) {
-  if (!height) return null
-  const o = 24
-  const hx = HOLE_X + o
-  const loop = (y: number) =>
-    `M ${hx - 1} ${y} C ${hx - 12} ${y + 2}, ${o - 20} ${y + 3}, ${o - 21} ${y - 2} C ${o - 22} ${y - 7}, ${o - 4} ${y - 8}, ${o + 7} ${y - 5}`
-  return (
-    <svg width={o * 2 + 20} height={height}
-      style={{ position: 'absolute', left: -o, top: 0, zIndex: 200, overflow: 'visible', pointerEvents: 'none', transform: 'translateZ(14px)' }}>
-      <defs>
-        <linearGradient id="wire" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#231c18" />
-          <stop offset=".35" stopColor="#5e4d42" />
-          <stop offset=".5" stopColor="#c9b3a2" />
-          <stop offset=".65" stopColor="#4e3f36" />
-          <stop offset="1" stopColor="#1e1814" />
-        </linearGradient>
-        <filter id="wireShadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="1.4" />
-        </filter>
-      </defs>
-      {holeYs(height).map(y => (
-        <g key={y}>
-          {[-3, 3].map(dy => (
-            <path key={'s' + dy} d={loop(y + dy)} transform="translate(2.5 3.5)" stroke="rgba(30,20,10,.3)" strokeWidth={2.4} fill="none" filter="url(#wireShadow)" />
-          ))}
-          {[-3, 3].map(dy => (
-            <g key={dy}>
-              <path d={loop(y + dy)} stroke="url(#wire)" strokeWidth={2.2} fill="none" strokeLinecap="round" />
-              <path d={loop(y + dy)} stroke="rgba(255,240,228,.45)" strokeWidth={0.6} fill="none" strokeLinecap="round" transform="translate(-.3 -.6)" />
-            </g>
-          ))}
-        </g>
-      ))}
-    </svg>
-  )
-}
-
-// ─── Neon dot stickers ────────────────────────
-function Dot({ d, style }: { d: number; style: React.CSSProperties }) {
-  return (
-    <div style={{
-      position: 'absolute', zIndex: 3, pointerEvents: 'none', width: d, height: d, borderRadius: '50%',
-      background: 'radial-gradient(circle at 50% 50%, #64f646 0%, #5ef040 70%, #55e338 100%)',
-      boxShadow: '0 .4px .5px rgba(0,40,0,.35), 0 0 0 .5px rgba(40,160,20,.35)',
-      ...style,
-    }}>
-    </div>
-  )
-}
-
-// ─── Cut-out paper flash ──────────────────────────────────────────────────
-function PaperFlash({ flash, index, W, H, mirror = false }: { flash: FlashDef; index: number; W: number; H: number; mirror?: boolean }) {
-  const [lift, setLift] = useState(false)
-  const { p } = flash
-  const size = p.s * W
-  const dot = Math.max(15, W * 0.062)
-  const bw = flash.aspect > 1 ? size / flash.aspect : size
-  const bh = bw * flash.aspect
 
   return (
-    <div
-      onMouseEnter={() => setLift(true)}
-      onMouseLeave={() => setLift(false)}
-      data-hover
-      style={{
-        position: 'absolute', left: mirror ? W - p.x * W - bw : p.x * W, top: p.y * H, width: bw, height: bh,
-        transform: `rotate(${p.rot}deg) translateY(${lift ? -2 : 0}px)`,
-        transition: 'transform .4s ease',
-        zIndex: index + 1,
-      }}
-    >
-      <div style={{
-        position: 'absolute', inset: 0,
-        // Paper lies flat: a tight contact shadow, barely any ambient shadow
-        filter: lift
-          ? 'drop-shadow(0 .5px .4px rgba(40,30,20,.3)) drop-shadow(.5px 3px 4px rgba(60,50,30,.12))'
-          : 'drop-shadow(0 .3px .4px rgba(40,30,20,.35)) drop-shadow(0 1px 1.5px rgba(60,50,30,.1))',
-        transition: 'filter .4s ease',
-      }}>
-        <Image src={flash.src} alt={flash.name} fill draggable={false} loading="eager" sizes={`${Math.round(size)}px`}
-          style={{ objectFit: 'contain', filter: 'contrast(1.12) saturate(.8) brightness(1.04)' }} />
-      </div>
-
-      {flash.dots.map(([x, y], k) => (
-        <Dot key={k} d={dot} style={{ left: x * bw - dot / 2, top: y * bh - dot / 2, transform: `rotate(${k * 47}deg)` }} />
-      ))}
-    </div>
-  )
-}
-
-// ─── Ballpoint notes ──────────────────────────────────────────────────────
-const hand = (gap: number): React.CSSProperties => ({
-  fontFamily: "'Nothing You Could Do', cursive",
-  fontSize: gap * 0.74, lineHeight: `${gap}px`, color: PEN,
-  textShadow: `0 0 .4px ${PEN}`, whiteSpace: 'nowrap',
-})
-
-function Underline({ w, double = false }: { w: number; double?: boolean }) {
-  return (
-    <svg width={w} height={8} viewBox={`0 0 ${w} 8`} style={{ position: 'absolute', left: -2, bottom: 1, overflow: 'visible' }}>
-      <path d={`M1 3 C ${w * 0.3} 1.5, ${w * 0.7} 4.5, ${w - 1} 2.5`} stroke={PEN} strokeWidth={1.1} fill="none" strokeLinecap="round" />
-      {double && <path d={`M${w * 0.2} 7 C ${w * 0.5} 5.5, ${w * 0.8} 7.5, ${w - 3} 6`} stroke={PEN} strokeWidth={1} fill="none" strokeLinecap="round" />}
-    </svg>
-  )
-}
-
-function FlashNote({ flash, W, H, mirror = false }: { flash: FlashDef; W: number; H: number; mirror?: boolean }) {
-  const gap = lineGap(W)
-  const top = snapToLine(flash.note.y, W, H) - gap + 3
-  return (
-    <div style={{ position: 'absolute', left: (mirror ? 1 - flash.note.x - flash.note.w - 0.02 : flash.note.x) * W, top, width: flash.note.w * W, transform: 'rotate(-.6deg)' }}>
-      <p style={{ ...hand(gap), position: 'relative', display: 'inline-block' }}>
-        {flash.name}
-        <Underline w={Math.min(flash.note.w * W, flash.name.length * gap * 0.36)} />
-      </p>
-      <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>
-        · {flash.available ? 'disponible ✓' : 'agotado ✗'}
-      </p>
-      <p style={{ ...hand(gap), paddingLeft: gap * 0.5 }}>· {flash.cm} cm aprox</p>
-      <p style={{ ...hand(gap), paddingLeft: gap * 0.5, position: 'relative', display: 'inline-block', fontSize: gap * 0.82 }}>
-        {flash.price}
-        {flash.available && <Underline w={gap * 2.9} />}
-      </p>
-    </div>
-  )
-}
-
-// ─── Faces ────────────────────────────────────────────────────────────────
-// mirror: the page sits on the left of a spread (back of a sheet), so the binding is on its right
-function PageFront({ n, W, H, mirror = false }: { n: number; W: number; H: number; mirror?: boolean }) {
-  const gap = lineGap(W)
-  const last = n === PAGES.length - 1
-  return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      <Paper W={W} H={H} seed={n + 1} mirror={mirror} />
-
-      {n === 0 && (
-        <div style={{ position: 'absolute', left: W * (mirror ? 0.07 : 0.14), top: lineTop(H) + gap * 0 - gap + 4, transform: 'rotate(-1deg)' }}>
-          <p style={{ ...hand(gap), fontSize: gap * 0.9, position: 'relative', display: 'inline-block' }}>
-            Flash disponibles
-            <Underline w={gap * 6.4} double />
-          </p>
-        </div>
-      )}
-      <p style={{ ...hand(gap), position: 'absolute', [mirror ? 'left' : 'right']: W * 0.07, top: lineTop(H) - gap + 4, fontSize: gap * 0.6, opacity: .85 }}>
-        flash 2026
-      </p>
-
-      {PAGES[n].map((f, i) => <PaperFlash key={f.src} flash={f} index={i} W={W} H={H} mirror={mirror} />)}
-      {PAGES[n].map(f => <FlashNote key={f.src + 'n'} flash={f} W={W} H={H} mirror={mirror} />)}
-
-      {last && (
-        <div style={{ position: 'absolute', left: W * (mirror ? 0.07 : 0.12), top: snapToLine(0.8, W, H) - gap + 3, transform: 'rotate(-.8deg)' }}>
-          <p style={hand(gap)}>1 diseño por cliente ♡</p>
-          <p style={hand(gap)}>escribime → @bri.t4tts</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function PageBlank({ n, W, H }: { n: number; W: number; H: number }) {
-  return (
-    <div style={{ position: 'absolute', inset: 0 }}>
-      <Paper W={W} H={H} seed={n + 40} mirror />
-    </div>
-  )
-}
-
-function CoverFront() {
-  return (
-    <div style={{ position: 'absolute', inset: 0, borderRadius: '0 14px 14px 0', overflow: 'hidden', background: '#b7c1d7' }}>
-      <Image src="/Briza-Maldonado/flash/cover.jpg" alt="Cuaderno de flashes" fill priority draggable={false} style={{ objectFit: 'cover' }} sizes="(max-width: 600px) 90vw, 460px" />
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 'inherit',
-        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12), inset -2px -2px 3px rgba(0,0,0,.12), inset 2px 2px 2px rgba(255,255,255,.35)',
-        background: 'linear-gradient(125deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,0) 35%, rgba(255,255,255,0) 60%, rgba(255,255,255,.07) 75%, rgba(255,255,255,0) 90%)',
-      }} />
-      <Holes />
-    </div>
-  )
-}
-
-function CoverBack() {
-  return (
-    <div style={{
-      position: 'absolute', inset: 0, borderRadius: '14px 0 0 14px', overflow: 'hidden',
-      backgroundColor: '#bcc5dc', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.1)',
-    }}>
-      <Holes right />
-    </div>
-  )
-}
-
-function Holes({ right = false }: { right?: boolean }) {
-  const [ref, { h }] = useSize<HTMLDivElement>()
-  return (
-    <div ref={ref} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      {h > 0 && holeYs(h).map(y => (
-        <div key={y} style={{
-          position: 'absolute', top: y - 5.5, [right ? 'right' : 'left']: HOLE_X - 3.5,
-          width: 7, height: 11, borderRadius: 1.5, background: '#2a2320',
-          boxShadow: '0 .8px 0 rgba(255,255,255,.5)',
-        }} />
-      ))}
-    </div>
-  )
-}
-
-// ─── Notebook ─────────────────────────────────────────────────────────────
-export default function Flash() {
-  const [wrapRef, wrap] = useSize<HTMLDivElement>()
-  // turned: sheets flipped (0 = closed). left: on narrow screens, whether the view shows the left page of the spread
-  const [nav, setNav] = useState({ turned: 0, left: false })
-  const navRef = useRef(nav)
-  navRef.current = nav
-  const turned = nav.turned
-  const [drag, setDrag] = useState<{ sheet: number; angle: number } | null>(null)
-  const [moving, setMoving] = useState<number | null>(null)
-  const [hinted, setHinted] = useState(false)
-  const stageRef = useRef<HTMLDivElement>(null)
-  const gesture = useRef<{ x: number; y: number; t: number; dragging: boolean; pan: boolean; sheet: number; dir: 1 | -1 } | null>(null)
-  const suppressClick = useRef(false)
-  const wheelAcc = useRef(0)
-  const wheelLock = useRef(0)
-
-  const W = Math.max(0, Math.min(460, wrap.w - 30))
-  const H = W / RATIO
-  const spread = wrap.w >= W * 2 + 80
-  // Desktop spreads use both sides of every sheet; phones show one page at a time (backs stay blank)
-  const perSheet = spread ? 2 : 1
-  const SHEETS = 1 + Math.ceil(PAGES.length / perSheet)
-  const frontPage = (i: number) => (i - 1) * perSheet
-  const backPage = (i: number) => (i - 1) * 2 + 1
-  const hasBack = (i: number) => spread && i >= 1 && backPage(i) < PAGES.length
-  // On a spread the last sheet can also be turned, revealing the inside of the back cover
-  const MAX_TURN = spread ? SHEETS : SHEETS - 1
-  useEffect(() => { setNav({ turned: 0, left: false }); setDrag(null) }, [spread])
-  useEffect(() => { loadGrain() }, [])
-  const open = turned > 0
-
-  // What one step forward/back does: flip a sheet, or (narrow screens) slide between the two pages of a spread
-  const step = (dir: 1 | -1, cur = navRef.current) => {
-    const { turned: t, left } = cur
-    if (spread || !left) {
-      const n = Math.min(MAX_TURN, Math.max(0, t + dir))
-      return n === t ? null : { next: { turned: n, left: false }, flip: dir === 1 ? t : t - 1 }
-    }
-    if (dir === 1) {
-      if (left) return { next: { turned: t, left: false }, flip: -1 }
-      if (t >= MAX_TURN) return null
-      // after flipping a page sheet, look at its back; flipping the cover shows the first page
-      return { next: { turned: t + 1, left: t >= 1 && hasBack(t) }, flip: t }
-    }
-    if (left) return { next: { turned: t - 1, left: false }, flip: t - 1 }
-    if (t === 0) return null
-    if (t >= 2 && hasBack(t - 1)) return { next: { turned: t, left: true }, flip: -1 }
-    return { next: { turned: t - 1, left: false }, flip: t - 1 }
-  }
-
-  const go = (dir: 1 | -1) => {
-    const r = step(dir)
-    if (!r) return
-    if (r.flip >= 0) setMoving(r.flip)
-    setHinted(true)
-    setNav(r.next)
-  }
-  const goRef = useRef(go)
-  goRef.current = go
-
-  useEffect(() => {
-    if (moving === null) return
-    const id = setTimeout(() => setMoving(null), 1250)
-    return () => clearTimeout(id)
-  }, [moving, turned])
-
-  // Horizontal trackpad scroll turns pages
-  useEffect(() => {
-    const el = stageRef.current
-    if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
-      e.preventDefault()
-      if (Date.now() < wheelLock.current) return
-      wheelAcc.current += e.deltaX
-      if (Math.abs(wheelAcc.current) > 50) {
-        goRef.current(wheelAcc.current > 0 ? 1 : -1)
-        wheelAcc.current = 0
-        wheelLock.current = Date.now() + 750
-      }
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [W])
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return
-    gesture.current = { x: e.clientX, y: e.clientY, t: performance.now(), dragging: false, pan: false, sheet: -1, dir: 1 }
-  }
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    const g = gesture.current
-    if (!g) return
-    const dx = e.clientX - g.x, dy = e.clientY - g.y
-    if (!g.dragging) {
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) {
-        if (Math.abs(dy) > 12) gesture.current = null // vertical scroll wins
-        return
-      }
-      const dir: 1 | -1 = dx < 0 ? 1 : -1
-      const r = step(dir)
-      if (!r) { gesture.current = null; return }
-      g.dragging = true; g.dir = dir; g.pan = r.flip < 0; g.sheet = r.flip
-      stageRef.current?.setPointerCapture(e.pointerId)
-    }
-    if (g.pan) return
-    const k = Math.min(1, Math.max(0, (g.dir === 1 ? -dx : dx) / (W * 1.1)))
-    setDrag({ sheet: g.sheet, angle: g.dir === 1 ? -180 * k : -180 + 180 * k })
-  }
-
-  const onPointerUp = (e: React.PointerEvent) => {
-    const g = gesture.current
-    gesture.current = null
-    if (!g) return
-    if (g.dragging) {
-      suppressClick.current = true
-      setTimeout(() => (suppressClick.current = false), 0)
-      const dx = e.clientX - g.x
-      const v = dx / Math.max(1, performance.now() - g.t)
-      const k = Math.min(1, Math.max(0, (g.dir === 1 ? -dx : dx) / (W * 1.1)))
-      const commit = (g.pan ? Math.abs(dx) > 40 : k > 0.3) || (g.dir === 1 ? v < -0.35 : v > 0.35)
-      setDrag(null)
-      if (!g.pan) setMoving(g.sheet)
-      if (commit) go(g.dir)
-      return
-    }
-    // Tap: cover opens; the outer edges of what is on screen turn
-    if (turned === 0) { go(1); return }
-    // Right side of what you see turns forward, left side turns back
-    const rel = (e.clientX - stageRef.current!.getBoundingClientRect().left) / W
-    go(spread ? (rel < 0 ? -1 : 1) : (rel < 0.4 ? -1 : 1))
-  }
-
-  const angleOf = (i: number) => (drag?.sheet === i ? drag.angle : i < turned ? -180 : 0)
-  const shift = spread
-    ? (open || (drag && drag.sheet === 0) ? W / 2 : 0)
-    : (nav.left ? W - 8 : 0)
-
-  return (
-    <section
-      id="flash"
-      style={{
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        padding: '5rem clamp(1rem, 4vw, 2.5rem) 6rem',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ marginBottom: '3rem' }}>
-        <p className="font-display" style={{
-          fontSize: 'clamp(2.5rem, 6vw, 6rem)', lineHeight: 1, letterSpacing: '-0.03em',
-          color: 'var(--ink)', fontStyle: 'italic',
-        }}>
-          Flash disponibles
-        </p>
-      </div>
-
-      <div ref={wrapRef} style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '1rem 0 2rem' }}>
-        {W > 0 && (
-          <div style={{
-            position: 'relative', width: W, height: H, marginLeft: 24,
-            transform: `translateX(${shift}px)`,
-            transition: 'transform 1.15s cubic-bezier(.42,.1,.28,1)',
-          }}>
-            {/* Page block + back cover under the right side */}
-            <div style={{ position: 'absolute', inset: 0, transform: 'translate(7px, 8px)', background: '#aeb9d3', borderRadius: '0 14px 14px 0', boxShadow: '0 30px 60px rgba(40,30,60,.35), 0 8px 18px rgba(40,30,60,.25)' }} />
-            {turned < SHEETS && [5, 3.5, 2].slice(0, SHEETS - Math.max(1, turned)).map(o => (
-              <div key={o} style={{ position: 'absolute', top: 4, bottom: 4, left: 0, right: 4, transform: `translate(${o}px, ${o * 0.6}px)`, background: o === 5 ? '#dedbcd' : '#ebe8db', borderRadius: '0 16px 16px 0', boxShadow: 'inset -1px -1px 0 rgba(0,0,0,.08)' }} />
-            ))}
-            {/* Left-side block once opened (visible on wide screens) */}
-            {/* The cover's thickness on the left appears only once the cover has landed, or it reads as a second cover */}
-            {open && moving !== 0 && drag?.sheet !== 0 && (
-              <div style={{ position: 'absolute', top: 0, bottom: 0, right: '100%', width: W, transform: 'translate(-7px, 8px)', background: '#aeb9d3', borderRadius: '14px 0 0 14px', boxShadow: '0 30px 60px rgba(40,30,60,.3)' }} />
-            )}
-
-            <div
-              ref={stageRef}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={() => { gesture.current = null; setDrag(null) }}
-              onClickCapture={e => { if (suppressClick.current) { e.stopPropagation(); e.preventDefault() } }}
-              data-cursor="drag"
-              style={{
-                position: 'absolute', inset: 0,
-                perspective: W * 3.2, perspectiveOrigin: '0% 50%',
-                touchAction: 'pan-y', userSelect: 'none', WebkitUserSelect: 'none',
-              }}
-            >
-              {/* One shared 3D space for sheets and wire: order comes from depth, so Safari can't flip it mid-turn */}
-              <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
-              {Array.from({ length: SHEETS }).map((_, i) => {
-                const angle = angleOf(i)
-                const shade = Math.sin((Math.abs(angle) * Math.PI) / 180)
-                const live = drag?.sheet === i
-                const z = live || moving === i ? 100 : i < turned ? 10 + i : 60 - i
-                // Distinct depth per sheet so resting pages never z-fight at the binding (iOS Safari sorts by depth, not z-index)
-                const depth = live || moving === i ? 8 : i < turned ? i * 1.5 - 20 : (SHEETS - i) * 1.5
-                const hidden = !spread && i < turned - 1 && !live && moving !== i
-                // Safari ignores backface-visibility when the face has transformed children (the rotated flashes),
-                // so faces are swapped explicitly when the sheet passes edge-on (~0.43s into the eased turn).
-                const faceUp = angle > -90
-                const flipAt = live ? 'none' : 'visibility 0s linear .43s'
-                const peek = i === 0 && turned === 0 && !drag && !hinted
-                return (
-                  <div key={i} style={{
-                    position: 'absolute', inset: 0, zIndex: z, visibility: hidden ? 'hidden' : 'visible', willChange: 'transform',
-                    transformStyle: 'preserve-3d', transformOrigin: '0 50%',
-                    transform: `translateZ(${depth}px) rotateY(${angle}deg)`,
-                    transition: live ? 'none' : 'transform 1.15s cubic-bezier(.42,.1,.28,1)',
-                  }}>
-                    <div style={{
-                      position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transformOrigin: '0 50%',
-                      animation: peek ? 'nbPeek 4.5s ease-in-out 1.5s infinite' : 'none',
-                    }}>
-                      {/* Front */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'visible' : 'hidden', transition: flipAt, borderRadius: i === 0 ? '0 14px 14px 0' : '0 16px 16px 0', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverFront /> : frontPage(i) < PAGES.length ? <PageFront n={frontPage(i)} W={W} H={H} /> : <PageBlank n={i + 20} W={W} H={H} />}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(90deg, rgba(40,25,10,${0.12 + shade * 0.3}) 0, rgba(40,25,10,${0.02 + shade * 0.25}) ${W * 0.08}px, rgba(40,25,10,${shade * 0.2}) 100%)` }} />
-                      </div>
-                      {/* Back */}
-                      <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', visibility: faceUp ? 'hidden' : 'visible', transition: flipAt, transform: 'rotateY(180deg) translateZ(.5px)', borderRadius: i === 0 ? '14px 0 0 14px' : '16px 0 0 16px', overflow: 'hidden' }}>
-                        {i === 0 ? <CoverBack /> : hasBack(i) ? <PageFront n={backPage(i)} W={W} H={H} mirror /> : <PageBlank n={i - 1} W={W} H={H} />}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(270deg, rgba(40,25,10,${0.22 + shade * 0.3}) 0, rgba(40,25,10,${shade * 0.15}) ${W * 0.1}px, rgba(40,25,10,0) 100%)` }} />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-              <WireSpiral height={H} />
+    <div ref={ref} className={`nb ${open ? 'open' : ''}`}>
+      <div className="nb-page">
+        <span className="nb-spiral" aria-hidden />
+        <header className="nb-head">
+          <p className="nb-kicker">Cuaderno · 2026</p>
+          <h3 className="nb-title">Flashes <span className="swash">disponibles</span></h3>
+          <p className="nb-sub">Diseños listos para tatuar. Cada uno se hace una sola vez.</p>
+        </header>
+        <ul className="nb-grid">
+          {FLASHES.map((f, i) => (
+            <li key={f.slug} className={`nb-item ${f.available ? '' : 'taken'}`} style={{ ['--i' as string]: i }}>
+              <div className="nb-art" draggable={f.available}
+                onDragStart={e => { e.dataTransfer.setData('text/flash', String(i)); e.dataTransfer.effectAllowed = 'copy' }}
+                title={f.available ? 'Arrastralo a tu foto' : undefined}>
+                <Image src={img(f)} alt={f.name} fill sizes="160px" style={{ objectFit: 'contain' }} draggable={false} />
+                {!f.available && <span className="nb-stamp">Tatuado</span>}
               </div>
-            </div>
+              <p className="nb-name">{f.name}</p>
+              <p className="nb-facts"><span>{f.cm} cm</span><span>{f.price}</span></p>
+              {f.available && (
+                <div className="nb-actions">
+                  <button type="button" className="nb-try" data-hover onClick={() => onTry(i)}>Probar</button>
+                  <button type="button" className="nb-want" data-cursor="book" onClick={() => book(f.name)}>Lo quiero</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
 
+      {/* The cover: front art outside, plain board inside */}
+      <div ref={cover} className="nb-cover" aria-hidden>
+        <div className="nb-cover-front">
+          <Image src={BASE + 'cover.jpg'} alt="" fill priority sizes="(max-width: 767px) 92vw, 44vw" style={{ objectFit: 'cover' }} />
+          <span className="nb-cover-label">Flashes<br /><em className="swash">de Briza</em></span>
+        </div>
+        <div className="nb-cover-back" />
+      </div>
+    </div>
+  )
+}
+
+// ─── Try it on: upload a photo, drop stencils on it ─────────────────────
+function TryOn({ pending, clearPending }: { pending: number | null; clearPending: () => void }) {
+  const area = useRef<HTMLDivElement>(null)
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [items, setItems] = useState<Placed[]>([])
+  const [sel, setSel] = useState<number | null>(null)
+  const [over, setOver] = useState(false)
+  const nextId = useRef(1)
+  const drag = useRef<{ id: number; dx: number; dy: number } | null>(null)
+
+  const add = useCallback((f: number, x = 0.5, y = 0.45) => {
+    const id = nextId.current++
+    setItems(list => [...list, { id, f, x, y, size: 0.34, rot: 0 }])
+    setSel(id)
+  }, [])
+
+  // "Probar" from the notebook
+  useEffect(() => {
+    if (pending === null) return
+    add(pending)
+    clearPending()
+    if (window.innerWidth < 900) area.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [pending, add, clearPending])
+
+  useEffect(() => () => { if (photo) URL.revokeObjectURL(photo) }, [photo])
+
+  const onFile = (file?: File) => {
+    if (!file || !file.type.startsWith('image/')) return
+    setPhoto(p => { if (p) URL.revokeObjectURL(p); return URL.createObjectURL(file) })
+  }
+
+  const rel = (cx: number, cy: number) => {
+    const r = area.current!.getBoundingClientRect()
+    return { x: clamp((cx - r.left) / r.width), y: clamp((cy - r.top) / r.height) }
+  }
+
+  const onDown = (e: React.PointerEvent, it: Placed) => {
+    e.stopPropagation()
+    setSel(it.id)
+    const p = rel(e.clientX, e.clientY)
+    drag.current = { id: it.id, dx: p.x - it.x, dy: p.y - it.y }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current
+    if (!d) return
+    const p = rel(e.clientX, e.clientY)
+    setItems(list => list.map(it => (it.id === d.id ? { ...it, x: clamp(p.x - d.dx), y: clamp(p.y - d.dy) } : it)))
+  }
+  const onUp = () => { drag.current = null }
+
+  const current = items.find(i => i.id === sel) ?? null
+  const update = (patch: Partial<Placed>) => setItems(list => list.map(it => (it.id === sel ? { ...it, ...patch } : it)))
+
+  return (
+    <div className="try">
+      <header className="try-head">
+        <p className="nb-kicker">Nuevo</p>
+        <h3 className="try-title">Probalo en <span className="swash">tu cuerpo</span></h3>
+        <p className="try-sub">Subí una foto de la zona, arrastrá un flash del cuaderno encima y acomodalo como si fuera el stencil.</p>
+      </header>
+
+      <div ref={area} className={`try-area ${over ? 'over' : ''} ${photo ? 'has' : ''}`}
+        onDragOver={e => { e.preventDefault(); setOver(true) }}
+        onDragLeave={() => setOver(false)}
+        onDrop={e => {
+          e.preventDefault(); setOver(false)
+          const f = e.dataTransfer.getData('text/flash')
+          if (f !== '') { const p = rel(e.clientX, e.clientY); add(Number(f), p.x, p.y); return }
+          onFile(e.dataTransfer.files?.[0])
+        }}
+        onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+        onPointerDown={() => setSel(null)}>
+        {photo
+          ? <img src={photo} alt="Tu foto" className="try-photo" draggable={false} />
+          : (
+            <label className="try-empty">
+              <span className="try-plus" aria-hidden>+</span>
+              <b>Subí una foto</b>
+              <span>brazo, pierna, costilla… o arrastrá acá una imagen</span>
+              <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
+            </label>
+          )}
+
+        {items.map(it => {
+          const f = FLASHES[it.f]
+          return (
+            <div key={it.id} className={`try-stencil ${sel === it.id ? 'sel' : ''}`}
+              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, width: `${it.size * 100}%`, transform: `translate(-50%, -50%) rotate(${it.rot}deg)` }}
+              onPointerDown={e => onDown(e, it)}>
+              <img src={img(f)} alt={f.name} draggable={false} />
+            </div>
+          )
+        })}
+
+        {!items.length && <p className="try-hint">Arrastrá un flash acá o tocá <b>Probar</b> en el cuaderno</p>}
+      </div>
+
+      <div className="try-controls">
+        {current ? (
+          <>
+            <p className="try-now"><b>{FLASHES[current.f].name}</b> · {FLASHES[current.f].cm} cm · {FLASHES[current.f].price}</p>
+            <label className="try-range">Tamaño
+              <input type="range" min={0.12} max={0.8} step={0.01} value={current.size} onChange={e => update({ size: Number(e.target.value) })} />
+            </label>
+            <label className="try-range">Rotación
+              <input type="range" min={-180} max={180} step={1} value={current.rot} onChange={e => update({ rot: Number(e.target.value) })} />
+            </label>
+            <div className="try-btns">
+              <button type="button" className="try-remove" data-hover onClick={() => { setItems(l => l.filter(i => i.id !== sel)); setSel(null) }}>Quitar</button>
+              <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => book(FLASHES[current.f].name)}>Quiero este flash ●</button>
+            </div>
+          </>
+        ) : (
+          <div className="try-btns">
+            {photo && (
+              <label className="try-remove try-change">Cambiar foto
+                <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
+              </label>
+            )}
+            <p className="try-privacy">Tu foto queda solo en tu dispositivo: no se sube a ningún lado.</p>
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+export default function Flash() {
+  const [pending, setPending] = useState<number | null>(null)
+  const clear = useCallback(() => setPending(null), [])
+  return (
+    <section id="flash" className="fl">
+      <Notebook onTry={setPending} />
+      <TryOn pending={pending} clearPending={clear} />
     </section>
   )
 }
