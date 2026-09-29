@@ -5,8 +5,11 @@ import Image from 'next/image'
 
 const P = '/Briza-Maldonado/'
 
+// Vitalina/Mysta pattern: one figure, cut out, standing in front of the name set huge behind her
 export default function Hero() {
   const ref = useRef<HTMLElement>(null)
+  const fig = useRef<HTMLDivElement>(null)
+  const word = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const introPlaying = document.documentElement.dataset.intro === 'playing' ||
@@ -15,32 +18,42 @@ export default function Hero() {
     if (!root) return
     root.style.setProperty('--hero-delay', `${introPlaying ? 2.3 : 0.15}s`)
     const t = setTimeout(() => root.classList.add('in'), 30)
-    return () => clearTimeout(t)
+
+    // Gentle depth on scroll: the name drifts slower than the figure
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let raf = 0, cur = 0
+    const tick = () => {
+      const target = reduce ? 0 : Math.min(1, window.scrollY / window.innerHeight)
+      cur += (target - cur) * 0.12
+      if (word.current) word.current.style.transform = `translate3d(0, ${cur * 60}px, 0)`
+      if (fig.current) fig.current.style.transform = `translate3d(-50%, ${cur * -40}px, 0)`
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => { clearTimeout(t); cancelAnimationFrame(raf) }
   }, [])
 
   return (
-    <section ref={ref} className="hero hero--tt">
-      {/* Corner collage, like La Tatuajería: Briza, and her work */}
-      <div className="tt-photo tt-photo--a"><Image src={P + 'portfolio/lobo.jpg'} alt="" fill priority sizes="22vw" style={{ objectFit: 'cover' }} /></div>
-      <div className="tt-photo tt-photo--b"><Image src={P + 'briza-tatuando.jpg'} alt="Briza Maldonado tatuando" fill priority sizes="(max-width: 767px) 58vw, 30vw" style={{ objectFit: 'cover', objectPosition: '55% 28%' }} /></div>
-      <div className="tt-photo tt-photo--c"><Image src={P + 'portfolio/lockets-gatos.jpg'} alt="" fill sizes="18vw" style={{ objectFit: 'cover' }} /></div>
-
-      <div className="tt-copy">
-        <h1 className="tt-title">
-          <span className="tt-line"><span style={{ ['--i' as string]: 0 }}>Briza</span></span>
-          <span className="tt-line"><span className="swash" style={{ ['--i' as string]: 1 }}>Maldonado</span></span>
-        </h1>
-        <div className="tt-text">
-          <p className="tt-reveal" style={{ ['--i' as string]: 2 }}>Tatuadora traditional en Palermo, Buenos Aires.</p>
-          <p className="tt-reveal tt-muted" style={{ ['--i' as string]: 3 }}>Black &amp; white y color. Cada pieza se diseña para vos y se tatúa una sola vez.</p>
-          <div className="hero-cta tt-reveal" style={{ ['--i' as string]: 4 }}>
-            <a href="#turno" className="cta-book" data-cursor="book">Pedir turno ●</a>
-            <a href="#obra" className="hero-link" data-cursor="view">Ver trabajos ↓</a>
-          </div>
-        </div>
+    <section ref={ref} className="hero hero--v">
+      <div ref={word} className="v-word" aria-hidden>
+        <span className="v-mask"><span>BRIZA</span></span>
       </div>
 
-      <div className="tt-sticker"><Image src={P + 'flash/sirena-paper.png'} alt="" fill sizes="14vw" style={{ objectFit: 'contain' }} /></div>
+      <div ref={fig} className="v-figure">
+        <Image src={P + 'briza-recorte.png'} alt="Briza Maldonado tatuando" fill priority sizes="(max-width: 767px) 110vw, 48vw" style={{ objectFit: 'contain', objectPosition: 'bottom center' }} />
+      </div>
+
+      <h1 className="sr-only">Briza Maldonado, tatuadora traditional en Palermo, Buenos Aires</h1>
+
+      <p className="v-corner v-corner--tr v-reveal">Tatuadora traditional<br />Palermo, Buenos Aires</p>
+      <div className="v-corner v-corner--bl v-reveal">
+        <p className="v-surname swash">Maldonado</p>
+        <p className="v-tag">Black &amp; white y color.<br />Cada pieza, una sola vez.</p>
+      </div>
+      <div className="v-corner v-corner--br v-reveal">
+        <a href="#turno" className="cta-book" data-cursor="book">Pedir turno ●</a>
+        <a href="#obra" className="hero-link" data-cursor="view">Ver trabajos ↓</a>
+      </div>
     </section>
   )
 }
