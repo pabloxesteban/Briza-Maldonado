@@ -46,6 +46,16 @@ export default function Navbar() {
     return () => io.disconnect()
   }, [pathname])
 
+  // Over the dark footer the bar switches to its light-on-dark look and the dock steps aside
+  const [footerIn, setFooterIn] = useState(false)
+  useEffect(() => {
+    const el = document.querySelector('footer')
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setFooterIn(e.isIntersecting), { rootMargin: '0px 0px -92% 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [pathname])
+
   const [pastHero, setPastHero] = useState(false)
   useEffect(() => {
     const onScroll = () => setPastHero(window.scrollY > window.innerHeight * 0.75)
@@ -61,7 +71,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={!scrolled && !menuOpen && pathname === '/' ? 'nav-on-dark' : ''}
+        className={!menuOpen && ((!scrolled && pathname === '/') || footerIn) ? `nav-on-dark ${footerIn ? 'nav-footer' : ''}` : ''}
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,
@@ -135,7 +145,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile: booking always one thumb away */}
-      <div className={`cta-dock ${bookingInView || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
+      <div className={`cta-dock ${bookingInView || footerIn || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
         <Link href={bookHref} className="cta-book">Pedir turno ●</Link>
       </div>
     </>
