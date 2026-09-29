@@ -20,44 +20,141 @@ function useMobile() {
   return m
 }
 
-// Editorial rhythm: every few pieces one plays big, so the grid reads like a spread, not a feed
-const isFeature = (k: number, mobile: boolean) => (mobile ? k % 5 === 0 : k % 7 === 0 || k % 7 === 4)
+// ─── Canvas: an endless wall of pieces you drag around (and drift through as you scroll) ─
+const wrap = (v: number, m: number) => ((v % m) + m) % m
 
-// ─── Grid ────────────────────────────────────────────────────────────────
-function Grid({ list, mobile, onOpen }: { list: number[]; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
-  const ref = useRef<HTMLDivElement>(null)
+function Canvas({ filter, setFilter, mobile, onOpen }: { filter: Filter; setFilter: (f: Filter) => void; mobile: boolean; onOpen: (i: number, el: HTMLElement) => void }) {
+  const section = useRef<HTMLDivElement>(null)
+  const stage = useRef<HTMLDivElement>(null)
+  const tiles = useRef<(HTMLButtonElement | null)[]>([])
+  const label = useRef<HTMLParagraphElement>(null)
+  const [hover, setHover] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
 
-  // Tiles settle in as they reach the screen
+  const C = mobile ? 3 : 6
+  const R = mobile ? 6 : 4
+  // Spread the pieces so the same one never sits next to itself
+  const cells = useMemo(() => Array.from({ length: C * R }, (_, k) => {
+    const r = Math.floor(k / C), c = k % C
+    return { r, c, i: (r * 5 + c * 3) % WORKS.length }
+  }), [C, R])
+
   useEffect(() => {
-    const root = ref.current
-    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return
-    root.classList.add('io')
-    const io = new IntersectionObserver(es => es.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('seen'); io.unobserve(e.target) }
-    }), { rootMargin: '0px 0px -6% 0px' })
-    root.querySelectorAll('.g-tile').forEach(el => io.observe(el))
-    return () => io.disconnect()
-  }, [list])
+    const st = stage.current, sec = section.current
+    if (!st || !sec) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let tw = 0, th = 0, gap = 0, W = 0, H = 0
+    const measure = () => {
+      const vw = st.clientWidth
+      tw = mobile ? vw * 0.46 : Math.max(220, vw * 0.19)
+      th = tw * 1.25
+      gap = mobile ? 10 : Math.max(16, vw * 0.018)
+      W = C * (tw + gap); H = R * (th + gap)
+      tiles.current.forEach(el => { if (el) { el.style.width = `${tw}px`; el.style.height = `${th}px` } })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+
+    // Drag with inertia
+    let x = 0, y = 0, vx = 0, vy = 0, down = false, lx = 0, ly = 0, moved = 0, auto = 1
+    const onDown = (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest('.cv-filters')) return
+      down = true; moved = 0; lx = e.clientX; ly = e.clientY; vx = vy = 0; auto = 0
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!down) return
+      const dx = e.clientX - lx, dy = e.clientY - ly
+      lx = e.clientX; ly = e.clientY
+      moved += Math.abs(dx) + Math.abs(dy)
+      if (moved > 6) setDragging(true)
+      vx = dx; vy = dy; x += dx; y += dy
+    }
+    const onUp = () => { down = false; setTimeout(() => { setDragging(false); moved = 0 }, 0) }
+    // Swallow the click that ends a drag
+    const onClick = (e: MouseEvent) => { if (moved > 6) { e.stopPropagation(); e.preventDefault() } }
+    st.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    st.addEventListener('click', onClick, true)
+
+    let raf = 0, sp = 0, scale = 1, lastScroll = -1
+    const tick = () => {
+      const r = sec.getBoundingClientRect()
+      const vh = window.innerHeight
+      const onScreen = r.bottom > 0 && r.top < vh
+      if (onScreen) {
+        // Scroll through the section drifts the wall diagonally
+        const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - vh)))
+        const scrollShift = reduce ? 0 : p * H * 0.9
+        if (!down) { vx *= 0.93; vy *= 0.93; x += vx; y += vy; if (!reduce) { auto = Math.min(1, auto + 0.004); x -= 0.25 * auto } }
+        const speed = Math.hypot(vx, vy) + Math.abs(scrollShift - (lastScroll < 0 ? scrollShift : lastScroll)) * 0.6
+        lastScroll = scrollShift
+        sp += (speed - sp) * 0.15
+        const target = reduce ? 1 : 1 - Math.min(0.1, sp * 0.004)
+        scale += (target - scale) * 0.15
+        const ox = x - scrollShift * 0.25, oy = y - scrollShift
+        cells.forEach((cell, k) => {
+          const el = tiles.current[k]
+          if (!el) return
+          const colShift = cell.c % 2 ? (th + gap) / 2 : 0
+          const tx = wrap(cell.c * (tw + gap) + ox, W) - (tw + gap)
+          const ty = wrap(cell.r * (th + gap) + colShift + oy, H) - (th + gap)
+          el.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`
+        })
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', measure)
+      st.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      st.removeEventListener('click', onClick, true)
+    }
+  }, [C, R, cells, mobile])
+
+  const h = hover !== null ? WORKS[hover] : null
+  const seen = new Set<number>()
 
   return (
-    <div ref={ref} className="g-grid">
-      {list.map((i, k) => {
-        const w = WORKS[i]
-        const big = isFeature(k, mobile)
-        return (
-          <button key={w.slug} type="button" className={`g-tile ${big ? 'big' : ''}`} data-cursor="view" data-work={w.slug}
-            style={{ ['--d' as string]: `${(k % 4) * 70}ms` }}
-            onClick={e => onOpen(i, e.currentTarget.querySelector('.g-img') as HTMLElement)}>
-            <span className="g-img">
-              <Image src={w.src} alt={w.title} fill sizes={big ? (mobile ? '100vw' : '50vw') : (mobile ? '50vw' : '25vw')} style={{ objectFit: 'cover' }} />
-            </span>
-            <span className="g-cap">
-              <span className="g-name">{w.title}</span>
-              <span className="g-style">{w.style}</span>
-            </span>
-          </button>
-        )
-      })}
+    <div ref={section} className="cv">
+      <div ref={stage} className={`cv-stage ${dragging ? 'drag' : ''} ${hover !== null ? 'hovering' : ''}`} data-cursor="drag">
+        {cells.map((cell, k) => {
+          const w = WORKS[cell.i]
+          const off = filter !== 'Todos' && w.style !== filter
+          const first = !seen.has(cell.i); seen.add(cell.i)
+          return (
+            <button key={k} ref={el => { tiles.current[k] = el }} type="button"
+              className={`cv-tile ${off ? 'off' : ''} ${hover === cell.i ? 'on' : ''}`}
+              data-work={first ? w.slug : undefined} aria-hidden={!first || off} tabIndex={first && !off ? 0 : -1}
+              aria-label={w.title}
+              onMouseEnter={() => !off && setHover(cell.i)} onMouseLeave={() => setHover(null)}
+              onFocus={() => setHover(cell.i)} onBlur={() => setHover(null)}
+              onClick={e => { if (!off) onOpen(cell.i, e.currentTarget.querySelector('.g-img') as HTMLElement) }}>
+              <span className="g-img">
+                <Image src={w.src} alt="" fill draggable={false} sizes={mobile ? '46vw' : '20vw'} style={{ objectFit: 'cover' }} />
+              </span>
+            </button>
+          )
+        })}
+
+        <div className="g-filters cv-filters" role="tablist" aria-label="Filtrar por estilo">
+          {FILTERS.map(f => (
+            <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
+          ))}
+        </div>
+
+        <div className="cv-hud" aria-hidden>
+          <p ref={label} key={h?.slug ?? 'hint'} className="cv-label">
+            {h ? <><span className="cv-name">{h.title}</span><span className="cv-meta">{h.style} · {h.zone}</span></>
+              : <span className="cv-hint">{mobile ? 'Deslizá para explorar · tocá una pieza' : 'Arrastrá para explorar · clic para ver'}</span>}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -299,18 +396,11 @@ export default function Archive() {
     <section id="obra" className="archive g">
       <header className="g-head">
         <h2 className="g-title"><span className="arch-t1">Diseños</span> <span className="arch-t2 swash">tatuados</span></h2>
-        <p className="g-lede">Traditional, black &amp; white y color. Tocá una pieza para verla de cerca o pedir algo parecido.</p>
+        <p className="g-lede">Una pared sin fin con todo lo que tatué. Arrastrala en cualquier dirección, filtrá por estilo y abrí la pieza que te guste para pedir algo parecido.</p>
       </header>
 
-      <div className="g-filters" role="tablist" aria-label="Filtrar por estilo">
-        {FILTERS.map(f => (
-          <button key={f} type="button" role="tab" aria-selected={filter === f} data-hover onClick={() => setFilter(f)}>{f}</button>
-        ))}
-      </div>
 
-      <div key={filter} className="g-view">
-        <Grid list={list} mobile={mobile} onOpen={onOpen} />
-      </div>
+      <Canvas filter={filter} setFilter={setFilter} mobile={mobile} onOpen={onOpen} />
 
       <div className="g-more">
         <p>Hay más en mi Instagram: trabajos recién hechos, flashes y fechas libres.</p>
