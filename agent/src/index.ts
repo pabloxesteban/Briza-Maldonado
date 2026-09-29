@@ -3,11 +3,15 @@
 // booking request. It never books on its own: the request goes to Briza on WhatsApp and she decides.
 import Anthropic from '@anthropic-ai/sdk'
 import { FLASHES } from './flashes'
+import { createPendingEvent } from './gcal-write'
 
 interface Env {
   ANTHROPIC_API_KEY: string
   GCAL_ID?: string
   GCAL_KEY?: string
+  // Private calendar where booking requests land as "Pendiente" + service account key JSON that can write to it
+  GCAL_PENDING_ID?: string
+  GOOGLE_SA_JSON?: string
   ALLOWED_ORIGIN: string
   WHATSAPP: string
 }
@@ -24,7 +28,7 @@ const SYSTEM = `Sos la asistente virtual de Briza Maldonado, tatuadora tradition
 Qué hacés:
 - Respondés dudas sobre tatuajes con Briza: estilos, flashes disponibles (usá list_flashes, no inventes precios), cuidados básicos y cómo se reserva.
 - Ayudás a elegir turno: usá get_open_slots y ofrecé 2-4 opciones concretas. Nunca inventes horarios.
-- Cuando la persona tenga idea (o flash), zona, tamaño aproximado, un turno elegido (o "lo antes posible") y su nombre, llamá a request_booking. Pedí de a uno los datos que falten.
+- Cuando la persona tenga idea (o flash), zona, tamaño aproximado, un turno elegido (o "lo antes posible"), su nombre y su WhatsApp, llamá a request_booking una sola vez. Pedí de a uno los datos que falten.
 
 Reglas:
 - No confirmás turnos: Briza tiene la última palabra. Decí siempre que la solicitud queda pendiente hasta que Briza la confirme por WhatsApp.
@@ -64,10 +68,12 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         idea: { type: 'string', description: 'Flash elegido o descripción del diseño propio.' },
         zone: { type: 'string' },
         size: { type: 'string' },
-        slot: { type: 'string', description: 'Turno elegido tal como lo devolvió get_open_slots (ej. "jueves 16/10 15:00"), o "lo antes posible".' },
+        slot: { type: 'string', description: 'Turno elegido tal como lo devolvió get_open_slots (label), o "lo antes posible" / "sin fecha".' },
+        slot_start: { type: 'string', description: 'El campo start (ISO) del turno elegido en get_open_slots; vacío si no eligió uno.' },
+        contact: { type: 'string', description: 'WhatsApp de la persona para que Briza le responda.' },
         notes: { type: 'string', description: 'Otros detalles útiles; vacío si no hay.' },
       },
-      required: ['name', 'idea', 'zone', 'size', 'slot', 'notes'],
+      required: ['name', 'idea', 'zone', 'size', 'slot', 'slot_start', 'contact', 'notes'],
       additionalProperties: false,
     },
   },
@@ -87,11 +93,13 @@ async function getOpenSlots(env: Env, input: { from_date: string; days: number }
   const data = await res.json() as { items?: { summary?: string; start?: { dateTime?: string } }[] }
   const slots = (data.items ?? [])
     .filter(e => /^\s*libre/i.test(e.summary ?? '') && e.start?.dateTime)
-    .map(e => fmt(new Date(e.start!.dateTime!)))
+    .map(e => ({ label: fmt(new Date(e.start!.dateTime!)), start: e.start!.dateTime! }))
   return { slots, note: slots.length ? '' : 'No hay turnos publicados en ese rango.' }
 }
 
-function requestBooking(env: Env, b: { name: string; idea: string; zone: string; size: string; slot: string; notes: string }) {
+type Booking = { name: string; idea: string; zone: string; size: string; slot: string; slot_start: string; contact: string; notes: string }
+
+async function requestBooking(env: Env, b: Booking) {
   const text = [
     `Hola Bri! Soy ${b.name} y quiero un turno ✦`,
     '',
@@ -104,15 +112,48 @@ function requestBooking(env: Env, b: { name: string; idea: string; zone: string;
     '(Lo armé con la asistente de la web)',
   ].join('\n')
   const url = `https://wa.me/${env.WHATSAPP}?text=${encodeURIComponent(text)}`
-  return { ok: true, whatsapp_url: url, summary: text, note: 'Mostrale el resumen y decile que toque el botón para enviárselo a Briza. Queda pendiente hasta que ella confirme.' }
+
+  // Heads-up for Briza: a "Pendiente" event in her private requests calendar, whether or not the
+  // visitor ends up sending the WhatsApp. She approves by replying and editing the event.
+  let pending = false
+  if (env.GCAL_PENDING_ID && env.GOOGLE_SA_JSON) {
+    const phone = b.contact.replace(/[^\d]/g, '')
+    try {
+      await createPendingEvent(env.GOOGLE_SA_JSON, env.GCAL_PENDING_ID, {
+        title: `⏳ Pendiente · ${b.name} · ${b.idea}`.slice(0, 120),
+        start: b.slot_start,
+        description: [
+          'Solicitud desde la asistente de la web. Confirmala o rechazala respondiendo por WhatsApp.',
+          '',
+          `Nombre: ${b.name}`,
+          `Contacto: ${b.contact}${phone ? ` → https://wa.me/${phone}` : ''}`,
+          `Idea: ${b.idea}`,
+          `Zona: ${b.zone}`,
+          `Tamaño: ${b.size}`,
+          `Turno pedido: ${b.slot}`,
+          ...(b.notes ? [`Notas: ${b.notes}`] : []),
+          '',
+          'Al confirmarlo: borrá "⏳ Pendiente" del título y el evento "Libre" de ese horario en el calendario de turnos.',
+        ].join('\n'),
+      })
+      pending = true
+    } catch { /* the WhatsApp message still carries everything */ }
+  }
+  return {
+    ok: true, whatsapp_url: url, summary: text, briza_notified: pending,
+    note: pending
+      ? 'Briza ya recibió el aviso en su calendario como pendiente. Decile que también puede tocar el botón para escribirle por WhatsApp, y que el turno se confirma cuando Briza responda.'
+      : 'Mostrale el resumen y decile que toque el botón para enviárselo a Briza. Queda pendiente hasta que ella confirme.',
+  }
 }
 
-async function runTool(env: Env, name: string, input: unknown): Promise<{ result: unknown; action?: { whatsapp_url: string; summary: string } }> {
+async function runTool(env: Env, name: string, input: unknown, turn: { bookings: number }): Promise<{ result: unknown; action?: { whatsapp_url: string; summary: string } }> {
   switch (name) {
     case 'get_open_slots': return { result: await getOpenSlots(env, input as { from_date: string; days: number }) }
     case 'list_flashes': return { result: FLASHES }
     case 'request_booking': {
-      const r = requestBooking(env, input as Parameters<typeof requestBooking>[1])
+      if (turn.bookings++ >= 1) return { result: { error: 'Ya se envió una solicitud en esta respuesta.' } }
+      const r = await requestBooking(env, input as Booking)
       return { result: r, action: { whatsapp_url: r.whatsapp_url, summary: r.summary } }
     }
     default: return { result: { error: `Herramienta desconocida: ${name}` } }
@@ -123,6 +164,7 @@ async function runTool(env: Env, name: string, input: unknown): Promise<{ result
 async function chat(env: Env, history: Msg[]) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY })
   const messages: Msg[] = history.slice(-MAX_HISTORY)
+  const turn = { bookings: 0 } // one booking request per visitor message
   let action: { whatsapp_url: string; summary: string } | undefined
 
   const today = new Date().toLocaleDateString('es-AR', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -158,7 +200,7 @@ async function chat(env: Env, history: Msg[]) {
     const results: Anthropic.Beta.BetaToolResultBlockParam[] = []
     for (const u of uses) {
       try {
-        const r = await runTool(env, u.name, u.input)
+        const r = await runTool(env, u.name, u.input, turn)
         if (r.action) action = r.action
         results.push({ type: 'tool_result', tool_use_id: u.id, content: JSON.stringify(r.result) })
       } catch (e) {

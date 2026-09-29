@@ -12,3 +12,5 @@ WHATSAPP = "5491156233929"
 #   ANTHROPIC_API_KEY  - Claude API key
 #   GCAL_ID            - Briza's public "Turnos" calendar id
 #   GCAL_KEY           - Google API key restricted to the Calendar API
+#   GCAL_PENDING_ID    - Briza's PRIVATE "Solicitudes" calendar (booking requests land here as Pendiente)
+#   GOOGLE_SA_JSON     - service-account key JSON with "Make changes to events" on that calendar
