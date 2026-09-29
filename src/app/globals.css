@@ -1368,3 +1368,15 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 .vw-bg-img { opacity: .4; }
 .vw-bg::after { background: radial-gradient(70% 80% at 50% 45%, rgba(247,241,226,.25), rgba(247,241,226,.8)); }
 .vw-info { bottom: 132px; width: min(24vw, 24rem); }
+/* Viewer: bigger pieces, slower glide */
+.vw { --cw: min(40vw, 58vh); overflow: clip; }
+.vw-stage { top: 104px; bottom: 124px; }
+.vw-card { transition: transform 1.15s cubic-bezier(.19,1,.22,1), opacity .9s var(--ease), filter .9s var(--ease), box-shadow .9s var(--ease) !important;
+  transform: translate(-50%, -50%) translateX(calc(var(--d) * 36vw)) translateY(-4%) scale(.46); opacity: .4; }
+.vw-card.on { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+.vw-card.on img { animation: vwImg 1.1s var(--ease) both; }
+@keyframes vwImg { from { opacity: .4; transform: scale(1.12); } to { opacity: 1; transform: scale(1.06); } }
+.vw-rail { position: absolute; left: 50%; right: auto; transform: translateX(-50%); max-width: 100%; bottom: 14px; }
+.vw-rail button { width: 58px; height: 72px; }
+.vw-rail button.on { width: 84px; }
+.vw-info { bottom: 118px; }

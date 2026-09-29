@@ -153,7 +153,9 @@ function Detail({ index, list, from, onIndex, onClose, onBook }: {
   }, [index, playing, hold, step])
 
   useEffect(() => {
-    rail.current?.querySelector('.on')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' })
+    // Centre the active thumbnail by scrolling the rail only (scrollIntoView would also shift the page sideways)
+    const r = rail.current, on = r?.querySelector('.on') as HTMLElement | null
+    if (r && on) r.scrollTo({ left: on.offsetLeft - r.clientWidth / 2 + on.offsetWidth / 2, behavior: 'smooth' })
   }, [index])
 
   useEffect(() => {
