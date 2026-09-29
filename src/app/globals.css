@@ -774,3 +774,36 @@ nav[style] { background: transparent !important; border: 0 !important; backdrop-
   .hero--split .hero-sticker--heart { width: 52vw; right: -2%; }
   .hero--split .hero-sticker--berry { width: 26vw; left: 4%; right: auto; }
 }
+
+/* ─── HERO: photo window that opens to full bleed on scroll ─── */
+.hero--open { display: block; min-height: 0; height: 230vh; padding: 0; background: var(--cream); }
+.hero-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.hero-content { position: absolute; inset: 0; z-index: 2; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; padding: 96px clamp(1.25rem, 5vw, 5rem) clamp(1.5rem, 5vh, 3.5rem); will-change: transform, opacity; }
+.hero-text-col { display: flex; flex-direction: column; }
+.hero-slot { position: relative; height: min(72vh, 44rem); }
+.hero-photo-layer { position: absolute; inset: 0; z-index: 1; clip-path: inset(50% 50% 50% 50%); will-change: clip-path; background: var(--c-pink-2); }
+.hero-photo-layer img { will-change: transform; }
+.hero--open .hero-line--name { font-size: clamp(6rem, 16vw, 16rem); }
+.hero--open .hero-line.swash { font-size: clamp(3rem, 7vw, 7rem); }
+.hero--open .hero-sticker--heart { width: min(20vw, 300px); left: -18%; right: auto; bottom: -6%; top: auto; z-index: 3; }
+.hero--open .hero-sticker--bird { width: min(10vw, 150px); right: -6%; top: -5%; left: auto; z-index: 3; }
+.hero--open .hero-sticker--berry { width: min(8vw, 120px); left: 44%; bottom: 7%; right: auto; top: auto; }
+@media (max-width: 767px) {
+  .hero--open { height: 200vh; }
+  .hero-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-items: start; padding: 84px 16px 20px; gap: 1rem; }
+  .hero-slot { height: 100%; min-height: 34vh; }
+  .hero--open .hero-line--name { font-size: 27vw; }
+  .hero--open .hero-line.swash { font-size: 13vw; }
+  .hero--open .hero-sub { font-size: .95rem; margin-top: .8rem; }
+  .hero--open .hero-cta { margin-top: 1rem; }
+  .hero--open .hero-sticker--heart { width: 34vw; left: -4%; bottom: -4%; }
+  .hero--open .hero-sticker--bird { width: 20vw; right: -2%; }
+  .hero--open .hero-sticker--berry { display: none; }
+}
+
+/* Gallery slides up over the pinned, fully-open photo like a curtain */
+.hero--open { height: 330vh; }
+#obra.archive { position: relative; z-index: 5; margin-top: -100vh; border-radius: clamp(28px, 4vw, 56px) clamp(28px, 4vw, 56px) 0 0; overflow: clip; box-shadow: 0 -24px 60px rgba(22,20,20,.18); background: var(--cream); }
+@media (max-width: 767px) { .hero--open { height: 300vh; } }
+#obra.archive::before { content: ''; display: block; height: clamp(18px, 2.5vw, 32px); background: var(--cream); }
+#obra.archive::after { content: ''; position: absolute; left: 50%; top: 9px; width: 44px; height: 5px; border-radius: 9px; background: rgba(22,20,20,.18); transform: translateX(-50%); }
