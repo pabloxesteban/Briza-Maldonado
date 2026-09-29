@@ -135,34 +135,37 @@ export default function Contact() {
       }}
     >
       <div className="booking-grid">
-        {/* Left: title + progress */}
-        <div>
-          <h2 className="font-display" style={{ fontSize: 'clamp(2.8rem, 7vw, 6.5rem)', lineHeight: 0.92, letterSpacing: '-0.03em', color: 'var(--ink)', marginBottom: '1.6rem' }}>
-            Hagamos<br /><span style={{ fontStyle: 'italic' }}>algo tuyo.</span>
-          </h2>
-          <p style={{ fontSize: '1rem', lineHeight: 1.65, color: 'var(--ink-muted)', maxWidth: '26rem' }}>
-            Cuatro preguntas rápidas y te abro el chat con todo escrito. Las referencias me las mandás directo por ahí.
-          </p>
+        {/* Left: title, progress and a live ticket of what will be sent */}
+        <div className="bk-left">
+          <h2 className="bk-title">Hagamos <span className="swash">algo tuyo.</span></h2>
+          <p className="bk-lede">Cuatro preguntas rápidas y te abro WhatsApp con todo escrito. Respondo en 24–48 h.</p>
 
           {!done && (
-            <ol className="booking-steps" aria-label="Progreso">
-              {STEPS.map((s, i) => (
-                <li key={s}>
-                  <button
-                    type="button"
-                    onClick={() => i < step && setStep(i)}
-                    disabled={i >= step}
-                    data-hover={i < step ? '' : undefined}
-                    aria-current={i === step ? 'step' : undefined}
-                    style={{ color: i === step ? 'var(--ink)' : i < step ? 'var(--ink-muted)' : 'rgba(185,167,174,.4)' }}
-                  >
-                    <span style={{ color: i <= step ? 'var(--mark)' : 'inherit' }}>0{i + 1}</span> {s}
-                  </button>
-                  <i style={{ transform: `scaleX(${i < step ? 1 : i === step ? 0.35 : 0})` }} />
-                </li>
-              ))}
-            </ol>
+            <div className="bk-progress" aria-label={`Paso ${step + 1} de 4`}>
+              <div className="bk-progress-top"><span>Paso {step + 1} de 4 · {STEPS[step]}</span><b>{Math.round(((step + (ready ? 1 : 0)) / 4) * 100)}%</b></div>
+              <div className="bk-track"><span style={{ transform: `scaleX(${(step + (ready ? 1 : 0)) / 4})` }} /></div>
+            </div>
           )}
+
+          <div className="bk-ticket" aria-live="polite">
+            <p className="bk-ticket-head"><span>Tu pedido</span><span className="swash">Briza</span></p>
+            {([
+              ['Idea', a.idea ? `${a.idea}${a.detail.trim() ? ` — ${a.detail.trim()}` : ''}` : ''],
+              ['Zona', a.zone],
+              ['Tamaño', a.size],
+              ['Turno', a.when],
+              ['Nombre', a.name.trim()],
+            ] as const).map(([k, v], i) => (
+              <button key={k} type="button" className={`bk-row ${v ? 'filled' : ''}`} disabled={done !== null || !v}
+                onClick={() => setStep([0, 1, 1, 2, 3][i])} data-hover>
+                <span className="bk-k">{k}</span>
+                <span className="bk-v">{v || '—'}</span>
+              </button>
+            ))}
+            <p className="bk-ticket-foot">Palermo, CABA · Se confirma por WhatsApp</p>
+          </div>
+
+          <p className="bk-alt">¿Preferís escribir directo? <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener">WhatsApp ↗</a> · <a href={`https://instagram.com/${INSTAGRAM}`} target="_blank" rel="noopener">@{INSTAGRAM} ↗</a></p>
         </div>
 
         {/* Right: one question at a time */}
