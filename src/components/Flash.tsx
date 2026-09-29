@@ -102,7 +102,7 @@ function Notebook({ onTry }: { onTry: (f: number) => void }) {
 // Step 1 "Ajustá tu foto": drag / pinch (or the slider) to frame the zone, then Aplicar.
 // Step 2: add flashes (drag from the notebook, "Probar", or the strip right here) and place them:
 // one finger moves, two fingers resize + rotate; sliders do the same for mouse users.
-type View = { x: number; y: number; zoom: number }
+type View = { x: number; y: number; zoom: number; rot?: number }
 type Pt = { x: number; y: number }
 
 function TryOn({ pending, clearPending }: { pending: number | null; clearPending: () => void }) {
@@ -162,7 +162,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
   const photoEl = useRef<HTMLImageElement>(null)
   const stencilEls = useRef(new Map<number, HTMLDivElement>())
   const frame = useRef(0)
-  const photoStyle = (v: View) => `translate(${v.x * 100}%, ${v.y * 100}%) scale(${v.zoom})`
+  const photoStyle = (v: View) => `translate(${v.x * 100}%, ${v.y * 100}%) rotate(${v.rot ?? 0}deg) scale(${v.zoom})`
   const paint = (kind: 'photo' | 'item', id: number | undefined, v: View | Placed) => {
     cancelAnimationFrame(frame.current)
     frame.current = requestAnimationFrame(() => {
@@ -203,7 +203,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
     const dr = pts.length > 1 ? ang(pts[0], pts[1]) - ang(g.startPts[0], g.startPts[1]) : 0
     if (g.kind === 'photo') {
       const s = g.start as View
-      g.cur = { x: s.x + dx, y: s.y + dy, zoom: clamp(s.zoom * k, 1, 4) }
+      g.cur = { x: s.x + dx, y: s.y + dy, zoom: clamp(s.zoom * k, 1, 4), rot: (s.rot ?? 0) + dr }
     } else {
       const s = g.start as Placed
       g.cur = { ...s, x: clamp(s.x + dx), y: clamp(s.y + dy), size: clamp(s.size * k, 0.06, 0.95), rot: s.rot + dr }
@@ -230,7 +230,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
         <div className="try-fs-bar">
           <button type="button" onClick={() => setFull(false)} aria-label="Cerrar editor">✕</button>
           <span>{framing ? 'Ajustá tu foto' : 'Sumá flashes'}</span>
-          <span className="try-fs-hint">{framing ? 'Arrastrá · pellizcá' : '1 dedo mueve · 2 dedos giran'}</span>
+          <span className="try-fs-hint">{framing ? 'Arrastrá · pellizcá · girá' : '1 dedo mueve · 2 dedos giran'}</span>
         </div>
       )}
       <header className="try-head">
@@ -281,7 +281,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
           )
         })}
 
-        {framing && <p className="try-hint">Arrastrá para mover · pellizcá para acercar</p>}
+        {framing && <p className="try-hint">Arrastrá · pellizcá para acercar · girá con 2 dedos</p>}
         {ready && !items.length && <p className="try-hint">Elegí un flash de abajo o arrastralo desde el cuaderno</p>}
         {nudge && <p className="try-hint warn">Primero subí y aplicá tu foto</p>}
       </div>
@@ -293,7 +293,11 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
             <label className="try-range try-desk">Zoom
               <input type="range" min={1} max={4} step={0.01} value={view.zoom} onChange={e => setView(v => ({ ...v, zoom: Number(e.target.value) }))} />
             </label>
+            <label className="try-range try-desk">Rotación
+              <input type="range" min={-180} max={180} step={1} value={Math.round(view.rot ?? 0)} onChange={e => setView(v => ({ ...v, rot: Number(e.target.value) }))} />
+            </label>
             <div className="try-btns">
+              <button type="button" className="try-remove" onClick={() => setView(v => ({ ...v, rot: ((v.rot ?? 0) + 90) % 360 }))}>Girar 90° ↻</button>
               <label className="try-remove try-change">Otra foto
                 <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
               </label>
@@ -328,7 +332,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
               {current && <button type="button" className="try-remove" onClick={() => { setItems(l => l.filter(i => i.id !== sel)); setSel(null) }}>Quitar</button>}
               <button type="button" className="try-remove" onClick={() => setFraming(true)}>Ajustar foto</button>
               {unique.length > 0 && (
-                <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => book(unique.map(i => FLASHES[i].name))}>
+                <button type="button" className="cta-book try-book" data-cursor="book" onClick={() => { setFull(false); book(unique.map(i => FLASHES[i].name)) }}>
                   {full ? (unique.length > 1 ? `Quiero estos ${unique.length} ●` : 'Lo quiero ●') : unique.length > 1 ? `Quiero estos ${unique.length} flashes ●` : `Quiero ${FLASHES[unique[0]].name} ●`}
                 </button>
               )}
