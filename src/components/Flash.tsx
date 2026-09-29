@@ -21,8 +21,8 @@ type Placed = { id: number; f: number; x: number; y: number; size: number; rot: 
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
 
-function book(name: string) {
-  window.dispatchEvent(new CustomEvent('book:flash', { detail: name }))
+function book(names: string | string[]) {
+  window.dispatchEvent(new CustomEvent('book:flash', { detail: Array.isArray(names) ? names : [names] }))
   setTimeout(() => document.getElementById('turno')?.scrollIntoView({ behavior: 'smooth' }), 100)
 }
 
@@ -197,6 +197,7 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
       </div>
 
       <div className="try-controls">
+        <p className="try-privacy">Tu foto queda solo en tu dispositivo: no se sube a ningún lado.</p>
         {current ? (
           <>
             <p className="try-now"><b>{FLASHES[current.f].name}</b> · {FLASHES[current.f].cm} cm · {FLASHES[current.f].price}</p>
@@ -213,12 +214,17 @@ function TryOn({ pending, clearPending }: { pending: number | null; clearPending
           </>
         ) : (
           <div className="try-btns">
+            {items.length > 0 && (
+              <button type="button" className="cta-book try-book" data-cursor="book"
+                onClick={() => book(Array.from(new Set(items.map(i => FLASHES[i.f].name))))}>
+                {new Set(items.map(i => i.f)).size > 1 ? `Quiero estos ${new Set(items.map(i => i.f)).size} flashes ●` : `Quiero ${FLASHES[items[0].f].name} ●`}
+              </button>
+            )}
             {photo && (
               <label className="try-remove try-change">Cambiar foto
                 <input type="file" accept="image/*" onChange={e => onFile(e.target.files?.[0])} />
               </label>
             )}
-            <p className="try-privacy">Tu foto queda solo en tu dispositivo: no se sube a ningún lado.</p>
           </div>
         )}
       </div>

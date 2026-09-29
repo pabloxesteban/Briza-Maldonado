@@ -75,6 +75,7 @@ export default function Contact() {
   const [a, setA] = useState<Answers>(EMPTY)
   const [done, setDone] = useState<null | 'whatsapp' | 'instagram'>(null)
   const [copied, setCopied] = useState(false)
+  const [flashes, setFlashes] = useState<string[]>([])
   const nameRef = useRef<HTMLInputElement>(null)
   const set = (k: keyof Answers) => (v: string) => setA(p => ({ ...p, [k]: v }))
 
@@ -92,8 +93,10 @@ export default function Contact() {
   // Pre-select the idea when a flash asks for it (see Flash notebook)
   useEffect(() => {
     const onPick = (e: Event) => {
-      const name = (e as CustomEvent<string>).detail
-      setA(p => ({ ...p, idea: 'Un flash del cuaderno', detail: name }))
+      const d = (e as CustomEvent<string | string[]>).detail
+      const names = Array.isArray(d) ? d : [d]
+      setFlashes(names)
+      setA(p => ({ ...p, idea: 'Un flash del cuaderno', detail: names.join(' + ') }))
       setStep(0); setDone(null)
     }
     const onIdea = (e: Event) => {
@@ -182,6 +185,22 @@ export default function Contact() {
             <form key={step} className="book-reveal" onSubmit={e => { e.preventDefault(); next() }}>
               {step === 0 && (
                 <>
+                  {a.idea === 'Un flash del cuaderno' && flashes.length > 0 && (
+                    <div className="book-picked">
+                      <p style={label}>{flashes.length > 1 ? 'Flashes que querés reservar' : 'Flash que querés reservar'}</p>
+                      <ul>
+                        {flashes.map(n => (
+                          <li key={n}>✦ {n}
+                            <button type="button" aria-label={`Quitar ${n}`} onClick={() => {
+                              const rest = flashes.filter(x => x !== n)
+                              setFlashes(rest)
+                              setA(p => ({ ...p, detail: rest.join(' + '), idea: rest.length ? p.idea : '' }))
+                            }}>✕</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <Question n="01">¿Qué tenés en mente?</Question>
                   <div className="book-chips">
                     {IDEAS.map(o => <Chip key={o} label={o} on={a.idea === o} onClick={() => set('idea')(o)} />)}

@@ -1509,3 +1509,9 @@ nav .nav-toggle { padding: .95rem 1.7rem !important; }
 .try-stencil { mix-blend-mode: multiply; }
 .try-stencil img { mix-blend-mode: normal; filter: grayscale(1) contrast(1.8) brightness(1.2) sepia(1) hue-rotate(205deg) saturate(3.4); opacity: .88; }
 @media (max-width: 900px) { .nb-actions button { font-size: .74rem; padding: .5rem .2rem; white-space: nowrap; } }
+.book-picked { margin-bottom: 1.6rem; padding: 1rem 1.1rem; border-radius: 14px; background: rgba(244,182,200,.35); border: 1px solid rgba(224,118,156,.4); animation: fadeIn .6s var(--ease) both; }
+.book-picked p { margin-bottom: .5rem !important; }
+.book-picked ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.book-picked li { display: inline-flex; align-items: center; gap: .6rem; padding: .55rem .6rem .55rem .9rem; border-radius: 999px; background: var(--ink); color: var(--cream); font-weight: 800; font-size: .95rem; }
+.book-picked li button { width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(247,241,226,.2); color: var(--cream); font-size: .7rem; line-height: 1; }
+.try-controls .try-privacy { order: 9; }
