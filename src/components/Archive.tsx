@@ -134,10 +134,13 @@ function Detail({ index, list, from, onIndex, onClose, onBook }: {
   useLayoutEffect(() => {
     const el = cards.current.get(index)
     if (!el || !from) return
+    // Animate the independent translate/scale properties so the card's own centring transform stays intact
     const r = el.getBoundingClientRect()
+    const dx = from.left + from.width / 2 - (r.left + r.width / 2)
+    const dy = from.top + from.height / 2 - (r.top + r.height / 2)
     const a = el.animate([
-      { transform: `translate(${from.left - r.left}px, ${from.top - r.top}px) scale(${from.width / r.width}, ${from.height / r.height})`, transformOrigin: '0 0' },
-      { transform: 'none', transformOrigin: '0 0' },
+      { translate: `${dx}px ${dy}px`, scale: `${from.width / r.width} ${from.height / r.height}` },
+      { translate: '0px 0px', scale: '1 1' },
     ], { duration: 900, easing: 'cubic-bezier(.22,1,.36,1)' })
     return () => a.cancel()
     // eslint-disable-next-line react-hooks/exhaustive-deps
