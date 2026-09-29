@@ -81,7 +81,8 @@ export default function Navbar() {
   }, [])
 
   const isSubPage = pathname !== '/'
-  const bookHref = pathname === '/' ? '#turno' : '/turno'
+  // The booking button that follows you around goes straight to WhatsApp: one tap, no form
+  const quickWA = `https://wa.me/5491156233929?text=${encodeURIComponent('Hola Bri! Quiero pedir un turno ✦')}`
   const show = isSubPage || visible
 
   return (
@@ -128,7 +129,8 @@ export default function Navbar() {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.6rem', zIndex: 1 }}>
-          <Link href={bookHref} className="cta-book nav-desktop" data-cursor="book">Pedir turno ●</Link>
+          <a href={quickWA} target="_blank" rel="noopener" className="cta-book nav-desktop" data-cursor="book"
+            onClick={() => setMenuOpen(false)} aria-label="Pedir turno por WhatsApp">Pedir turno <span className="wa-dot" aria-hidden>↗</span></a>
           <button className="nav-toggle" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen}
             aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} data-hover>
             <span>{menuOpen ? 'Cerrar' : 'Menu'}</span><i />
@@ -165,7 +167,7 @@ export default function Navbar() {
 
       {/* Mobile: booking always one thumb away */}
       <div className={`cta-dock ${bookingInView || footerIn || menuOpen || !show || (!isSubPage && !pastHero) ? 'hide' : ''}`}>
-        <Link href={bookHref} className="cta-book">Pedir turno ●</Link>
+        <a href={quickWA} target="_blank" rel="noopener" className="cta-book" aria-label="Pedir turno por WhatsApp">Pedir turno por WhatsApp ↗</a>
       </div>
     </>
   )
