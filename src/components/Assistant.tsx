@@ -187,6 +187,25 @@ export default function Assistant() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [ctx, past, open])
   useEffect(() => { if (open) { setUnread(0); hideTeaser() } }, [open])
+  // Phones: the chat takes the whole screen like a DM, locks the page and sits above the keyboard
+  const panel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open || window.innerWidth >= 768) return
+    document.documentElement.classList.add('lila-open')
+    window.dispatchEvent(new Event('lenis:stop'))
+    document.body.style.overflow = 'hidden'
+    const vv = window.visualViewport
+    const fit = () => { if (panel.current && vv) { panel.current.style.height = `${vv.height}px`; panel.current.style.top = `${vv.offsetTop}px` } }
+    fit(); vv?.addEventListener('resize', fit); vv?.addEventListener('scroll', fit)
+    return () => {
+      document.documentElement.classList.remove('lila-open')
+      window.dispatchEvent(new Event('lenis:start')); document.body.style.overflow = ''
+      vv?.removeEventListener('resize', fit); vv?.removeEventListener('scroll', fit)
+      if (panel.current) { panel.current.style.height = ''; panel.current.style.top = '' }
+    }
+  }, [open])
+  // Swipe the header down to minimize
+  const swipe = useRef<number | null>(null)
   const [typed, setTyped] = useState('')
   useEffect(() => {
     const lines = CONTEXT[ctx]?.say ?? CONTEXT.top.say
@@ -348,8 +367,11 @@ export default function Assistant() {
         </button>
       </div>
 
-      <div className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
-        <header className="ai-head">
+      <div ref={panel} className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
+        <header className="ai-head"
+          onTouchStart={e => { swipe.current = e.touches[0].clientY }}
+          onTouchEnd={e => { const y0 = swipe.current; swipe.current = null; if (y0 !== null && e.changedTouches[0].clientY - y0 > 60) setOpen(false) }}>
+          <span className="ai-grab" aria-hidden />
           <span className="ai-head-av"><LilaAvatar size={40} /><i /></span>
           <div className="ai-head-txt">
             <p className="ai-name">Lila <span className="ai-verified" aria-label="Asistente de Briza">✓</span></p>
