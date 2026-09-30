@@ -2170,3 +2170,10 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
   .ai-clip { width: 44px !important; height: 44px !important; }
   html.lila-open .nav2, html.lila-open .cta-dock, html.lila-open .lila-dock { opacity: 0 !important; pointer-events: none !important; }
 }
+/* Closed chat must be fully off-screen even when Safari's toolbar collapses (100svh < visible height) */
+@media (max-width: 767px) {
+  .ai-panel { transform: translateY(calc(100% + 40vh)) !important; visibility: hidden; transition: transform .45s cubic-bezier(.22,1,.36,1), visibility 0s linear .45s !important; }
+  .ai-panel.open { transform: none !important; visibility: visible; transition: transform .45s cubic-bezier(.22,1,.36,1), visibility 0s !important; }
+}
+.ai-panel:not(.open) { visibility: hidden; }
+.ai-panel.open { visibility: visible; }
