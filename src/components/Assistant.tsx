@@ -133,15 +133,6 @@ const CONTEXT: Record<string, { say: string[]; chips: string[] }> = {
 export default function Assistant() {
   const [demo, setDemo] = useState(false)
   const [open, setOpen] = useState(false)
-  // A friendly nudge a few seconds after the visitor starts exploring (once per visit, dismissible)
-  const [teaser, setTeaser] = useState(false)
-  useEffect(() => {
-    let seen = false
-    try { seen = sessionStorage.getItem('lila-teaser') === '1' } catch { /* noop */ }
-    if (seen) return
-    const t = setTimeout(() => setTeaser(true), 2500)
-    return () => clearTimeout(t)
-  }, [])
   // Lila waits until the hero is behind, so she doesn't sit on top of its buttons
   const [past, setPast] = useState(false)
   useEffect(() => {
@@ -149,8 +140,15 @@ export default function Assistant() {
     on(); window.addEventListener('scroll', on, { passive: true })
     return () => window.removeEventListener('scroll', on)
   }, [])
-  const hideTeaser = () => { setTeaser(false); try { sessionStorage.setItem('lila-teaser', '1') } catch { /* noop */ } }
 
+  // Chat-head notifications: each new section she "sends" a message (typing… then the bubble),
+  // with an unread badge. It collapses after a while; ✕ mutes that section.
+  const [teaser, setTeaser] = useState(false)
+  const [typingPeek, setTypingPeek] = useState(false)
+  const [unread, setUnread] = useState(0)
+  const [bump, setBump] = useState(0)
+  const muted = useRef(new Set<string>())
+  const hideTeaser = () => { setTeaser(false); setTypingPeek(false) }
   // Section in view → contextual lines, typed out one letter at a time
   const [ctx, setCtx] = useState('top')
   useEffect(() => {
@@ -159,6 +157,15 @@ export default function Assistant() {
     ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el) })
     return () => io.disconnect()
   }, [])
+  useEffect(() => {
+    if (!past || open || muted.current.has(ctx)) return
+    setTeaser(false); setTypingPeek(false)
+    const t1 = setTimeout(() => setTypingPeek(true), 900)
+    const t2 = setTimeout(() => { setTypingPeek(false); setTeaser(true); setUnread(u => u + 1); setBump(b => b + 1) }, 2600)
+    const t3 = setTimeout(() => setTeaser(false), 13000)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [ctx, past, open])
+  useEffect(() => { if (open) { setUnread(0); hideTeaser() } }, [open])
   const [typed, setTyped] = useState('')
   useEffect(() => {
     const lines = CONTEXT[ctx]?.say ?? CONTEXT.top.say
@@ -190,6 +197,18 @@ export default function Assistant() {
   }, [demo, past])
   const quick = (t: string) => { hideTeaser(); setOpen(true); setTimeout(() => sendRef.current?.(t), 250) }
   const sendRef = useRef<((t: string) => void) | null>(null)
+  // First open: Lila greets in a few separate messages, like a real person typing
+  const INTRO = ['¡Holaa! Soy Lila 🖤', 'Te ayudo a elegir un flash (te paso el precio), armar tu idea o reservar turno. Briza lo confirma.', '¿Qué tenés ganas de tatuarte?']
+  const [intro, setIntro] = useState(0)
+  useEffect(() => {
+    if (!open || intro >= INTRO.length) return
+    const t = setTimeout(() => setIntro(n => n + 1), intro === 0 ? 500 : 1100)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, intro])
+  const [hearts, setHearts] = useState<Set<number>>(new Set())
+  const openedAt = useRef('')
+  if (open && !openedAt.current) openedAt.current = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
   const [history, setHistory] = useState<Msg[]>([])
   const [action, setAction] = useState<Action | null>(null)
   const [input, setInput] = useState('')
@@ -244,11 +263,12 @@ export default function Assistant() {
     setHistory(next); setInput(''); setPics([]); setBusy(true); setError('')
     if (demo) {
       const out = demoReply(t, demoState.current, pics.length > 0)
+      const wait = Math.min(2600, 600 + out.reply.length * 14)
       setTimeout(() => {
         setHistory([...next, { role: 'assistant', content: out.reply }])
         if (out.action) setAction(out.action)
         setBusy(false)
-      }, 700 + Math.random() * 500)
+      }, wait)
       return
     }
     try {
@@ -268,16 +288,29 @@ export default function Assistant() {
   // Only show the visitor's words and the assistant's text (tool traffic stays hidden)
   const bubbles = history
     .filter(m => !(m.role === 'user' && typeof m.content !== 'string' && m.content.some(b => b.type === 'tool_result')))
-    .map(m => ({ role: m.role, text: textOf(m), imgs: m.role === 'user' ? imagesOf(m) : [] }))
+    .flatMap(m => {
+      const text = textOf(m), imgs = m.role === 'user' ? imagesOf(m) : []
+      if (m.role === 'user') return [{ role: m.role, text, imgs }]
+      return text.split(/\n\s*\n/).map(t => ({ role: m.role, text: t.trim(), imgs: [] as string[] }))
+    })
     .filter(b => b.text || b.imgs.length)
+  const all = [
+    ...INTRO.slice(0, intro).map(t => ({ role: 'assistant' as const, text: t, imgs: [] as string[] })),
+    ...bubbles,
+  ]
+  const lastUser = all.map(b => b.role).lastIndexOf('user')
 
   return (
     <>
       <div className={`lila-dock ${open || !past ? 'hide' : ''}`}>
+        {typingPeek && !open && (
+          <div className="lila-peek" aria-hidden><i /><i /><i /></div>
+        )}
         {teaser && !open && (
-          <div className="lila-bubble" role="status">
-            <button type="button" className="lila-bubble-x" aria-label="Ocultar" onClick={hideTeaser}>✕</button>
-            <button type="button" className="lila-bubble-text" onClick={() => { hideTeaser(); setOpen(true) }}>
+          <div key={ctx} className="lila-bubble" role="status">
+            <button type="button" className="lila-bubble-x" aria-label="Ocultar" onClick={() => { muted.current.add(ctx); hideTeaser() }}>✕</button>
+            <p className="lila-bubble-from"><b>Lila</b> · ahora</p>
+            <button type="button" className="lila-bubble-text" onClick={() => setOpen(true)}>
               {typed}<i className="lila-caret" aria-hidden />
             </button>
             <div className="lila-chips">
@@ -285,33 +318,47 @@ export default function Assistant() {
             </div>
           </div>
         )}
-        <button ref={orb} type="button" className="lila-orb" onClick={() => { hideTeaser(); setOpen(true) }} aria-label="Hablar con Lila" data-hover>
+        <button ref={orb} key={bump} type="button" className={`lila-orb ${unread ? 'new' : ''}`} onClick={() => setOpen(true)} aria-label={unread ? `Lila · ${unread} mensaje${unread > 1 ? 's' : ''} nuevo${unread > 1 ? 's' : ''}` : 'Hablar con Lila'} data-hover>
           <span className="lila-cf" aria-hidden />
           <span className="lila-face"><LilaAvatar size={56} /></span>
+          {unread > 0 && <span className="lila-badge" aria-hidden>{unread}</span>}
         </button>
       </div>
 
       <div className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
         <header className="ai-head">
-          <LilaAvatar size={40} />
-          <div>
+          <button type="button" className="ai-back" onClick={() => setOpen(false)} aria-label="Cerrar">‹</button>
+          <span className="ai-head-av"><LilaAvatar size={40} /><i /></span>
+          <div className="ai-head-txt">
             <p className="ai-name">Lila <span className="ai-verified" aria-label="Asistente de Briza">✓</span></p>
-            <p className="ai-sub"><i className="ai-dot" />{demo ? 'Activa ahora · demo' : 'Activa ahora'}</p>
+            <p className="ai-sub">{busy || (open && intro < INTRO.length) ? <em>escribiendo…</em> : <>Activa ahora{demo ? ' · demo' : ''}</>}</p>
           </div>
-          <button type="button" className="ai-x" onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
+          <span className="ai-head-ic" aria-hidden>ⓘ</span>
         </header>
 
         <div ref={list} className="ai-list" aria-live="polite">
-          <div className="ai-row"><LilaAvatar size={28} /><p className="ai-msg bot">¡Holaa! Soy Lila, la asistente de Briza 🖤 Te ayudo a elegir flashes (con precio) o a armar tu idea, te paso estimativos, miro tus referencias (📎) y te reservo turno (Briza lo confirma). ¿Qué tenés ganas de tatuarte?</p></div>
-          {bubbles.map((b, i) => (
-            <div key={i} className={`ai-row ${b.role === 'user' ? 'me' : ''}`}>
-              {b.role !== 'user' && <LilaAvatar size={28} />}
-              <div className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'}`}>
-                {b.imgs.length > 0 && <span className="ai-imgs">{b.imgs.map(u => <img key={u} src={u} alt="Referencia" />)}</span>}
-                {b.text}
+          <div className="ai-profile">
+            <span className="ai-profile-av"><LilaAvatar size={72} /></span>
+            <b>Lila</b>
+            <span>Asistente de Briza Maldonado · Tattoo · Palermo</span>
+          </div>
+          <p className="ai-date">Hoy {openedAt.current}</p>
+          {all.map((b, i) => {
+            const next = all[i + 1]
+            const tail = !next || next.role !== b.role
+            return (
+              <div key={i} className={`ai-row ${b.role === 'user' ? 'me' : ''} ${tail ? 'tail' : ''}`}>
+                {b.role !== 'user' && (tail ? <LilaAvatar size={28} /> : <span className="ai-av-space" />)}
+                <div className={`ai-msg ${b.role === 'user' ? 'me' : 'bot'} ${hearts.has(i) ? 'loved' : ''}`}
+                  onDoubleClick={() => setHearts(h => { const n = new Set(h); n.has(i) ? n.delete(i) : n.add(i); return n })}>
+                  {b.imgs.length > 0 && <span className="ai-imgs">{b.imgs.map(u => <img key={u} src={u} alt="Referencia" />)}</span>}
+                  {b.text}
+                  {hearts.has(i) && <span className="ai-heart" aria-label="Te gusta">❤️</span>}
+                </div>
+                {i === lastUser && <p className="ai-seen">{busy ? 'Enviado' : 'Visto'}</p>}
               </div>
-            </div>
-          ))}
+            )
+          })}
           {busy && <div className="ai-row"><LilaAvatar size={28} /><p className="ai-msg bot ai-typing" aria-label="Lila está escribiendo"><i /><i /><i /></p></div>}
           {action && (
             <div className="ai-action">
@@ -323,9 +370,9 @@ export default function Assistant() {
           {error && <p className="ai-err">{error}</p>}
         </div>
 
-        {!history.length && (
+        {!busy && intro >= INTRO.length && (
           <div className="ai-suggest">
-            {SUGGEST.map(s => <button key={s} type="button" onClick={() => send(s)}>{s}</button>)}
+            {(history.length ? (CONTEXT[ctx] ?? CONTEXT.top).chips : SUGGEST).map(s => <button key={s} type="button" onClick={() => send(s)}>{s}</button>)}
           </div>
         )}
 

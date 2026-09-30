@@ -2101,3 +2101,49 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .lila-chips button { background: #f2f2f2 !important; color: var(--ink) !important; border: 0 !important; }
 .lila-chips button:hover { background: #1ec95b !important; color: #fff !important; }
 .lila-bubble-x { background: var(--ink) !important; color: #fff !important; }
+
+/* ─── Lila v5: chat-head notifications + a real DM ─── */
+.lila-orb.new { animation: lilaBump .7s cubic-bezier(.34,1.56,.64,1); }
+@keyframes lilaBump { 30% { transform: scale(1.14) rotate(-6deg); } 60% { transform: scale(.96) rotate(3deg); } }
+.lila-orb.new .lila-cf { background: conic-gradient(from 0deg, #1ec95b, #b6f24a, #1ec95b, #0fa84a, #1ec95b); animation: lilaSpin 3s linear infinite; }
+.lila-badge { position: absolute; top: -2px; right: -2px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #ff3040; color: #fff; font-size: .74rem; font-weight: 800; display: grid; place-items: center; border: 2.5px solid var(--cream); animation: lilaTeaser .5s cubic-bezier(.34,1.56,.64,1) both; }
+.lila-orb::after { display: none !important; }
+.lila-peek { display: flex; gap: 4px; padding: .8rem 1rem; border-radius: 20px 20px 6px 20px; background: #fff; box-shadow: 0 14px 30px -14px rgba(22,20,20,.4), 0 0 0 1px rgba(22,20,20,.06); animation: lilaTeaser .4s cubic-bezier(.34,1.56,.64,1) both; }
+.lila-peek i { width: 7px; height: 7px; border-radius: 50%; background: #8e8e8e; animation: aiDot 1s infinite; }
+.lila-peek i:nth-child(2) { animation-delay: .15s; } .lila-peek i:nth-child(3) { animation-delay: .3s; }
+.lila-bubble-from { font-size: .72rem; color: #8e8e8e; margin-bottom: .25rem; }
+.lila-bubble-from b { color: var(--ink); }
+/* Panel */
+.ai-panel { height: min(680px, calc(100svh - 40px)) !important; }
+.ai-head { gap: .6rem !important; }
+.ai-back { border: 0; background: none; font-size: 2rem; line-height: 1; color: var(--ink); padding: 0 .2rem; margin-top: -4px; }
+.ai-head-av { position: relative; }
+.ai-head-av .lila-av { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1ec95b !important; }
+.ai-head-av i { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 50%; background: #1ec95b; border: 2px solid #fff; }
+.ai-head-txt { flex: 1; min-width: 0; }
+.ai-sub em { font-style: normal; color: #1ec95b; font-weight: 700; }
+.ai-head-ic { font-size: 1.3rem; color: var(--ink); }
+.ai-x { display: none !important; }
+.ai-profile { display: flex; flex-direction: column; align-items: center; gap: .15rem; padding: 1.2rem 0 .6rem; text-align: center; }
+.ai-profile-av .lila-av { width: 72px; height: 72px; box-shadow: 0 0 0 3px #fff, 0 0 0 5.5px #1ec95b; }
+.ai-profile b { margin-top: .6rem; font-size: 1.05rem; }
+.ai-profile span:last-child { font-size: .78rem; color: #8e8e8e; }
+.ai-date { text-align: center; font-size: .72rem; color: #8e8e8e; margin: .4rem 0 .2rem; }
+.ai-list { gap: 2px !important; padding: .6rem .8rem 1rem !important; }
+.ai-row { flex-wrap: wrap; gap: .45rem; }
+.ai-row.tail { margin-bottom: .55rem; }
+.ai-av-space { width: 28px; flex-shrink: 0; }
+.ai-row .ai-msg { position: relative; animation: aiIn .35s cubic-bezier(.34,1.56,.64,1) both; user-select: text; }
+@keyframes aiIn { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+.ai-row:not(.tail) .ai-msg.bot { border-bottom-left-radius: 6px !important; }
+.ai-row.tail .ai-msg.bot { border-bottom-left-radius: 22px !important; }
+.ai-row:not(.tail) .ai-msg.me { border-bottom-right-radius: 6px !important; }
+.ai-row.me + .ai-row.me .ai-msg.me { border-top-right-radius: 6px !important; }
+.ai-row:not(.me) + .ai-row:not(.me) .ai-msg.bot { border-top-left-radius: 6px !important; }
+.ai-msg.loved { margin-bottom: 10px; }
+.ai-heart { position: absolute; bottom: -12px; right: 8px; font-size: .75rem; background: #fff; border-radius: 999px; padding: 1px 5px; box-shadow: 0 1px 4px rgba(0,0,0,.18); animation: lilaTeaser .4s cubic-bezier(.34,1.56,.64,1) both; }
+.ai-row.me .ai-heart { right: auto; left: 8px; }
+.ai-seen { width: 100%; text-align: right; font-size: .7rem; color: #8e8e8e; margin: 2px 4px 0 0; }
+.ai-suggest { padding: .3rem .8rem .2rem !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+.ai-suggest button { flex-shrink: 0; font-size: .82rem !important; }
+.ai-typing i { background: #8e8e8e !important; } @media (max-width: 767px) { .ai-panel { height: calc(100svh - 70px) !important; } }
