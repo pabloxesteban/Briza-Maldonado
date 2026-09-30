@@ -130,6 +130,22 @@ const CONTEXT: Record<string, { say: string[]; chips: string[] }> = {
   turno: { say: ['¿Querés que te lo arme yo?', 'Te busco un turno libre ✦', 'Más rápido por acá 😉'], chips: ['¿Qué turnos hay?', 'Quiero un flash'] },
 }
 
+// Quick replies follow what Lila just asked: her listed options, yes/no, sizes…
+function replyChips(all: { role: string; text: string }[], ctx: string): string[] {
+  const last = [...all].reverse().find(b => b.role !== 'user')
+  const lastBlock = all.slice(all.map(b => b.role).lastIndexOf('user') + 1).map(b => b.text).join('\n')
+  const t = (lastBlock || last?.text || '').toLowerCase()
+  if (!all.some(b => b.role === 'user')) return SUGGEST
+  const bullets = lastBlock.split('\n').map(l => l.trim()).filter(l => /^(•|\d+\.)\s*/.test(l))
+  if (/n[uú]mero/.test(t) && bullets.length) return bullets.map(l => l.match(/^(\d+)\./)?.[1]).filter(Boolean).slice(0, 6).map(n => `El ${n}`)
+  if (/turno|cu[aá]l te queda|cu[aá]l prefer/.test(t) && bullets.length) return [...bullets.filter(l => !/nº|\$/i.test(l)).map(l => l.replace(/^•\s*/, '')).slice(0, 3), 'Ninguno me sirve']
+  if (/te va\?|s[ií] o no|de acuerdo|est[aá]s de acuerdo/.test(t)) return ['Sí, dale', 'No por ahora']
+  if (/tama[nñ]o/.test(t)) return ['Chico · 5–8 cm', 'Mediano · 10–15 cm', 'Grande · +15 cm']
+  if (/c[oó]mo te llam|tu usuario|instagram|mail/.test(t)) return []
+  if (/flash o|idea propia/.test(t)) return ['Un flash', 'Idea propia']
+  return (CONTEXT[ctx] ?? CONTEXT.top).chips
+}
+
 export default function Assistant() {
   const [demo, setDemo] = useState(false)
   const [open, setOpen] = useState(false)
@@ -148,6 +164,7 @@ export default function Assistant() {
   const [unread, setUnread] = useState(0)
   const [bump, setBump] = useState(0)
   const muted = useRef(new Set<string>())
+  const [pings, setPings] = useState<string[]>([])
   const hideTeaser = () => { setTeaser(false); setTypingPeek(false) }
   // Section in view → contextual lines, typed out one letter at a time
   const [ctx, setCtx] = useState('top')
@@ -161,7 +178,11 @@ export default function Assistant() {
     if (!past || open || muted.current.has(ctx)) return
     setTeaser(false); setTypingPeek(false)
     const t1 = setTimeout(() => setTypingPeek(true), 900)
-    const t2 = setTimeout(() => { setTypingPeek(false); setTeaser(true); setUnread(u => u + 1); setBump(b => b + 1) }, 2600)
+    const t2 = setTimeout(() => {
+      setTypingPeek(false); setTeaser(true); setUnread(u => u + 1); setBump(b => b + 1)
+      const line = (CONTEXT[ctx] ?? CONTEXT.top).say[0]
+      setPings(p => (p.includes(line) ? p : [...p, line]))
+    }, 2600)
     const t3 = setTimeout(() => setTeaser(false), 13000)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [ctx, past, open])
@@ -200,8 +221,9 @@ export default function Assistant() {
   // First open: Lila greets in a few separate messages, like a real person typing
   const INTRO = ['¡Holaa! Soy Lila 🖤', 'Te ayudo a elegir un flash (te paso el precio), armar tu idea o reservar turno. Briza lo confirma.', '¿Qué tenés ganas de tatuarte?']
   const [intro, setIntro] = useState(0)
+  const introList = pings.length ? [INTRO[0]] : INTRO
   useEffect(() => {
-    if (!open || intro >= INTRO.length) return
+    if (!open || intro >= introList.length) return
     const t = setTimeout(() => setIntro(n => n + 1), intro === 0 ? 500 : 1100)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,7 +317,8 @@ export default function Assistant() {
     })
     .filter(b => b.text || b.imgs.length)
   const all = [
-    ...INTRO.slice(0, intro).map(t => ({ role: 'assistant' as const, text: t, imgs: [] as string[] })),
+    ...introList.slice(0, intro).map(t => ({ role: 'assistant' as const, text: t, imgs: [] as string[] })),
+    ...(intro >= introList.length ? pings : []).map(t => ({ role: 'assistant' as const, text: t, imgs: [] as string[] })),
     ...bubbles,
   ]
   const lastUser = all.map(b => b.role).lastIndexOf('user')
@@ -327,13 +350,14 @@ export default function Assistant() {
 
       <div className={`ai-panel ${open ? 'open' : ''}`} role="dialog" aria-label="Lila, asistente de Briza" aria-hidden={!open}>
         <header className="ai-head">
-          <button type="button" className="ai-back" onClick={() => setOpen(false)} aria-label="Cerrar">‹</button>
           <span className="ai-head-av"><LilaAvatar size={40} /><i /></span>
           <div className="ai-head-txt">
             <p className="ai-name">Lila <span className="ai-verified" aria-label="Asistente de Briza">✓</span></p>
-            <p className="ai-sub">{busy || (open && intro < INTRO.length) ? <em>escribiendo…</em> : <>Activa ahora{demo ? ' · demo' : ''}</>}</p>
+            <p className="ai-sub">{busy || (open && intro < introList.length) ? <em>escribiendo…</em> : <>Activa ahora{demo ? ' · demo' : ''}</>}</p>
           </div>
-          <span className="ai-head-ic" aria-hidden>ⓘ</span>
+          <button type="button" className="ai-min" onClick={() => setOpen(false)} aria-label="Minimizar chat" title="Minimizar">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
         </header>
 
         <div ref={list} className="ai-list" aria-live="polite">
@@ -370,9 +394,9 @@ export default function Assistant() {
           {error && <p className="ai-err">{error}</p>}
         </div>
 
-        {!busy && intro >= INTRO.length && (
+        {!busy && intro >= introList.length && (
           <div className="ai-suggest">
-            {(history.length ? (CONTEXT[ctx] ?? CONTEXT.top).chips : SUGGEST).map(s => <button key={s} type="button" onClick={() => send(s)}>{s}</button>)}
+            {replyChips(all, ctx).map(s => <button key={s} type="button" onClick={() => send(s)}>{s}</button>)}
           </div>
         )}
 

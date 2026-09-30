@@ -2147,3 +2147,6 @@ nav.nav-footer .cta-book.nav-desktop { background: var(--c-pink) !important; col
 .ai-suggest { padding: .3rem .8rem .2rem !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
 .ai-suggest button { flex-shrink: 0; font-size: .82rem !important; }
 .ai-typing i { background: #8e8e8e !important; } @media (max-width: 767px) { .ai-panel { height: calc(100svh - 70px) !important; } }
+.ai-min { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 0; background: #efefef; color: var(--ink); cursor: pointer; transition: background .25s; }
+.ai-min:hover { background: #e2e2e2; }
+.ai-head { padding-left: 1rem !important; }
