@@ -1,3 +1,5 @@
 work/
 __pycache__/
 viral-video/build/
+output/final/*.mp4
+output/variants/*.mp4
