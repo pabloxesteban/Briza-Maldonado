@@ -171,25 +171,15 @@ HOOKS = {
 # ------------------------------------------------------------------ tatuajes terminados (pop-ups)
 PORT = ROOT / "tatuajes" / "portfolio"
 SLOTS = {"L1": (215, 1010), "R1": (765, 1010), "L2": (230, 1330), "R2": (750, 1330)}
-CARDS = [  # (beat entrada, beat salida, archivo, slot)
-    (8, 16, "cocodrilo", "L1"), (10, 16, "conejo", "R1"), (12, 16, "elefante-skate", "L2"), (14, 16, "pinguino", "R2"),
-    (24, 32, "lobo", "L1"), (26, 32, "lockets-gatos", "R1"), (28, 32, "garza", "L2"), (30, 32, "polilla-esterno", "R2"),
-    (32, 40, "mariposas-rodillas", "R1"), (34, 40, "daga-serpiente", "L1"), (36, 40, "rosa-alambre", "R2"),
-    (38, 40, "mariposa-pierna", "L2"),
-    (40, 48, "patchwork-sleeve", "L1"), (42, 48, "espinas", "R1"), (44, 48, "alambre-daga-corazon", "L2"),
-    (46, 48, "mono-corazon", "R2"),
-    (56, 64, "garza", "R1"), (58, 64, "pinguino", "L1"), (60, 64, "lockets-gatos", "R2"), (62, 64, "polilla-esterno", "L2"),
-    (48, 56, "cocodrilo", "R1"), (50, 56, "elefante-skate", "L1"), (52, 56, "lobo", "R2"), (54, 56, "conejo", "L2"),
-]
-PILE_NAMES = ["mariposas-rodillas", "rosa-alambre", "daga-serpiente", "espinas", "mariposa-pierna",
-              "patchwork-sleeve", "alambre-daga-corazon", "mono-corazon", "cocodrilo", "conejo", "elefante-skate",
-              "lobo", "lockets-gatos", "garza", "polilla-esterno", "pinguino"]
+# orden de aparición (sin repetir hasta agotar los 16)
+SEQ = ["cocodrilo", "conejo", "elefante-skate", "pinguino", "lobo", "lockets-gatos", "garza", "polilla-esterno",
+       "mariposas-rodillas", "daga-serpiente", "rosa-alambre", "mariposa-pierna", "patchwork-sleeve", "espinas",
+       "alambre-daga-corazon", "mono-corazon"]
 STICKERS = [  # pocos flashes: (beat entrada, beat salida, diseño, cx, cy, alto, rot)
     (0, 4, "mariposa-daga", 200, 1150, 330, -12),
     (0.5, 4, "frutilla", 210, 1420, 240, 10),
     (16, 24, "pajaro-flores", 220, 1000, 320, -8),
-    (18, 24, "gallo", 220, 1300, 330, 8),
-    (20, 24, "flor-alambre-puas", 420, 1420, 260, 6),
+    (18, 24, "flor-alambre-puas", 230, 1340, 280, 6),
 ]
 
 
@@ -236,40 +226,49 @@ def body_overlap(cx, w, t0, t1):
     return worst
 
 
-CARD_W = 260
+CARD_W = 250
+GALLERY = [(200, 930), (200, 1320), (760, 930), (760, 1320)]   # 4 lugares que no se pisan entre sí
 PLAN = []  # (t0, t1, nombre, cx, cy, ancho, rot)
 rnd = random.Random(11)
-CANDS = [(195, 900), (195, 1290), (405, 960), (405, 1320), (765, 900), (765, 1290), (560, 960), (560, 1320)]
-blocks = {}
-for e0, e1, n, slot in CARDS:
-    blocks.setdefault(e1, []).append((e0, e1, n))
-for e1, items in blocks.items():
-    used = []
-    for e0, _, n in items:
-        t0, t1 = b(e0), b(e1)
-        h = CARD_W * 1.45 + 30
-        ok = [p for p in CANDS if p not in used and not hits_face(p[0], p[1], CARD_W + 24, h, t0, t1, torso=True)
-              and body_overlap(p[0], CARD_W + 24, t0, t1) < 0.35]
-        ok.sort(key=lambda p: body_overlap(p[0], CARD_W + 24, t0, t1))
-        p = ok[0] if ok else min((q for q in CANDS if q not in used), key=lambda q: body_overlap(q[0], CARD_W, t0, t1))
-        used.append(p)
-        PLAN.append((t0, t1, n, p[0], p[1], CARD_W, rnd.uniform(-6, 6)))
-# pila final: 1 tatuaje por beat hasta el end card (y queda debajo del oscurecido)
-for k, n in enumerate(PILE_NAMES):
-    e0 = 64 + round(k * 19 / len(PILE_NAMES) * 2) / 2   # 16 tatuajes en los 19 beats, en beat o corchea
+
+
+def slot_ok(p, t0, t1):
+    h = CARD_W * 1.45 + 30
+    return not hits_face(p[0], p[1], CARD_W + 24, h, t0, t1, torso=True) and \
+        body_overlap(p[0], CARD_W + 24, t0, t1) < 0.3
+
+
+# entradas: cada 2 beats en el desarrollo (vive 4 beats → máx. 2 en pantalla),
+# cada beat en el pico (vive 4 beats → galería de 4), sin fotos durante "flashes disponibles"
+ENTRIES = [(e, 4) for e in range(8, 16, 2)] + [(e, 4) for e in range(24, 64, 2)] + [(e, 4) for e in range(64, 83)]
+last_used = {p: -99 for p in GALLERY}
+busy = []  # (t1, slot)
+for k, (e0, life) in enumerate(ENTRIES):
     t0 = b(e0)
-    for _ in range(300):
-        w = int(rnd.uniform(190, 240))
-        cx, cy = rnd.uniform(130, 810), rnd.uniform(820, 1380)
-        h = w * 1.4 + 30
-        if not hits_face(cx, cy, w + 30, h, t0, END, torso=True) and cx + w / 2 + 20 <= 940:
-            break
-    PLAN.append((t0, DUR + 1, n, cx, cy, w, rnd.uniform(-12, 12)))
+    t1 = b(min(e0 + life, 83)) if e0 + life < 83 else DUR + 1     # las últimas quedan bajo el end card
+    busy = [(tb, p) for tb, p in busy if tb > t0 + 1e-3]
+    free = [p for p in GALLERY if p not in [q for _, q in busy]]
+    good = [p for p in free if slot_ok(p, t0, min(t1, END))] or free or GALLERY
+    p = min(good, key=lambda q: last_used[q])
+    last_used[p] = k
+    busy.append((t1, p))
+    PLAN.append((t0, t1, SEQ[k % len(SEQ)], p[0], p[1], CARD_W, rnd.uniform(-5, 5)))
 
 
 def pop_scale(t, t0):
+    """Entrada suave en el beat (0,92 → 1 en 3 frames) y después late con el bombo."""
     k = int((t - t0) * FPS)
-    return {0: 1.16, 1: 0.97}.get(k, 1.0)
+    s = {0: 0.92, 1: 0.96, 2: 0.99}.get(k, 1.0)
+    if t >= DROP:
+        s *= 1 + 0.035 * beat_env(t, 0.12)
+    return s
+
+
+def sway(t):
+    """Balanceo mínimo alternado por beat."""
+    if t < DROP:
+        return 0.0
+    return (1.2 if beat_index(t) % 2 == 0 else -1.2) * beat_env(t, 0.2)
 
 
 # ------------------------------------------------------------------ capa techno: stencils fantasma pulsando
@@ -363,11 +362,11 @@ def frame(t, hook="main"):
         t0, t1 = b(e0), b(e1)
         if t0 <= t < t1:
             s = pop_scale(t, t0)
-            paste(c, load(f"stickers/{n}.png", height=h), cx, cy, s, s, rot=r)
+            paste(c, load(f"stickers/{n}.png", height=h), cx, cy, s, s, rot=r - sway(t))
     for t0, t1, n, cx, cy, w, r in PLAN:
         if t0 <= t < t1:
             s = pop_scale(t, t0)
-            paste(c, photo_card(n, w), cx, cy, s, s, rot=r)
+            paste(c, photo_card(n, w), cx, cy, s, s, rot=r + sway(t))
     if t >= END:
         c.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, 150)))
         put_caption(c, "[agenda abierta]", t, END, y=700, size=110)
