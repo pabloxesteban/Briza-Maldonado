@@ -178,8 +178,9 @@ SEQ = ["cocodrilo", "conejo", "elefante-skate", "pinguino", "lobo", "lockets-gat
 STICKERS = [  # pocos flashes: (beat entrada, beat salida, diseño, cx, cy, alto, rot)
     (0, 4, "mariposa-daga", 200, 1150, 330, -12),
     (0.5, 4, "frutilla", 210, 1420, 240, 10),
-    (16, 24, "pajaro-flores", 220, 1000, 320, -8),
-    (18, 24, "flor-alambre-puas", 230, 1340, 280, 6),
+    (16, 19, "pajaro-flores", 200, 930, 290, -8),
+    (17, 19, "flor-alambre-puas", 210, 1350, 260, 6),
+    (19, 24, "chancho-y-vaca", 265, 1150, 450, -5),      # el más llamativo: solo y grande
 ]
 
 
@@ -240,7 +241,7 @@ def slot_ok(p, t0, t1):
 
 # entradas: cada 2 beats en el desarrollo (vive 4 beats → máx. 2 en pantalla),
 # cada beat en el pico (vive 4 beats → galería de 4), sin fotos durante "flashes disponibles"
-ENTRIES = [(e, 4) for e in range(8, 16, 2)] + [(e, 4) for e in range(24, 64, 2)] + [(e, 4) for e in range(64, 83)]
+ENTRIES = [(e, min(4, 16 - e)) for e in range(8, 16, 2)] + [(e, 4) for e in range(24, 64, 2)] + [(e, 4) for e in range(64, 83)]
 last_used = {p: -99 for p in GALLERY}
 busy = []  # (t1, slot)
 for k, (e0, life) in enumerate(ENTRIES):
