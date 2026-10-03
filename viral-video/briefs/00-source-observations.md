@@ -37,6 +37,14 @@ Frames disponibles: `work/v1/sheet_0N.jpg`, `work/v2/sheet_0N.jpg` (contact shee
 ## REGLA DEL CLIENTE (prioridad máxima)
 "Estamos copiando el VIDEO_2 pero haciendo la versión de Briza, porque es un trend." → La señora y su video quedan TAL CUAL: footage continuo, sin freezes, sin cortes internos, sin reemplazarlo por otras escenas, mismo audio original. Estructura igual a VIDEO_2: recorte de ≈5 s de intro (fuente 5,0 → drop en 10,0 s de salida), corre hasta ≈58,8 s de fuente (≈53,8 s de salida), end card = video oscurecido + ícono IG + @handle en los últimos ≈4 s. Lo único que cambia es la CAPA: el producto (flashes/stickers de Briza en vez de carpetitas), el copy (propio, voseo, rubro tatuaje), la marca. Los 3 conceptos son 3 versiones de esa capa, no 3 formatos distintos.
 
+## REGLA DEL CLIENTE #2 (cambio de dirección, prioridad máxima)
+- **Sin vaca**: el diseño de la vaca ya está tatuado. No usar vaca (ni "vaca-vive-y-deja-vivir", ni "chancho-y-vaca") ni chistes de vaca.
+- **Nada de "vegan" / "tradicional vegano"** en copy ni producto (no usar corazon-vegan-v1/v2).
+- **Más genérico**: apuntar a **agendar un turnito**. El copy es de cualquier tatuadora de barrio, gracioso, voseo.
+- **Pocos flashes**: solo algunos (máx. 4–5 diseños: mariposa-daga, frutilla, gallo, pajaro-flores, flor-alambre-puas, flor-hojas), apariciones puntuales.
+- **Efectos más abstractos como en el trend**: el equivalente de las carpetitas translúcidas de V2 → stencils gigantes en violeta de papel de calco (transfer), semi-transparentes, superpuestos, titilando, apareciendo/desapareciendo de golpe, acumulándose; texto fantasma gigante semi-transparente; flashes de color; ícono IG ciclando colores. Llamativo y gracioso.
+- Footage de la señora y audio original siguen intactos (regla #1).
+
 ## Restricciones de producción (ACTUALIZADO por decisión del cliente)
 - **Base obligatoria: el footage de VIDEO_1 (la señora bailando) + su pista de audio original.** Igual que hizo VIDEO_2: el trend ES reusar ese video como "comercial" propio. Fuente limpia (sin overlays): `work/video1.mp4` (576x1024, se escala a 1080x1920).
 - Se puede recortar la intro (VIDEO_2 recortó ≈5 s; el drop original está en 15,0 s) y se debe cortar antes de 58,9 s (ahí la cámara se cae y se ve un interior). Se pueden usar freeze frames, punch-ins, velocidad, repetición, cortes, silencios deliberados.
