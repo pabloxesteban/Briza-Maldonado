@@ -36,7 +36,7 @@ FONT = Path(__file__).with_name("Montserrat.ttf")
 BUILD = ROOT / "viral-video" / "build"
 TRACK = {int(k): v for k, v in json.load(open(BUILD / "track.json")).items()}
 BEATS = json.load(open(BUILD / "beats.json"))
-DROP_I = min(range(len(BEATS)), key=lambda i: abs(BEATS[i] - 9.96))
+DROP_I = min(range(len(BEATS)), key=lambda i: abs(BEATS[i] - 9.94))
 DROP = BEATS[DROP_I]
 
 footage = Footage([Seg(SRC_OFF, SRC_OFF + DUR)])
@@ -157,7 +157,7 @@ TEXTS = [
     (24, 32, "o traé tu [idea]"),
     (32, 40, "trabajos [recientes]"),
     (40, 48, "[Palermo], Buenos~Aires"),
-    (48, 56, "tatuajes [tradicionales]"),
+    (48, 56, "[diseños] propios"),
     (56, 64, "[turnos] por MD"),
     (64, 83, "[agenda abierta]"),
 ]
@@ -181,15 +181,15 @@ CARDS = [  # (beat entrada, beat salida, archivo, slot)
     (56, 64, "garza", "R1"), (58, 64, "pinguino", "L1"), (60, 64, "lockets-gatos", "R2"), (62, 64, "polilla-esterno", "L2"),
     (48, 56, "cocodrilo", "R1"), (50, 56, "elefante-skate", "L1"), (52, 56, "lobo", "R2"), (54, 56, "conejo", "L2"),
 ]
-PILE_NAMES = ["pinguino", "garza", "lockets-gatos", "polilla-esterno", "mariposas-rodillas", "rosa-alambre",
-              "daga-serpiente", "espinas", "mariposa-pierna", "patchwork-sleeve", "alambre-daga-corazon",
-              "mono-corazon", "cocodrilo", "conejo", "elefante-skate", "lobo"]
+PILE_NAMES = ["mariposas-rodillas", "rosa-alambre", "daga-serpiente", "espinas", "mariposa-pierna",
+              "patchwork-sleeve", "alambre-daga-corazon", "mono-corazon", "cocodrilo", "conejo", "elefante-skate",
+              "lobo", "lockets-gatos", "garza", "polilla-esterno", "pinguino"]
 STICKERS = [  # pocos flashes: (beat entrada, beat salida, diseño, cx, cy, alto, rot)
     (0, 4, "mariposa-daga", 200, 1150, 330, -12),
-    (0.5, 4, "frutilla", 790, 1120, 280, 10),
-    (16, 24, "pajaro-flores", 220, 1060, 330, -8),
-    (18, 24, "gallo", 770, 1080, 360, 8),
-    (20, 24, "flor-alambre-puas", 230, 1360, 300, 6),
+    (0.5, 4, "frutilla", 210, 1420, 240, 10),
+    (16, 24, "pajaro-flores", 220, 1000, 320, -8),
+    (18, 24, "gallo", 220, 1300, 330, 8),
+    (20, 24, "flor-alambre-puas", 420, 1420, 260, 6),
 ]
 
 
@@ -236,20 +236,27 @@ def body_overlap(cx, w, t0, t1):
     return worst
 
 
-CARD_W = 270
+CARD_W = 260
 PLAN = []  # (t0, t1, nombre, cx, cy, ancho, rot)
 rnd = random.Random(11)
+CANDS = [(195, 900), (195, 1290), (405, 960), (405, 1320), (765, 900), (765, 1290), (560, 960), (560, 1320)]
+blocks = {}
 for e0, e1, n, slot in CARDS:
-    t0, t1 = b(e0), b(e1)
-    cx, cy = SLOTS[slot]
-    if body_overlap(cx, CARD_W + 40, t0, t1) > 0.3:          # si pisa a la señora → slot espejado
-        cx = {215: 765, 230: 750, 765: 215, 750: 230}[cx]
-    PLAN.append((t0, t1, n, cx, cy, CARD_W, rnd.uniform(-6, 6)))
+    blocks.setdefault(e1, []).append((e0, e1, n))
+for e1, items in blocks.items():
+    used = []
+    for e0, _, n in items:
+        t0, t1 = b(e0), b(e1)
+        h = CARD_W * 1.45 + 30
+        ok = [p for p in CANDS if p not in used and not hits_face(p[0], p[1], CARD_W + 24, h, t0, t1, torso=True)
+              and body_overlap(p[0], CARD_W + 24, t0, t1) < 0.35]
+        ok.sort(key=lambda p: body_overlap(p[0], CARD_W + 24, t0, t1))
+        p = ok[0] if ok else min((q for q in CANDS if q not in used), key=lambda q: body_overlap(q[0], CARD_W, t0, t1))
+        used.append(p)
+        PLAN.append((t0, t1, n, p[0], p[1], CARD_W, rnd.uniform(-6, 6)))
 # pila final: 1 tatuaje por beat hasta el end card (y queda debajo del oscurecido)
-for k, n in enumerate(PILE_NAMES * 2):
-    e0 = 64 + k
-    if e0 >= 83:
-        break
+for k, n in enumerate(PILE_NAMES):
+    e0 = 64 + round(k * 19 / len(PILE_NAMES) * 2) / 2   # 16 tatuajes en los 19 beats, en beat o corchea
     t0 = b(e0)
     for _ in range(300):
         w = int(rnd.uniform(190, 240))
@@ -318,7 +325,7 @@ def ghost_alpha(t):
         a = ga * (base * (0.25 + 0.75 * env) if on_a else base * 0.18) + \
             gb * (base * 0.18 if on_a else base * (0.25 + 0.75 * env))
     else:
-        a = ghost_group(bar, 3, 9, 700, 1200) * (0.10 + 0.08 * beat_env(t, 0.2))
+        a = ghost_group(bar, 3, 11, 500, 950) * (0.18 + 0.10 * beat_env(t, 0.2))
     return a
 
 
