@@ -34,6 +34,9 @@ Frames disponibles: `work/v1/sheet_0N.jpg`, `work/v2/sheet_0N.jpg` (contact shee
 - `stencils/*.png` (transparentes) y `stickers/*.png` (con borde blanco): flor-alambre-puas, frutilla, vaca-vive-y-deja-vivir, chancho-y-vaca, gallo, pajaro-flores, corazon-vegan-v1/v2, mariposa-daga, flor-hojas.
 - Tema recurrente: TRADICIONAL VEGANO (vaca "vive y deja vivir", corazón "Vegan", animales de granja con corazoncito en la frente).
 
+## REGLA DEL CLIENTE (prioridad máxima)
+"Estamos copiando el VIDEO_2 pero haciendo la versión de Briza, porque es un trend." → La señora y su video quedan TAL CUAL: footage continuo, sin freezes, sin cortes internos, sin reemplazarlo por otras escenas, mismo audio original. Estructura igual a VIDEO_2: recorte de ≈5 s de intro (fuente 5,0 → drop en 10,0 s de salida), corre hasta ≈58,8 s de fuente (≈53,8 s de salida), end card = video oscurecido + ícono IG + @handle en los últimos ≈4 s. Lo único que cambia es la CAPA: el producto (flashes/stickers de Briza en vez de carpetitas), el copy (propio, voseo, rubro tatuaje), la marca. Los 3 conceptos son 3 versiones de esa capa, no 3 formatos distintos.
+
 ## Restricciones de producción (ACTUALIZADO por decisión del cliente)
 - **Base obligatoria: el footage de VIDEO_1 (la señora bailando) + su pista de audio original.** Igual que hizo VIDEO_2: el trend ES reusar ese video como "comercial" propio. Fuente limpia (sin overlays): `work/video1.mp4` (576x1024, se escala a 1080x1920).
 - Se puede recortar la intro (VIDEO_2 recortó ≈5 s; el drop original está en 15,0 s) y se debe cortar antes de 58,9 s (ahí la cámara se cae y se ve un interior). Se pueden usar freeze frames, punch-ins, velocidad, repetición, cortes, silencios deliberados.
