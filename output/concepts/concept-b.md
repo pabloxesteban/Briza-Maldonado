@@ -1,66 +1,77 @@
-# Concepto B — CHAOTIC SHITPOST: "A todo le hago una vaca"
+# Concepto B — CHAOTIC SHITPOST: "Bueno, haceme la vaca"
 
-> No hay bailarina ni escena aspiracional. Es un chat de MD entre clientes y la tatuadora: cada referencia que llega se pisa con un sellazo de la vaca. Del trend se queda con el sonido (123 BPM + drop) y con la escalada por acumulación.
+> No es una publicidad: es una historia de clienta. Durante la intro, un chat de MD entre la clienta y la tatuadora: cada referencia que manda se pisa con un sello de vaca. El drop llega justo cuando la clienta se rinde ("bueno. haceme la vaca."), y el baile de la señora pasa a SIGNIFICAR algo: es la felicidad de la clienta. Después, la tatuadora planifica la manga sobre su cuerpo en freezes tipo "telestrator" de fútbol, hasta que el plan se escapa al paisaje.
 
-**Idea (1 frase):** los clientes le mandan a Briza sus referencias (Pinterest, el nombre del ex, un mandala, la cara del perro) y ella contesta siempre lo mismo: una vaca, cada vez más rápido, hasta que el único que pide la vaca se queda sin vaca.
+**Idea (1 frase):** la tatuadora contesta todas las referencias con una vaca, la clienta se rinde, baila de felicidad, y en cada freeze el plan de tattoos crece hasta tatuar el velero.
+
+## Fuente y mapeo
+- `work/video1.mp4` + audio original. Rango: **src 5,24 → ≈39,7 s.** Reloj continuo: **out = src − 5,24.** Drop src 15,0 = **out 9,76** (beat 20, compás 6).
+- **Los freezes congelan solo la imagen**: la música sigue, y al soltar el freeze el footage salta al tiempo real (jump cut). La sincronía audio/imagen nunca se rompe.
 
 ## Hook (frame 1)
-- **Visual:** pantalla de chat genérica (fondo blanco, header gris "cliente nuevo", sin logos). Burbuja gris del cliente: "hola!! te paso mi idea 🙏" + una "imagen adjunta" `acuarela_pinterest.jpg`: manchones pastel generados (blur de círculos de colores) con un lobo aullando hecho con 3 triángulos.
-- **Texto superior (fuera del chat):** **"cómo trabajo con referencias:"**, Liberation Sans Bold blanca con contorno negro de 6 px, arriba (y≈300).
+- **Visual:** src 5,24, la señora caminando de espaldas. En la mitad de arriba (el cielo) hay un chat de MD genérico, dibujado plano, sin logos. Burbuja gris de la clienta: "hola!! te paso mi idea 🙏" + imagen adjunta `acuarela_pinterest.jpg` (manchones pastel con blur y un lobo de 3 triángulos).
+- **Texto arriba:** **"cómo trabajo con referencias:"**, Liberation Sans Bold blanca con contorno negro de 6 px (y≈280).
 
 ## Storyline y punchline
-Tutorial falso de "cómo trabajo con referencias". La respuesta de Briza a cualquier pedido es estampar la vaca encima. Después del drop los pedidos llegan uno por compás, luego uno por beat, el chat se fríe y se llena de vacas. **Remate:** el cliente se rinde, "bueno. haceme la vaca." — la música se corta 1 beat — y Briza contesta "uh no, la vaca ya la tiene todo el mundo. ¿un gallo?" + gallo estampado con boom. La tatuadora que solo hace vacas se niega a hacer la vaca.
+Pre-drop (intro bajita): ping-pong del chat, cada vez más rápido, con un sello de vaca en cada referencia. La señora caminando = la clienta pensándolo. En 9,27 (un beat antes del drop, cuando ella se da vuelta a cámara) llega "haceme la vaca." y **el drop es el "sí"**. Post-drop: la tatuadora propone "¿y un chanchito al lado?" y la respuesta es el baile. Cada propuesta es un freeze con el flash pegado sobre su cuerpo, con flechas y círculos rojos de marcador. La escalada sale del cuerpo: el saco, el bloque, el velero, el mar. **Remate:** corte de música + freeze total tapado de flashes: **"sesión 1 de 47"**. Coda: "¿duele?" → "consultá por privado".
 
-## Duración y estructura (29,3 s = 15 compases; beat 0,488 s, compás 1,951 s)
-| Compás | t (s) | Qué pasa |
+## Estructura (33,2 s = 17 compases)
+| out (s) | src (s) | Qué pasa |
 |---|---|---|
-| 1 | 0,00 | Hook: cliente + acuarela_pinterest.jpg |
-| 1 | 0,98 (beat 2) | Burbuja de Briza "dale!" |
-| 2 | 1,95 (beat 4) | **SELLO:** `stickers/vaca-vive-y-deja-vivir.png` cae torcida encima de la acuarela, tapándola. Sfx pop grave |
-| 3 | 3,90 | Cliente: **"algo minimalista, una línea finita"** |
-| 4 | 5,85 | Sello vaca. Briza: **"listo"** |
-| **5** | **7,80** | **DROP.** Chat a doble velocidad. Pedido por compás (pedido en beat 0, sello en beat 2): |
-| 5 | 7,80 | **"el nombre de mi ex en cursiva"** → vaca |
-| 6 | 9,76 | **"un mandala"** (círculos PIL) → vaca |
-| 7 | 11,71 | **"la cara de mi perro (es un caniche)"** → vaca |
-| 8 | 13,66 | **"algo que represente mi viaje a Bariloche"** → vaca |
-| 9 | 15,61 | **"un tribal como el de mi tío"** → vaca |
-| 10 | 17,56 | **"uno que no se vea"** → vaca invisible (sello vacío al 10 %) + burbuja "ahí está" |
-| 11–12 | 19,51–23,41 | **Ráfaga, una palabra por beat:** "brújula" "infinito" "rosa" "dragón" "reloj" "pluma" "ancla" "mi abuela" → vaca en cada uno, 8 sellos, deep-fry creciente (saturación 1,0→1,8, JPEG q 40→12), shake 6–14 px |
-| 12 | 22,44 | Cliente, letras grandes: **"bueno. haceme la vaca."** Freeze + música en silencio 1 beat |
-| 13 | 23,41 | Briza: **"uh no, la vaca ya la tiene todo el mundo"** — frame limpio, sin fry |
-| 13 | 24,39 (beat 50) | Briza: **"¿un gallo?"** |
-| 14 | 25,37 | **SELLO GALLO** gigante + boom + punch-in 1,0→1,25. Vuelve la música |
-| 15 | 27,32–29,27 | End card: chat al 30 %, **"consultas por MD (traé tu referencia)"** + @[handle de Briza]. Último frame = chat vacío con "hola!! te paso mi idea" → loopea con el frame 1 |
+| 0,00 | 5,24 | Hook: chat + acuarela |
+| 0,98 | 6,22 | **SELLO** vaca sobre la acuarela (sfx pop grave) |
+| 1,95 | 7,19 | "algo minimalista, una línea finita" → sello en 2,93 |
+| 3,90 | 9,14 | Un pedido por beat: "el nombre de mi ex" → sello 4,39 |
+| 4,88 | 10,12 | "un mandala" → sello 5,37 |
+| 5,85 | 11,09 | "un tribal como el de mi tío" → sello 6,34 |
+| 6,83 | 12,07 | "uno que no se vea" → sello vacío al 10 % + Briza: "ahí está" (7,32) |
+| 7,80 | 13,04 | La clienta escribe "…" (2 beats) |
+| 8,78 | 14,02 | "bueno." |
+| 9,27 | 14,51 | **"haceme la vaca."** (ella gira a cámara) |
+| **9,76** | **15,00** | **DROP.** El chat explota: 10 sellos de vaca en 1 beat, deep-fry ON (saturación ×1,5, JPEG q 25), shake 8 px |
+| 11,71 | 16,95 | El chat se achica arriba. Briza: **"¿y un chanchito al lado?"** |
+| 12,68 | 17,92 | **FREEZE 1** (2 beats): círculo rojo en la pantorrilla + sticker chancho-y-vaca + flecha "acá" |
+| 13,66–15,61 | — | Baile. Briza: **"¿el gallo en la espalda?"** → FREEZE 2 en 14,63 (1 beat): "no se ve, confiá" |
+| 15,61–17,56 | — | Un freeze por beat, alternado con baile: "frutilla, tobillo" · "mariposa, mano" · "corazón Vegan, cuello" · "pájaro, donde quieras" |
+| 17,56 | 22,80 | Escalada fuera del cuerpo, un freeze por beat: **"el saco también"** · **"el bloque (de prueba)"** · **"el velero"** · **"el mar"** |
+| 19,51 | 24,75 | **"el que filma"**: flecha al borde de abajo (sfx boom + punch-in 1,0→1,25) |
+| 20,49 | — | **Corte de música 2 beats.** Freeze: cuerpo y paisaje tapados por 20 flashes con flechas. Aparece **"sesión 1 de 47"** (Liberation Sans Bold negra sobre blanco) |
+| 21,46 | 26,70 | Vuelve la música y el baile limpio, sin deep-fry |
+| 23,41 | 28,65 | Clienta: **"¿y duele?"** |
+| 25,37 | 30,61 | Briza: **"consultá por privado"** |
+| 27,32–33,17 | 32,6–38,4 | Ella sigue bailando, más oscuro. **"consultas por MD (traé tu idea chiquita)"** + @brizamaldonado. Último frame: vuelve la burbuja "hola!! te paso mi idea 🙏" para que encaje en loop con el frame 1 |
 
 ## Visuales
-UI de chat dibujada en PIL, plana, sin marca de ninguna app. Las "referencias" son gráficos malos generados (acuarela de blur, mandala de círculos, nombre "Lucas" en cursiva con DejaVu Serif Italic, caniche de 6 círculos, montaña triangular "Bariloche", tribal de polígonos negros). Los sellos son los stickers con borde blanco, rotados ±20°, siempre más grandes que la referencia. Las vacas no se borran: se apilan en el chat.
+- **Chat:** burbujas grises (clienta) y negras (Briza) planas, en el cielo, sin tapar a la señora.
+- **Referencias:** gráficos malos generados (acuarela de blur, "Lucas" en cursiva serif, mandala de círculos, tribal de polígonos).
+- **Telestrator:** círculos y flechas rojas a mano alzada (trazo irregular de PIL) + stickers posados sobre el frame congelado. Las anotaciones se acumulan de un freeze al siguiente.
+- **Fry:** deep-fry solo entre 9,76 y 20,49.
 
 ## Texto en pantalla (exacto)
-cómo trabajo con referencias: · hola!! te paso mi idea 🙏 · dale! · algo minimalista, una línea finita · listo · el nombre de mi ex en cursiva · un mandala · la cara de mi perro (es un caniche) · algo que represente mi viaje a Bariloche · un tribal como el de mi tío · uno que no se vea · ahí está · brújula · infinito · rosa · dragón · reloj · pluma · ancla · mi abuela · bueno. haceme la vaca. · uh no, la vaca ya la tiene todo el mundo · ¿un gallo? · consultas por MD (traé tu referencia)
+cómo trabajo con referencias: · hola!! te paso mi idea 🙏 · algo minimalista, una línea finita · el nombre de mi ex · un mandala · un tribal como el de mi tío · uno que no se vea · ahí está · … · bueno. · haceme la vaca. · ¿y un chanchito al lado? · acá · ¿el gallo en la espalda? · no se ve, confiá · frutilla, tobillo · mariposa, mano · corazón Vegan, cuello · pájaro, donde quieras · el saco también · el bloque (de prueba) · el velero · el mar · el que filma · sesión 1 de 47 · ¿y duele? · consultá por privado · consultas por MD (traé tu idea chiquita)
 
 ## Audio
-`audio.track(29.27, drop_at=7.805)` + SFX en `audio.mix`: `sfx_pop` en cada sello (pitch sube en la ráfaga), `sfx_boom` en el gallo, corte de música 22,44–23,41. Acá los SFX están permitidos: es otro registro (shitpost), no la publicidad seria. Con sonido trending in-app: dejar los SFX en la pista original a volumen alto y el trend debajo.
+Pista original continua. Encima van SFX sintetizados: pop por sello (con el pitch subiendo en la ráfaga), "scribble" de marcador por freeze, boom en "el que filma" y silencio deliberado en 20,49–21,46.
 
 ## Edición
-Feo a propósito: deep-fry progresivo, shake, punch-in solo en el gallo. Todo cae en beat. Legibilidad sagrada: pedidos con x-height ≥ 64 px, máx. 6 palabras.
+Shitpost: sellos torcidos ±20°, deep-fry, shake, un punch-in y freezes con jump cut. Todo cae en beat. Legibilidad sagrada: máximo 6 palabras por burbuja.
 
 ## Integración tattoo
-Situaciones de cliente reales (Pinterest, ex, tribal del tío, "que no se vea") = el chiste interno de tatuadora que cualquiera entiende. Cada sello muestra un flash entero y nítido 1 beat: la vaca, el gallo y, en la ráfaga, corazón Vegan, frutilla y chancho-y-vaca mezclados en sellos "fuera de serie".
+Las situaciones de clienta (Pinterest, ex, tribal del tío, "que no se vea", "¿duele?") son el guion. Los flashes aparecen enteros y nítidos sobre el cuerpo, que es exactamente el "¿cómo me quedaría?" que despierta deseo.
 
 ## Integración Briza
-Es la que contesta en el chat: seca, tierna, terca. Personalidad de tatuadora de flash ("yo dibujo lo mío"), no de servicio a pedido.
+Es la que contesta: terca, tierna, seca. Tatuadora de flash con su propio criterio.
 
 ## CTA
-"consultas por MD (traé tu referencia)" — invita a mandar la referencia sabiendo qué va a pasar. Comentario fijado: "dejá tu referencia acá abajo 👇 te contesto con lo que corresponde".
+"consultas por MD (traé tu idea chiquita)". Comentario fijado: "dejá tu referencia acá abajo, te contesto con lo que corresponde 🐄".
 
 ## Comentarios esperables
-- "¿y si te pido un dragón?" → Briza contesta con la foto de la vaca (loop de respuestas infinito, cada una es otra impresión)
-- "uno que no se vea → vaca invisible JAJAJA"
-- "@lucas el nombre de tu ex"
-- "la traición del final no me la esperaba"
-- "yo quiero el gallo igual"
+- "¿y si te pido un dragón?" → Briza responde con la vaca (loop infinito de respuestas)
+- "'uno que no se vea' → ahí está JAJAJA"
+- "el velero también JAJAJA no puedo"
+- "@marti vos con 'algo chiquito'"
+- "sesión 1 de 47 es mi relación con mi tatuadora"
 
 ## Producción
-**Ahora, 100 % producible:** stickers de `stickers/` como sellos, chat + referencias + UI en PIL, emoji con Noto Color Emoji, fry con `engine.crunch` y saturación, shake con `engine.shake`, punch con `engine.punch`, audio con `audio.mix` (pop/boom/cortes). No necesita ninguna persona ni escena.
-**Live-action (bonus):** Briza en el estudio, en contrapicado, sosteniendo el celular; cada pedido aparece como overlay y ella levanta sin expresión una hoja de flash con la vaca (y al final el gallo). Abre una serie: "referencias de la semana" con pedidos reales de seguidores, contestados todos con una vaca.
+**Ahora, 100 % producible:** trim y freezes por número de frame desde `work/video1.mp4`, audio original con SFX mezclados (`audio.py`: pop/boom + scribble nuevo), chat, referencias y telestrator en PIL, `stickers/`, y `engine.crunch`/`shake`/`punch`. Hay que fijar a mano las coordenadas del cuerpo para cada frame congelado (6–15 frames).
+**Live-action (bonus):** una clienta real de Briza (con permiso) baila después de tatuarse con el mismo chat arriba. Así arranca la serie "referencias de la semana", con pedidos reales de seguidores contestados con una vaca.
