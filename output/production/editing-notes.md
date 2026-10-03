@@ -384,3 +384,17 @@ Look WhatsApp barato, dibujado con PIL sin assets:
 - Saco todavía rojo en el pico (41–45).
 - Entradas en el frame exacto del beat (±1 frame).
 - Nada legible bajo y 1550 ni en x > 940 entre y 950–1700.
+
+---
+
+## Implementación (video-editor) — desvíos documentados y fixes de QC
+
+Pipeline: `viral-video/pipeline/build_final.py` (footage `footage.py` + capa PIL + ffmpeg). Re-render: `python3 viral-video/pipeline/build_final.py`. Variantes de hook: `--hook a|b|c --from-master output/final/briza-viral-final.mp4 output/variants/hook-X.mp4` (re-renderiza sólo los primeros 3 s y empalma con el master, mismo audio).
+
+Desvíos respecto del guion (decididos por el editor):
+- Pre-drop: 5 intercambios de chat en vez de 7 (se cortaron "¿cuánto sale uno chiquito?" y "¿me hacés precio?") para que cada pregunta + respuesta dure ≥2 beats y se lea en celular. Burbujas a 40 px (no 30).
+- Slot de fotos en piel: no hay fotos en el repo → sin slot.
+- Cara: además del rechazo de posiciones, la capa de calcos lleva una máscara suave (óvalo cara alfa 0, torso alfa ×0,3) calculada por frame desde `track.json`.
+- Tracking del paisaje: `viral-video/build/landtrack.json` (template matching del faro y la esquina del bloque, `landtrack.py`). Se usa para la flecha "acá también".
+
+Fixes de QC ronda 1 aplicados: 1 ("jueves 17 hs." 2 beats), 2 ("bueno, agendame" hasta 10,49 s; TATUAJES corrido), 3 (gag stencil 2+2 beats, 300 px, tobillo, sin papel), 4 (watermark fuera de la botonera; stickers x≤760), 5 (sello AGENDADO reubicado y a 0,7), 6 (torso alfa ×0,3, óvalo de cara ampliado, alfa máx. 0,62), 7 (se quitaron "turnos por MD" y "diseños propios" → compases de aire), 8 ("zona: consultar" en la tarjeta), 10 ("no te rasques"), 11 (ghost text a alfa 0,31), 12 (thumbnail de Pinterest con "P" roja y más contraste). Fix 9 → variantes de hook (output/variants/).

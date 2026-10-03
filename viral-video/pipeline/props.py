@@ -122,14 +122,18 @@ def pinterest_thumb(w=270, h=220, seed=4):
         c = rnd.choice([(255, 182, 193), (173, 216, 230), (221, 160, 221), (255, 228, 181)])
         x, y, r = rnd.randint(0, w), rnd.randint(0, h), rnd.randint(30, 80)
         blob = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        ImageDraw.Draw(blob).ellipse([x - r, y - r, x + r, y + r], fill=c + (120,))
-        im.alpha_composite(blob.filter(ImageFilter.GaussianBlur(14)))
+        ImageDraw.Draw(blob).ellipse([x - r, y - r, x + r, y + r], fill=c + (200,))
+        im.alpha_composite(blob.filter(ImageFilter.GaussianBlur(10)))
     d = ImageDraw.Draw(im)
     cx, cy = w / 2, h / 2 + 10
     pts = [(cx - 60, cy - 70), (cx - 30, cy - 20), (cx + 30, cy - 20), (cx + 60, cy - 70), (cx + 45, cy + 20),
            (cx, cy + 70), (cx - 45, cy + 20)]
-    d.polygon(pts, outline=(60, 60, 70, 255))
+    d.polygon(pts, outline=(40, 40, 50, 255), width=3)
     for a in range(len(pts)):
         d.line([pts[a], (cx, cy)], fill=(60, 60, 70, 255), width=2)
     d.rectangle([0, 0, w - 1, h - 1], outline=(200, 200, 200, 255), width=2)
+    # logo P de Pinterest
+    r = 30
+    d.ellipse([w - 2 * r - 10, 10, w - 10, 10 + 2 * r], fill=(230, 0, 35, 255))
+    d.text((w - r - 10, 10 + r), "P", font=font("sans-bold", 44), fill=(255, 255, 255, 255), anchor="mm")
     return im

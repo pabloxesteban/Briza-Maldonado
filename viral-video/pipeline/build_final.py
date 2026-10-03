@@ -153,7 +153,7 @@ def ghost_layer(t):
             spr = transfer(g["name"], g["h"], VIOLET)
             if g["mirror"]:
                 spr = spr.transpose(Image.FLIP_LEFT_RIGHT)
-            paste(layer, with_alpha(spr, min(1, g["a"] + 0.12)), g["cx"], g["cy"], rot=g["rot"])
+            paste(layer, with_alpha(spr, min(0.62, g["a"] + 0.12)), g["cx"], g["cy"], rot=g["rot"])
     if layer is None:
         return None
     # agujero suave en la cara: nunca se tapa
@@ -161,8 +161,8 @@ def ghost_layer(t):
     w, h = x1 - x0, y1 - y0
     m = Image.new("L", (W, H), 255)
     dm = ImageDraw.Draw(m)
-    dm.rectangle([x0, y0 + 0.2 * h, x1, y0 + 0.55 * h], fill=150)       # torso: tope de alfa ≈0,3
-    dm.ellipse([x0 + 0.05 * w, y0 - 0.04 * h, x1 - 0.05 * w, y0 + 0.26 * h], fill=0)  # cara: limpia
+    dm.rectangle([x0, y0 + 0.2 * h, x1, y0 + 0.55 * h], fill=75)       # torso: tope de alfa ≈0,3
+    dm.ellipse([x0 + 0.02 * w, y0 - 0.06 * h, x1 - 0.02 * w, y0 + 0.32 * h], fill=0)  # cara: limpia
     m = m.filter(ImageFilter.GaussianBlur(30))
     a = np.asarray(layer.getchannel("A"), np.float32) * np.asarray(m, np.float32) / 255
     layer.putalpha(Image.fromarray(a.astype(np.uint8)))
@@ -176,28 +176,26 @@ TEXTS = [  # (t0, t1, texto)
     (b(-13), b(-11), "tarde."),
     (b(-10), b(-8), "la tuneamos."),
     (b(-7), b(-5), "sí."),
-    (b(-4), b(-3), "jueves 17 hs."),
-    (b(-1), b(0), "“bueno, agendame”"),
+    (b(-4), b(-2), "jueves 17 hs."),
+    (b(-1), b(1), "“bueno, agendame”"),
     (b(8), b(12), "agendá tu turnito"),
-    (b(12), b(16), "turnos por MD"),
     (b(16), b(20), "no hacemos envíos\n(es un tatuaje)"),
     (b(20), b(24), "chiquitos, medianos\ny “ya que estoy”"),
-    (b(24), b(25), "1. el stencil"),
-    (b(25), b(28), "2. así queda"),
+    (b(24), b(26), "1. el stencil"),
+    (b(26), b(28), "2. así queda"),
     (b(28), b(32), "3 cuotas sin interés\nen la frutilla"),
-    (b(32), b(36), "diseños propios\n(no de Pinterest)"),
     (b(36), b(40), "acá un tatuaje"),
     (b(40), b(44), "acá también"),
     (b(44), b(48), "seña por alias"),
     (b(48), b(52), "promo de a dos\n(traé a tu amiga)"),
     (b(52), b(56), "el que filma:\njueves 17 hs"),
-    (b(56), b(60), "cuidados:\nno te toques"),
+    (b(56), b(60), "cuidados:\nno te rasques"),
     (b(60), b(64), "flash disponible"),
     (b(64), b(72), "compartan que\nme ayuda un montón"),
 ]
 GHOST_TEXT = [  # (t0, t1, texto, lado)
     (b(-7), b(-5), "SÍ", "L"),
-    (b(0), b(2), "TATUAJES", "L"),
+    (b(1), b(2), "TATUAJES", "L"),
     (b(8), b(12), "TURNITO", "R"),
     (b(44), b(48), "ALIAS", "L"),
     (b(64), b(72), "COMPARTAN", "L"),
@@ -206,8 +204,11 @@ GHOST_TEXT = [  # (t0, t1, texto, lado)
 FLASHES = [(b(0), (255, 43, 214)), (b(8), (255, 230, 0)), (b(40), (0, 229, 255)), (b(64), (255, 43, 214)), (b(68), (255, 255, 255)), (b(81), (255, 230, 0))]
 
 HOOKS = {
-    # texto del hook (0 – 1,71) por variante
-    "main": "¿querés tatuarte?",
+    # texto del hook (0 – 1,71) por variante: (texto, tamaño)
+    "main": ("¿querés tatuarte?", 250),
+    "a": ("¿querés un tatuaje que nadie te pidió?", 190),          # más absurdo
+    "b": ("¿querés tatuarte y que tu vieja no se entere?", 180),   # más argentino
+    "c": ("¿querés un tatuaje chiquito?", 220),                    # más tattoo
 }
 
 
@@ -220,7 +221,7 @@ def ghost_text(c, s, side):
     f = font("sans-bold", 300)
     tw = int(f.getlength(s))
     im = Image.new("RGBA", (tw + 20, 340), (0, 0, 0, 0))
-    ImageDraw.Draw(im).text((10, 0), s, font=f, fill=(255, 255, 255, 102))
+    ImageDraw.Draw(im).text((10, 0), s, font=f, fill=(255, 255, 255, 80))
     im = im.resize((int(im.width * 0.8), im.height)).rotate(90 if side == "L" else -90, expand=True)
     if im.height > 1500:
         im = im.resize((int(im.width * 1500 / im.height), 1500))
@@ -236,7 +237,7 @@ CHAT = [  # (t_entrada, texto, adjunto)
     (b(-8), "¿mi vieja se va a enterar?", None),
     (b(-5), "¿cuándo tenés?", None),
 ]
-TYPING = (b(-3), b(-1))
+TYPING = (b(-2), b(-1))
 PIN = pinterest_thumb(260, 200)
 
 
@@ -291,29 +292,30 @@ def draw_chat(c, t):
 STICK = [  # (t0, t1, diseño, cx, cy, alto, rot)
     (b(0), b(2), "mariposa-daga", 180, 1450, 300, -12),
     (b(0), b(2), "flor-alambre-puas", 920, 410, 280, 10),
-    (b(12), b(14), "frutilla", 920, 1440, 260, 8),
+    (b(12), b(14), "frutilla", 740, 1440, 260, 8),
     (b(28), b(32), "frutilla", 820, 1150, 340, 10),
     (b(60), b(64), "gallo", 190, 1450, 330, -8),
-    (b(61), b(64), "pajaro-flores", 900, 1450, 300, 8),
+    (b(61), b(64), "pajaro-flores", 740, 1450, 300, 8),
 ]
 
 
 def calf(t):
+    """Tobillo/empeine (zona de piel visible, no el pantalón)."""
     x0, y0, x1, y1 = box(t)
-    return x0 + 0.33 * (x1 - x0), y0 + 0.80 * (y1 - y0)
+    return x0 + 0.35 * (x1 - x0), y0 + 0.86 * (y1 - y0)
 
 
 # ---------------------------------------------------------------- tarjeta TURNITO y end card
 def card(c, t):
-    x0, y0, x1, y1 = 140, 290, 940, 860
+    x0, y0, x1, y1 = 140, 290, 940, 900
     d = ImageDraw.Draw(c)
     d.rectangle([x0, y0, x1, y1], fill=(255, 255, 255, 255), outline=(0, 0, 0, 255), width=6)
     d.text((x0 + 40, y0 + 25), "TURNITO", font=font("sans-bold", 110), fill=(0, 0, 0, 255))
     fields = [("día:", "jueves", b(76)), ("hora:", "17 hs", b(77)), ("diseño:", "ya que estoy", b(78)),
-              ("seña:", "por alias", None)]
+              ("seña:", "por alias", None), ("zona:", "consultar", None)]
     fb, hand = font("sans-bold", 62), font("/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf", 64)
     for i, (k, v, tv) in enumerate(fields):
-        y = y0 + 175 + i * 92
+        y = y0 + 170 + i * 84
         d.text((x0 + 40, y), k, font=fb, fill=(0, 0, 0, 255))
         kx = x0 + 40 + d.textlength(k, font=fb) + 20
         if tv is None:
@@ -331,7 +333,7 @@ def card(c, t):
         rng = np.random.default_rng(1)
         a = np.asarray(st.getchannel("A"), np.float32) * (rng.random((170, 640)) > 0.18)
         st.putalpha(Image.fromarray(a.astype(np.uint8)))
-        paste(c, st, 600, 700, rot=-14)
+        paste(c, st, 770, 560, scale_x=0.7, scale_y=0.7, rot=-14)
 
 
 def endcard(c, t):
@@ -347,7 +349,7 @@ END_BEAT = 81  # end card en el beat 81 → 49,51 s
 
 # ---------------------------------------------------------------- frame
 WM_POS = [(0, b(12), (600, 250), (0, 0, 0, 255), 0), (b(12), b(40), (60, 880), (255, 255, 255, 255), 5),
-          (b(40), b(64), (600, 1300), (255, 255, 255, 255), 5), (b(64), b(76), (600, 250), (0, 0, 0, 255), 0)]
+          (b(40), b(64), (60, 250), (0, 0, 0, 255), 0), (b(64), b(76), (600, 250), (0, 0, 0, 255), 0)]
 
 
 def frame(t, hook="main"):
@@ -367,11 +369,11 @@ def frame(t, hook="main"):
         if t0 <= t < t1:
             paste(c, load(f"stickers/{n}.png", height=h), cx, cy, rot=r)
     # gag stencil → tatuaje (pantorrilla)
-    if b(24) <= t < b(27):
+    if b(24) <= t < b(28):
         cx, cy = calf(t)
-        spr = with_alpha(transfer("mariposa-daga", 190, VIOLET), 1.6) if t < b(25) else load("stickers/mariposa-daga.png", height=180)
+        spr = transfer("mariposa-daga", 300, VIOLET, 1.2, paper=False) if t < b(26) else load("stickers/mariposa-daga.png", height=300)
         paste(c, spr, cx, cy)
-        im, off = arrow((cx - 260, cy - 220), (cx - 70, cy - 60), seed=3)
+        im, off = arrow((cx - 330, cy - 330), (cx - 120, cy - 120), seed=3)
         c.alpha_composite(im, off)
     # flechas de escalada
     if b(36) <= t < b(40):
@@ -396,7 +398,8 @@ def frame(t, hook="main"):
             c.alpha_composite(wm, pos)
     # textos
     if t < b(-17):
-        text(c, HOOKS.get(hook, HOOKS["main"]), W / 2, 560, 250, "sans", fill=(0, 0, 0, 255), squeeze=0.64,
+        hs, hz = HOOKS.get(hook, HOOKS["main"])
+        text(c, hs, W / 2, 560 if hook == "main" else 640, hz, "sans", fill=(0, 0, 0, 255), squeeze=0.64,
              max_w=900, line_gap=0.92, stroke=3, stroke_fill=(255, 255, 255, 255))
     for t0, t1, s in TEXTS:
         if t0 <= t < t1:
@@ -407,6 +410,22 @@ def frame(t, hook="main"):
         if tf <= t < tf + 2 / FPS:
             c.alpha_composite(Image.new("RGBA", (W, H), col + ((140,) if t < tf + 1 / FPS else (64,))))
     return c
+
+
+def build_hook_variant(main_mp4, out, hook, head=3.0):
+    """Variante de hook: re-renderiza sólo los primeros `head` s y los empalma con el master (mismo audio)."""
+    import subprocess
+    out = Path(out)
+    tmp = BUILD / f"head_{hook}.mp4"
+    silent = BUILD / "silence.wav"
+    audio.write_wav(silent, np.zeros(int(head * audio.SR), np.float32))
+    render(lambda t: frame(t, hook), head, silent, tmp)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(tmp), "-i", str(main_mp4), "-filter_complex",
+                    f"[0:v]trim=0:{head},setpts=PTS-STARTPTS[a];[1:v]trim={head},setpts=PTS-STARTPTS[b];"
+                    "[a][b]concat=n=2:v=1:a=0[v]", "-map", "[v]", "-map", "1:a", "-c:v", "libx264", "-crf", "18",
+                    "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "copy", "-movflags", "+faststart", str(out)],
+                   check=True)
+    return out
 
 
 def build(out, hook="main"):
@@ -424,8 +443,12 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--hook", default="main")
     ap.add_argument("--frames")
+    ap.add_argument("--from-master", help="master ya renderizado: sólo re-render del hook")
     ap.add_argument("out", nargs="?", default=str(ROOT / "output/final/briza-viral-final.mp4"))
     a = ap.parse_args()
+    if a.from_master:
+        print(build_hook_variant(a.from_master, a.out, a.hook))
+        raise SystemExit
     if a.frames:
         ims = [frame(float(x), a.hook).convert("RGB").resize((270, 480)) for x in a.frames.split(",")]
         strip = Image.new("RGB", (270 * len(ims), 480))
