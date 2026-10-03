@@ -45,6 +45,14 @@ Frames disponibles: `work/v1/sheet_0N.jpg`, `work/v2/sheet_0N.jpg` (contact shee
 - **Efectos más abstractos como en el trend**: el equivalente de las carpetitas translúcidas de V2 → stencils gigantes en violeta de papel de calco (transfer), semi-transparentes, superpuestos, titilando, apareciendo/desapareciendo de golpe, acumulándose; texto fantasma gigante semi-transparente; flashes de color; ícono IG ciclando colores. Llamativo y gracioso.
 - Footage de la señora y audio original siguen intactos (regla #1).
 
+## REGLA DEL CLIENTE #3 (vigente, reemplaza lo que contradiga)
+- **No mostrar el IG/handle de Briza** en ningún lado (ni watermark ni end card).
+- **Voz y tipografía de Briza** según su reel típico (work/reel/briza_reel.mp4): subtítulos blancos en negrita redondeada (Montserrat ExtraBold), sombra suave, **palabra clave en amarillo** (#FFD400), centrados; habla natural ("Bueno,", "súper", "así fue como quedó"); pop-ups de fotos recortadas con borde blanco.
+- **Sin chat** (si apareciera, estilo del chat de Lila sin nombrar Lila; por ahora: no aparece).
+- **Sin "jueves 17 hs"** ni datos inventados. **Sin chistes en los subtítulos**: el video ya es gracioso; el texto es natural e informativo, como tatuadores de tradicional que abren agenda.
+- Énfasis: **hace tatuajes, Palermo, muchos animalitos, agenda abierta**. Todo en español.
+- Diseños más cool; no sólo flashes: **tatuajes ya hechos** (fotos reales del reel de Briza en `tatuajes/`).
+
 ## Restricciones de producción (ACTUALIZADO por decisión del cliente)
 - **Base obligatoria: el footage de VIDEO_1 (la señora bailando) + su pista de audio original.** Igual que hizo VIDEO_2: el trend ES reusar ese video como "comercial" propio. Fuente limpia (sin overlays): `work/video1.mp4` (576x1024, se escala a 1080x1920).
 - Se puede recortar la intro (VIDEO_2 recortó ≈5 s; el drop original está en 15,0 s) y se debe cortar antes de 58,9 s (ahí la cámara se cae y se ve un interior). Se pueden usar freeze frames, punch-ins, velocidad, repetición, cortes, silencios deliberados.
