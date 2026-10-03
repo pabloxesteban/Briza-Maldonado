@@ -188,10 +188,15 @@ SFX = {
 }
 
 
-def mix(duration, drop_at, events, music_cuts=(), seed=1, music_gain=1.0):
+def mix(duration, drop_at, events, music_cuts=(), seed=1, music_gain=1.0, base=None):
     """events: [(t, nombre, gain, kwargs)]. music_cuts: [(t0, t1)] silencios deliberados
     (con tape-stop en t0 si se pide con ('tapestop', t0, t1))."""
-    music = track(duration, drop_at, seed) * music_gain
+    if base is not None:
+        music = np.zeros(int(duration * SR), np.float32)
+        music[: min(len(base), len(music))] = base[: len(music)]
+        music *= music_gain
+    else:
+        music = track(duration, drop_at, seed) * music_gain
     for cut in music_cuts:
         kind, t0, t1 = cut if len(cut) == 3 else ("cut", *cut)
         i0, i1 = int(t0 * SR), int(t1 * SR)
@@ -206,9 +211,10 @@ def mix(duration, drop_at, events, music_cuts=(), seed=1, music_gain=1.0):
         t, name, gain = ev[:3]
         kw = ev[3] if len(ev) > 3 else {}
         _place(out, SFX[name](**kw) * gain, t)
-    out = np.tanh(out * 1.2) / np.tanh(1.2)
+    if base is None:
+        out = np.tanh(out * 1.2) / np.tanh(1.2)
     peak = np.max(np.abs(out)) or 1
-    return (out / peak * 0.89).astype(np.float32)
+    return (out / max(peak, 0.89) * 0.89).astype(np.float32)
 
 
 def write_wav(path, x):

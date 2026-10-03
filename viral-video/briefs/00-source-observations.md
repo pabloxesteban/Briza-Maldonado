@@ -34,9 +34,11 @@ Frames disponibles: `work/v1/sheet_0N.jpg`, `work/v2/sheet_0N.jpg` (contact shee
 - `stencils/*.png` (transparentes) y `stickers/*.png` (con borde blanco): flor-alambre-puas, frutilla, vaca-vive-y-deja-vivir, chancho-y-vaca, gallo, pajaro-flores, corazon-vegan-v1/v2, mariposa-daga, flor-hojas.
 - Tema recurrente: TRADICIONAL VEGANO (vaca "vive y deja vivir", corazón "Vegan", animales de granja con corazoncito en la frente).
 
-## Restricciones de producción (decididas por el orquestador)
-- NO hay footage de Briza ni de ninguna persona disponible ahora. NO se reutiliza el footage de VIDEO_1 (persona real, contenido ajeno).
-- El video producido ahora debe poder hacerse con: los assets del repo + gráficos generados (PIL/ffmpeg) + audio sintetizado/SFX generados. Se puede dibujar todo "a propósito feo" (estética Paint/Canva/cutout).
-- La música trend se agrega idealmente in-app al publicar (sonido trending). El render lleva una pista propia sintetizada ≈123 BPM con drop, para que el timing sea compatible.
-- Se entrega además un guion de rodaje para una versión live-action con Briza (segunda iteración).
-- Herramientas: ffmpeg, ImageMagick, Python (PIL, numpy, scipy). Fuentes: DejaVu, Liberation (Sans/Narrow no; Arial-like = Liberation Sans), FreeSans, Noto Color Emoji.
+## Restricciones de producción (ACTUALIZADO por decisión del cliente)
+- **Base obligatoria: el footage de VIDEO_1 (la señora bailando) + su pista de audio original.** Igual que hizo VIDEO_2: el trend ES reusar ese video como "comercial" propio. Fuente limpia (sin overlays): `work/video1.mp4` (576x1024, se escala a 1080x1920).
+- Se puede recortar la intro (VIDEO_2 recortó ≈5 s; el drop original está en 15,0 s) y se debe cortar antes de 58,9 s (ahí la cámara se cae y se ve un interior). Se pueden usar freeze frames, punch-ins, velocidad, repetición, cortes, silencios deliberados.
+- Audio: la pista original de VIDEO_1 (instrumental ≈123 BPM, drop en 15,0 s). Se pueden sumar SFX sintetizados encima y cortes de música deliberados.
+- Lo que hay que hacer distinto a VIDEO_2 es TODA la capa propia: rubro (tatuajes de Briza), copy, overlays (flashes/stencils/stickers de Briza, gráficos generados), estructura de escalada y punchlines. Nada de carpetitas, ni frases ni end card de @juampidelbosque.
+- Handle de Briza: placeholder `@brizamaldonado` (configurable, a confirmar).
+- Herramientas: ffmpeg, ImageMagick, Python (PIL, numpy, scipy). Fuentes: DejaVu Sans/Serif Bold, Liberation Sans/Serif (Arial-like). Condensado se simula escalando en X.
+- Además se entrega un guion de rodaje para una versión live-action con Briza (segunda iteración).
