@@ -30,8 +30,8 @@ npx wrangler r2 bucket create briza-refs
 npx wrangler deploy                           # anotar la URL y ponerla en PUBLIC_URL (wrangler.toml), deploy otra vez
 npx wrangler secret put NOMBRE                # uno por cada secreto listado en wrangler.toml
 ```
-En GitHub → Settings → Secrets and variables → Actions → Variables: `AGENT_URL` (URL del worker) y
-`FLASH_SHEET` (CSV publicado). Volver a publicar la web.
+En Vercel → proyecto → Settings → Environment Variables: `NEXT_PUBLIC_AGENT_URL` (URL del worker) y
+`NEXT_PUBLIC_FLASH_SHEET` (CSV publicado). Volver a publicar la web (Deployments → Redeploy).
 
 ### Google Calendar
 - Calendario público **Turnos**: eventos "Libre" = turnos que se ofrecen.

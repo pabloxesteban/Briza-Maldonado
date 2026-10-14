@@ -62,7 +62,7 @@ export default function About() {
         }}
       >
         <img
-          src="/Briza-Maldonado/briza-portrait.jpg"
+          src="/briza-portrait.jpg"
           alt="Briza Maldonado"
           style={{
             position: 'absolute', inset: 0,

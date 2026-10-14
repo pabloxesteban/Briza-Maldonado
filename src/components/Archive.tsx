@@ -212,7 +212,7 @@ function Detail({ index, list, from, onIndex, onClose, onBook }: {
           ))}
         </div>
         <div className="vw-topline">
-          <span className="vw-who"><Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} /> Diseños tatuados <em>{pos + 1} de {n}</em></span>
+          <span className="vw-who"><Image src="/brand/sirena-arch.png" alt="" width={40} height={48} /> Diseños tatuados <em>{pos + 1} de {n}</em></span>
           <div className="vw-tools">
             <button type="button" className="vw-play" data-hover onClick={() => setPlaying(p => !p)} aria-label={playing ? 'Pausar' : 'Reproducir'}>
               {playing ? '❚❚ Pausa' : '▶ Reproducir'}
@@ -333,7 +333,7 @@ function Stories({ index, list, onIndex, onClose, onBook }: {
         ))}
       </div>
       <div className="st-head">
-        <span className="st-who"><Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={40} height={48} /> @{INSTAGRAM}</span>
+        <span className="st-who"><Image src="/brand/sirena-arch.png" alt="" width={40} height={48} /> @{INSTAGRAM}</span>
         <button type="button" className="st-x" aria-label="Cerrar" onClick={onClose}>✕</button>
       </div>
       <div key={w.slug} className="st-img">

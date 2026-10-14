@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const V = '/Briza-Maldonado/proceso/'
+const V = '/proceso/'
 // Three studio clips, each starting at a different point of its loop so the columns never move in step
 const CLIPS = [{ src: 'portada', start: 0 }, { src: 'portada3', start: 0.45 }, { src: 'portada2', start: 0.7 }]
 

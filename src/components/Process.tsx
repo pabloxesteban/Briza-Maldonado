@@ -10,7 +10,7 @@ const STAGES = [
   { n: '04', t: 'La piel', d: 'Aguja, tinta y pulso. Del papel a la piel, una sola vez.' },
 ]
 
-const V = '/Briza-Maldonado/proceso/'
+const V = '/proceso/'
 const ZZ = [{ x: 34, y: 8 }, { x: 64, y: 36 }, { x: 34, y: 64 }, { x: 64, y: 92 }]
 // Hand-drawn S-stroke through the steps, like a line pulled with the machine
 const INK_PATH = 'M34,8 C33,21 63,19 64,36 C65,53 35,47 34,64 C33,81 63,75 64,92'

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-const BASE = '/Briza-Maldonado/_img/brand/'
+const BASE = '/_img/brand/'
 
 // First visit per session: the heart gets "tattooed" — black line and shading first, then the colour —
 // and the screen lifts away.

@@ -604,8 +604,9 @@ export default {
     }
 
     const origin = req.headers.get('Origin') ?? ''
-    const allowed = origin === env.ALLOWED_ORIGIN || origin.startsWith('http://localhost')
-    const cors = { 'Access-Control-Allow-Origin': allowed ? origin : env.ALLOWED_ORIGIN, 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', Vary: 'Origin' }
+    const origins = env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+    const allowed = origins.includes(origin) || origin.startsWith('http://localhost')
+    const cors = { 'Access-Control-Allow-Origin': allowed ? origin : origins[0], 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', Vary: 'Origin' }
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
     if (req.method !== 'POST' || !allowed) return new Response('Not allowed', { status: 403, headers: cors })
     const ip = req.headers.get('CF-Connecting-IP') ?? 'anon'

@@ -7,7 +7,7 @@ export type Work = {
   src: string
 }
 
-const P = '/Briza-Maldonado/portfolio/'
+const P = '/portfolio/'
 
 export const WORKS: Work[] = [
   { slug: 'garza', title: 'La Garza', style: 'Traditional', zone: 'Antebrazo', note: 'Alas abiertas, plumas en capas. Un vuelo permanente.', src: P + 'garza.jpg' },

@@ -8,10 +8,10 @@ import { WORKS } from '@/data/works'
 
 // Same order as the home page; each one previews its own picture on hover
 const links = [
-  { label: 'Flashes',  hash: '#flash',   pic: '/Briza-Maldonado/flash/cover.jpg' },
+  { label: 'Flashes',  hash: '#flash',   pic: '/flash/cover.jpg' },
   { label: 'Diseños',  hash: '#obra',    pic: '' },
-  { label: 'Proceso',  hash: '#proceso', pic: '/Briza-Maldonado/proceso/boceto-poster.jpg' },
-  { label: 'Turno',    hash: '#turno',   pic: '/Briza-Maldonado/briza-tatuando.jpg' },
+  { label: 'Proceso',  hash: '#proceso', pic: '/proceso/boceto-poster.jpg' },
+  { label: 'Turno',    hash: '#turno',   pic: '/briza-tatuando.jpg' },
 ]
 
 // Is the page dark at this point of the screen? Walks up from the element there to the first painted
@@ -142,7 +142,7 @@ export default function Navbar() {
       <nav ref={navRef} className={`nav2 ${menuOpen ? 'menu-open' : ''} ${isSubPage ? 'always' : ''}`} style={{ opacity: show ? undefined : 0 }}>
         {/* Logo → home */}
         <Link href="/" aria-label="Briza Maldonado — inicio" className="nb2-brand">
-          <Image src="/Briza-Maldonado/brand/sirena-arch.png" alt="" width={400} height={480} priority
+          <Image src="/brand/sirena-arch.png" alt="" width={400} height={480} priority
             sizes="56px" className="nav-arch" />
           <span className="nav-lockup"><span className="nav-l1">Briza</span><span className="nav-l2 swash">Maldonado</span></span>
         </Link>

@@ -4,8 +4,8 @@ compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-# Only the site may call the chat/form endpoints
-ALLOWED_ORIGIN = "https://pabloxesteban.github.io"
+# Only the site may call the chat/form endpoints (comma-separated list of origins)
+ALLOWED_ORIGIN = "https://briza-maldonado.vercel.app"
 # URL of this worker after the first deploy (used in Aceptar/Rechazar, Mercado Pago and photo links)
 PUBLIC_URL = "https://briza-agent.CAMBIAR.workers.dev"
 
