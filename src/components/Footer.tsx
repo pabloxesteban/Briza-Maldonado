@@ -1,6 +1,5 @@
 'use client'
 
-import { BASE_PATH } from '@/lib/basePath'
 import Image from 'next/image'
 
 const INSTAGRAM = 'bri.t4tts'
@@ -10,7 +9,7 @@ export default function Footer() {
   return (
     <footer className="ft2">
       <p className="ft2-brand">
-        <Image src={`${BASE_PATH}/brand/sirena-arch.png`} alt="" width={400} height={480} className="ft2-arch" />
+        <Image src="/brand/sirena-arch.png" alt="" width={400} height={480} className="ft2-arch" />
         Briza Maldonado <span>· Palermo, Buenos Aires · © {new Date().getFullYear()}</span>
       </p>
       <nav className="ft2-links" aria-label="Contacto">

@@ -1,6 +1,5 @@
 'use client'
 
-import { BASE_PATH } from '@/lib/basePath'
 import { useEffect, useRef } from 'react'
 
 const lines = [
@@ -63,7 +62,7 @@ export default function About() {
         }}
       >
         <img
-          src={`${BASE_PATH}/briza-portrait.jpg`}
+          src="/briza-portrait.jpg"
           alt="Briza Maldonado"
           style={{
             position: 'absolute', inset: 0,
