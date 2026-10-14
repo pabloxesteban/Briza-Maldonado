@@ -1,6 +1,6 @@
 import manifest from './imageManifest.json'
+import { BASE_PATH as BASE } from './basePath'
 
-const BASE = '/Briza-Maldonado'
 const variants = manifest as Record<string, number[]>
 
 // Maps next/image requests to the pre-generated WebP variants (see tools/optimize_images.py)

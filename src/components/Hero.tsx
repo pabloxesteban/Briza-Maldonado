@@ -1,8 +1,9 @@
 'use client'
 
+import { BASE_PATH } from '@/lib/basePath'
 import { useEffect, useRef, useState } from 'react'
 
-const V = '/Briza-Maldonado/proceso/'
+const V = `${BASE_PATH}/proceso/`
 // Three studio clips, each starting at a different point of its loop so the columns never move in step
 const CLIPS = [{ src: 'portada', start: 0 }, { src: 'portada3', start: 0.45 }, { src: 'portada2', start: 0.7 }]
 

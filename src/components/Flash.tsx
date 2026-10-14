@@ -1,12 +1,13 @@
 'use client'
 
+import { BASE_PATH } from '@/lib/basePath'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 
 // aspect = height / width of the cut-out; dots = neon sticker dots (fractions of the cut-out box), like Briza's notebook
 type FlashDef = { slug: string; name: string; price: string; cm: number; available: boolean; status?: 'reservado' | 'tatuado'; aspect?: number; dots?: number[][] }
 
-const BASE = '/Briza-Maldonado/flash/'
+const BASE = `${BASE_PATH}/flash/`
 const FLASHES: FlashDef[] = [
   { slug: 'mariposa-daga', name: 'Mariposa con daga', price: '$50.000', cm: 8, available: true, aspect: 1.308, dots: [[0.919, 0.272], [0.54, 0.929], [0.186, 0.622], [0.486, 0.03]] },
   { slug: 'frutilla', name: 'Frutilla', price: '$40.000', cm: 5, available: true, aspect: 1.243, dots: [[0.743, 0.705], [0.058, 0.555], [0.654, 0.049]] },
